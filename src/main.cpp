@@ -1,91 +1,87 @@
 #include <SFML/Graphics.hpp>
 #include <cstdlib>
+
+ // vec2, vec3, mat4, radians
+#include "utils.hpp"
 #include <iostream>
-#include <chrono>
-
-#include <glm/glm.hpp> // vec2, vec3, mat4, radians
-
-using namespace std::chrono_literals;
+#include <thread>
+#include<gameCore.hpp>
 
 constexpr int g_width = 1280;
 constexpr int g_height = 720;
 
+inline void handle_events(sf::Window&);
+
+void draw_on_screen(sf::Uint8*);
+
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(g_width, g_height), "My window", sf::Style::Close );
-    window.setFramerateLimit(60);
+    //load ass(start)
+    GameCore gameCore{ {{g_width, g_height }, 90.f, 10.f, 1.f} };
+    if (gameCore.load_map("map.txt")) {
+        std::unique_ptr<RayInfo[]> rayInfoVec = gameCore.view_by_ray_casting();
+        std::cout << rayInfoVec[0].entityHit;
+    }
+    else return -1;
+    
 
-    std::string map;
-    map += {'w','w','w','w','w','w','w','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w','w','w','w','w','w','w','w'};
+    //set win
+    sf::RenderWindow window(sf::VideoMode(g_width, g_height), "My window", sf::Style::Close);
+    window.setFramerateLimit(0);
 
-    constexpr int mapX = 8;
-    constexpr int mapY = 6;
+    //create canvas
+    sf::Uint8* pixels = new sf::Uint8[g_width * g_height * 4];
+    sf::Texture viewTexture;
+    viewTexture.create(g_width, g_height);
+    sf::Sprite view(viewTexture);
 
-    std::chrono::nanoseconds dt(0ns);
-    int frameCounter = 0;
-    auto tStart = std::chrono::high_resolution_clock::now();
+    //load ass(end)
 
-    sf::CircleShape shape(5.f);
+    debug::GameTimer gt;
+
 
     while (window.isOpen())
     {
-        auto deltaTime = std::chrono::high_resolution_clock::now() - tStart;
-        tStart = std::chrono::high_resolution_clock::now();
-        dt += deltaTime;
-        frameCounter++; 
-        
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            switch (event.type)
-            {
-                case sf::Event::Closed:
-                    window.close();
-                    break;
-            }
-        }
 
-        // clear the window with black color
+        handle_events(window);
         window.clear(sf::Color::Black);
 
-        // draw everything here...
-
-        
-
-        sf::Color sCol = shape.getFillColor();
-        for (int i = 0; i < 100; i++)
-        {
-            shape.setPosition(10*i, 0);
-            shape.setFillColor({ static_cast<sf::Uint8>(dt.count()), static_cast<sf::Uint8>(dt.count() * 1), static_cast<sf::Uint8>(dt.count() * 2)});
-            window.draw(shape);
-        }
-        for (int i = 0; i < 100; i++)
-        {
-            shape.setPosition(10 * i, 10);
-            shape.setFillColor({ static_cast<sf::Uint8>(dt.count()), static_cast<sf::Uint8>(dt.count() * 1), static_cast<sf::Uint8>(dt.count() * 2)});
-            window.draw(shape);
-        }
-
-        auto tEnd = std::chrono::steady_clock::now();
-        deltaTime = tEnd - tStart;
-
-        
-        
-        if (dt > 1s)
-        {
-            std::cout << frameCounter << std::endl;
-            dt = 0ms;
-            frameCounter = 0;
-        }
-
-        // end the current frame
+        draw_on_screen(pixels);
+        viewTexture.update(pixels);
+        //draw on screen
+        window.draw(view);
         window.display();
+
+        gt.add_frame();
+        std::cout << gt.get_frame_rate() << std::endl;
     }
 
+
+
     return 0;
+}    
+
+inline void handle_events(sf::Window& window) 
+{
+    sf::Event event;
+    while (window.pollEvent(event))
+    {
+        switch (event.type)
+        {
+        case sf::Event::Closed:
+            window.close();
+            break;
+        }
+    }
+}
+
+void draw_on_screen(sf::Uint8* pixels) 
+{
+    for (int i = 0; i < g_width * g_height * 4; i += 4) 
+    {
+        pixels[i] = 0xFF;
+        pixels[i + 1] = i%120;
+        pixels[i + 2] = i%200;
+        pixels[i + 3] = i%256;
+    }
 }
