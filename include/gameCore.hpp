@@ -3,8 +3,20 @@
 
 #include<cstdint>
 #include<memory>
-#include<glm/vec2.hpp>
 #include<string>
+#include"utils.hpp"
+#include<vector>
+
+enum class EntityType : char {
+	Wall = 'w',
+	Oob = 'o',
+	Empty = '\0'
+};
+
+struct  MinimapData 
+{
+	
+};
 
 struct EntityTransform 
 {
@@ -28,7 +40,7 @@ struct GameMap
 
 struct RayInfo
 {
-	char entityHit;
+	EntityType entityHit;
 	glm::vec2 hitPos;
 };
 
@@ -42,12 +54,16 @@ public:
 
 	bool load_map(const std::string&);
 
-	std::unique_ptr<RayInfo[]>  view_by_ray_casting();
+	std::vector<RayInfo>  view_by_ray_casting();
+
+	//get_minimap_info();
 
 private:
 	EntityTransform m_entityTransform;
 	GameCamera m_gameCamera;
 	GameMap m_gameMap;
+
+	bool check_out_of_map_bounds(const glm::vec2 &);
 };
 
 #endif

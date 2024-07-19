@@ -22,11 +22,10 @@ add_executable(main src/main.cpp)
 
 include_directories(include)
 
-
 add_subdirectory(libs)
 
-#target_include_directories(utils PUBLIC "${PROJECT_SOURCE_DIR}/build/_deps/glm-src/glm")
-target_link_libraries(gameCore PUBLIC utils glm::glm)
+target_link_libraries(utils PUBLIC glm::glm)
+target_link_libraries(gameCore PUBLIC utils)
 target_link_libraries(main PUBLIC sfml-graphics gameCore gameGraphics)
 
 target_compile_features(main PRIVATE cxx_std_17)
