@@ -1,91 +1,119 @@
 #include <SFML/Graphics.hpp>
 #include <cstdlib>
+
+ // vec2, vec3, mat4, radians
+#include "utils.hpp"
 #include <iostream>
-#include <chrono>
-
-#include <glm/glm.hpp> // vec2, vec3, mat4, radians
-
-using namespace std::chrono_literals;
-
+#include <thread>
+#include<gameCore.hpp>
+#include<glm/ext/scalar_constants.hpp>
 constexpr int g_width = 1280;
 constexpr int g_height = 720;
 
+inline void handle_events(sf::Window&);
+
+void draw_on_screen(sf::Uint8*);
+void draw_on_screen(sf::RenderWindow&, const std::vector<RayInfo>& ,const sf::Vector2f& );
+
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(g_width, g_height), "My window", sf::Style::Close );
-    window.setFramerateLimit(60);
+    //load ass(start)
 
-    std::string map;
-    map += {'w','w','w','w','w','w','w','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w',' ',' ',' ',' ',' ',' ','w'};
-    map += {'w','w','w','w','w','w','w','w'};
 
-    constexpr int mapX = 8;
-    constexpr int mapY = 6;
+    vecMath::rotation_mat2x2(10.f);
+    
 
-    std::chrono::nanoseconds dt(0ns);
-    int frameCounter = 0;
-    auto tStart = std::chrono::high_resolution_clock::now();
+    //set win
+    sf::RenderWindow window(sf::VideoMode(g_width, g_height), "My window", sf::Style::Close);
+    window.setFramerateLimit(0);
 
-    sf::CircleShape shape(5.f);
+    //create canvas
+    //sf::Uint8* pixels = new sf::Uint8[g_width * g_height * 4];
+    //sf::Texture viewTexture;
+    //viewTexture.create(g_width, g_height);
+    //sf::Sprite view(viewTexture);
+
+
+    
+
+    GameCore gameCore{ {{g_width, g_height}, 0.25f * (glm::pi<float>()), 30.f, 0.02f} };
+    //sf::Vector2f plPos{ 15.f, 10.f };
+    sf::Vector2f plPos{ 4.5f, 2.f };
+    std::vector<RayInfo> rayInfoVec;
+
+    if (!gameCore.load_map("map.txt"))
+    {
+        std::cerr << "Missing \"map\" file\n";
+        return -1;
+    }
 
     while (window.isOpen())
     {
-        auto deltaTime = std::chrono::high_resolution_clock::now() - tStart;
-        tStart = std::chrono::high_resolution_clock::now();
-        dt += deltaTime;
-        frameCounter++; 
-        
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            switch (event.type)
-            {
-                case sf::Event::Closed:
-                    window.close();
-                    break;
-            }
-        }
 
-        // clear the window with black color
+        handle_events(window);
         window.clear(sf::Color::Black);
 
-        // draw everything here...
+        debug::GameTimer gt;
 
+        gt.reset_timer();
         
+        rayInfoVec = gameCore.view_by_ray_casting();
 
-        sf::Color sCol = shape.getFillColor();
-        for (int i = 0; i < 100; i++)
-        {
-            shape.setPosition(10*i, 0);
-            shape.setFillColor({ static_cast<sf::Uint8>(dt.count()), static_cast<sf::Uint8>(dt.count() * 1), static_cast<sf::Uint8>(dt.count() * 2)});
-            window.draw(shape);
-        }
-        for (int i = 0; i < 100; i++)
-        {
-            shape.setPosition(10 * i, 10);
-            shape.setFillColor({ static_cast<sf::Uint8>(dt.count()), static_cast<sf::Uint8>(dt.count() * 1), static_cast<sf::Uint8>(dt.count() * 2)});
-            window.draw(shape);
-        }
+        std::cout << "casting" << '\t' << gt.reset_timer() << std::endl;
 
-        auto tEnd = std::chrono::steady_clock::now();
-        deltaTime = tEnd - tStart;
+        draw_on_screen(window, rayInfoVec, plPos);
 
-        
-        
-        if (dt > 1s)
-        {
-            std::cout << frameCounter << std::endl;
-            dt = 0ms;
-            frameCounter = 0;
-        }
-
-        // end the current frame
+        std::cout << "drawing" << '\t' << gt.reset_timer() << std::endl;
+        //viewTexture.update(pixels);
+        //window.draw(view);
         window.display();
+
+        gt.add_frame();
+        //std::cout << gt.get_frame_rate() << std::endl;
     }
 
+
+
     return 0;
+}    
+
+inline void handle_events(sf::Window& window) 
+{
+    sf::Event event;
+    while (window.pollEvent(event))
+    {
+        switch (event.type)
+        {
+        case sf::Event::Closed:
+            window.close();
+            break;
+        }
+    }
+}
+
+void draw_on_screen(sf::RenderWindow& window, const std::vector<RayInfo>& points, const sf::Vector2f& start)
+{
+    
+    sf::VertexArray lines(sf::Lines, points.size() * 2);
+    float multip = 100;
+    for (int i = 0; i < points.size(); ++i)
+    {
+        lines[i * 2] = sf::Vector2f(start.x * multip, start.y * multip) ;
+        lines[i*2 + 1] = sf::Vector2f((points[i].hitPos[0])* multip, (points[i].hitPos[1])* multip);
+        lines[i * 2 + 1].color = sf::Color( 256, 0xFF, 0xFF);
+        //std::cout << static_cast<char>(r.entityHit) << " " << r.hitPos[0] << " " << r.hitPos[1] << std::endl;
+
+    }
+    window.draw(lines);
+}
+
+void draw_on_screen(sf::Uint8* pixels) 
+{
+    for (int i = 0; i < g_width * g_height * 4; i += 4) 
+    {
+        pixels[i] = 0xff;
+        pixels[i + 1] = i%120;
+        pixels[i + 2] = i%200;
+        pixels[i + 3] = i%256;
+    }
 }
