@@ -1,0 +1,4 @@
+#ifndef GAMEGRAPHICS_HPP
+#define GAMEGRAPHICS_HPP
+
+#endif
