@@ -32,6 +32,25 @@ void GameCore::start_internal_time()
 	m_lastTime = std::chrono::high_resolution_clock::now();
 }
 
+void GameCore::chech_position_in_map(const glm::vec2& rayPosInMap, EntityType& hitMarker) const
+{
+	if (!check_out_of_map_bounds(rayPosInMap))
+	{
+		switch (m_gameMap.cells[glm::floor(rayPosInMap[0]) + glm::floor(rayPosInMap[1]) * m_gameMap.x])
+		{
+		case 'w':
+			hitMarker = EntityType::Wall;
+			break;
+		case ' ': default:
+			break; //todo: add map features
+		}
+	}
+	else
+	{
+		hitMarker = EntityType::Oob;
+	}
+}
+
 std::vector<RayInfo> GameCore::view_by_ray_casting() const
 {
 	std::vector<RayInfo> rayInfoVec;
@@ -50,21 +69,7 @@ std::vector<RayInfo> GameCore::view_by_ray_casting() const
 		while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist)
 		{
 			glm::vec2 rayPosInMap = startPos + currentRay;
-			if (!check_out_of_map_bounds(rayPosInMap)) 
-			{
-				switch (m_gameMap.cells[glm::floor(rayPosInMap[0]) + glm::floor(rayPosInMap[1]) * m_gameMap.x]) 
-				{
-					case 'w':
-						hitMarker = EntityType::Wall;
-						break;
-					case ' ': default: 
-						break; //todo: add map features
-				}
-			}
-			else
-			{
-				hitMarker = EntityType::Oob;
-			}
+			chech_position_in_map(rayPosInMap, hitMarker);
 			currentRay += rayIncrement;
 		}
 		//std::cout << i << " " << glm::length(currentRay) << " " << rayIncrement[0] << " " << rayIncrement[1] << " " << m_entityTransform.forewardAngle << std::endl;
@@ -87,14 +92,22 @@ void GameCore::update_entities()
 	//update entitys (shoud be contained in a data structure, now only player exists)
 	//check_collision
 
-	m_entityTransform.coords = m_entityTransform.coords +
-		 (glm::vec2(glm::cos(m_entityTransform.forewardAngle), glm::sin(m_entityTransform.forewardAngle))
+	glm::vec2 moveAttempt = m_entityTransform.coords +
+		(glm::vec2(glm::cos(m_entityTransform.forewardAngle), 
+			glm::sin(m_entityTransform.forewardAngle))
 			* (m_pInputCache.foreward * deltaTime * correctionFactor));
 
-	m_entityTransform.coords = m_entityTransform.coords +
-		(glm::vec2(-glm::sin(m_entityTransform.forewardAngle), glm::cos(m_entityTransform.forewardAngle))
+	moveAttempt = moveAttempt +
+		(glm::vec2(-glm::sin(m_entityTransform.forewardAngle),
+			glm::cos(m_entityTransform.forewardAngle))
 			* (m_pInputCache.lateral * deltaTime * correctionFactor));
 
+	EntityType hitMarker = EntityType::Empty;
+	chech_position_in_map(moveAttempt, hitMarker);
+	if (hitMarker == EntityType::Empty) //check for any unblocking tiles 
+	{
+		m_entityTransform.coords = moveAttempt;
+	}
 
 	m_entityTransform.forewardAngle += m_pInputCache.rotate * deltaTime * correctionFactor;
 

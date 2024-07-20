@@ -78,7 +78,6 @@ public:
 		void move_strafe(float) const;
 	private:
 		GameCore* gameCore;
-		
 	};
 
 private:
@@ -87,7 +86,8 @@ private:
 	GameMap m_gameMap{};
 	PlayerInputCache m_pInputCache{};
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
-
+	
+	inline void GameCore::chech_position_in_map(const glm::vec2&, EntityType&) const;
 	bool check_out_of_map_bounds(const glm::vec2 &) const;
 };
 
