@@ -20,7 +20,7 @@ glm::mat2x2 vecMath::rotation_mat2x2(float angle)
 		glm::sin(angRads), glm::cos(angRads));
 }
 
-int debug::GameTimer::get_time_nano()
+int debug::GameTimer::get_time_nano() const
 {
 	return (std::chrono::high_resolution_clock::now() - tStart).count();
 }

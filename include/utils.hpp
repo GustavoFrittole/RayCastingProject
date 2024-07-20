@@ -15,7 +15,7 @@ namespace debug
 		GameTimer() : tStart(std::chrono::high_resolution_clock::now()){}
 		void add_frame();
 		int get_frame_rate();
-		int get_time_nano();
+		int get_time_nano() const;
 		int reset_timer();
 	private:
 		int m_frameCounter = 0;

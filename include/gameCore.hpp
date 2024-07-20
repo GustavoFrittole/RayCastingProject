@@ -13,7 +13,7 @@ enum class EntityType : char {
 	Empty = '\0'
 };
 
-struct  MinimapData 
+struct  MapData 
 {
 	
 };
@@ -44,6 +44,14 @@ struct RayInfo
 	glm::vec2 hitPos;
 };
 
+
+struct PlayerInputCache
+{
+	float foreward = 0;
+	float lateral = 0;
+	float rotate = 0;
+};
+
 bool fill_map_form_file(GameMap*, EntityTransform& , const std::string& );
 
 class GameCore 
@@ -53,17 +61,34 @@ public:
 		: m_gameCamera(gc) {}
 
 	bool load_map(const std::string&);
-
-	std::vector<RayInfo>  view_by_ray_casting();
+	void update_entities();
+	std::vector<RayInfo>  view_by_ray_casting() const;
+	void start_internal_time();
 
 	//get_minimap_info();
+	//idea: gameCore should contain different transforms for different entitys in a dedicated strucure
+	//		atm implementing new entities is premature
+	//should be singelton
+	class PlayerControler 
+	{
+	public:
+		PlayerControler(GameCore* gc) : gameCore(gc){}
+		void rotate(float) const;
+		void move_foreward(float) const;
+		void move_strafe(float) const;
+	private:
+		GameCore* gameCore;
+		
+	};
 
 private:
-	EntityTransform m_entityTransform;
-	GameCamera m_gameCamera;
-	GameMap m_gameMap;
+	EntityTransform m_entityTransform{};
+	GameCamera m_gameCamera{};
+	GameMap m_gameMap{};
+	PlayerInputCache m_pInputCache{};
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 
-	bool check_out_of_map_bounds(const glm::vec2 &);
+	bool check_out_of_map_bounds(const glm::vec2 &) const;
 };
 
 #endif
