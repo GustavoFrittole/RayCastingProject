@@ -2,17 +2,16 @@
 #define UTILS_HPP
 #include<string>
 #include<chrono>
-#include<glm/vec2.hpp>
 #include<glm/mat2x2.hpp>
-#include<glm/trigonometric.hpp>
 
-//ONLY_DEBUG
+
+//DEBUG
 namespace debug
 {
 	class GameTimer 
 	{
 	public:
-		GameTimer() : tStart(std::chrono::high_resolution_clock::now()){}
+		GameTimer(){}
 		void add_frame();
 		int get_frame_rate();
 		int get_time_nano() const;

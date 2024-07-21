@@ -2,20 +2,15 @@
 #define GAMECORE_HPP
 
 #include<cstdint>
-#include<memory>
-#include<string>
-#include"utils.hpp"
 #include<vector>
+#include<glm/vec2.hpp>
+#include<string>
+#include<chrono>
 
 enum class EntityType : char {
 	Wall = 'w',
 	Oob = 'o',
 	Empty = '\0'
-};
-
-struct  MapData 
-{
-	
 };
 
 struct EntityTransform 
@@ -26,9 +21,10 @@ struct EntityTransform
 
 struct GameCamera 
 {
-	uint16_t screenXY[2]{};
-	float fov = 0.f;
-	float maxRenderDist = 0.f;
+	uint16_t pixelWidth{};
+	uint16_t pixelHeight{};
+	float fov = 90.f;
+	float maxRenderDist = 10.f;
 	float rayPrecision = 0.1f;
 };
 
@@ -36,6 +32,14 @@ struct GameMap
 {
 	uint16_t x = 0, y = 0;
 	std::string cells;
+};
+
+struct MapData
+{
+	const float& fov;
+	const float& maxRenderDist;
+	const EntityTransform& playerTransform;
+	const GameMap& gameMap;
 };
 
 struct RayInfo
@@ -57,27 +61,27 @@ bool fill_map_form_file(GameMap*, EntityTransform& , const std::string& );
 class GameCore 
 {
 public:
-	GameCore(GameCamera gc)
-		: m_gameCamera(gc) {}
+	GameCore() = delete;
+	GameCore(GameCamera gc) : m_gameCamera(gc) {}
 
 	bool load_map(const std::string&);
 	void update_entities();
 	std::vector<RayInfo>  view_by_ray_casting() const;
 	void start_internal_time();
+	MapData getMapData() const;
 
 	//get_minimap_info();
-	//idea: gameCore should contain different transforms for different entitys in a dedicated strucure
-	//		atm implementing new entities is premature
+
 	//should be singelton
 	class PlayerControler 
 	{
 	public:
-		PlayerControler(GameCore* gc) : gameCore(gc){}
+		PlayerControler(GameCore& gc) : gameCore(gc){}
 		void rotate(float) const;
 		void move_foreward(float) const;
 		void move_strafe(float) const;
 	private:
-		GameCore* gameCore;
+		GameCore& gameCore;
 	};
 
 private:

@@ -1,10 +1,12 @@
+
 #include<gameCore.hpp>
 #include"utils.hpp"
 #include<fstream>
 #include<iostream>
+#include"utils.hpp"
+#include<glm/trigonometric.hpp>
 
 bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& filePath)
-
 {
 	std::ifstream file(filePath);
 	if (file.is_open())
@@ -20,6 +22,11 @@ bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& fi
 	}
 	else
 		return false;
+}
+
+MapData GameCore::getMapData() const 
+{
+	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap };
 }
 
 bool GameCore::check_out_of_map_bounds(const glm::vec2& pos) const 
@@ -54,14 +61,14 @@ void GameCore::chech_position_in_map(const glm::vec2& rayPosInMap, EntityType& h
 std::vector<RayInfo> GameCore::view_by_ray_casting() const
 {
 	std::vector<RayInfo> rayInfoVec;
-	rayInfoVec.reserve(m_gameCamera.screenXY[0]);
+	rayInfoVec.reserve(m_gameCamera.pixelWidth);
 	
 	glm::mat2x2 rotationMat = vecMath::rotation_mat2x2(glm::degrees( m_gameCamera.fov ));
 	glm::vec2 playerForwDir{ glm::cos(m_entityTransform.forewardAngle), glm::sin(m_entityTransform.forewardAngle) };
 	glm::vec2 rayIncrement = (playerForwDir * rotationMat ) * m_gameCamera.rayPrecision;
 	glm::vec2 startPos = m_entityTransform.coords;
 
-	for (int i = 0; i < m_gameCamera.screenXY[0]; ++i) 
+	for (int i = 0; i < m_gameCamera.pixelWidth; ++i) 
 	{
 		glm::vec2 currentRay{ 0,0 };
 		EntityType hitMarker = EntityType::Empty;
@@ -83,15 +90,13 @@ std::vector<RayInfo> GameCore::view_by_ray_casting() const
 
 void GameCore::update_entities()
 {
-	//calculate dt and update internal clock
+	//calculate delta time and update internal clock
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	int deltaTime = (currentTime - m_lastTime).count();
 	m_lastTime = currentTime;
 	float correctionFactor = 0.000000001f;
 
-	//update entitys (shoud be contained in a data structure, now only player exists)
 	//check_collision
-
 	glm::vec2 moveAttempt = m_entityTransform.coords +
 		(glm::vec2(glm::cos(m_entityTransform.forewardAngle), 
 			glm::sin(m_entityTransform.forewardAngle))
@@ -104,6 +109,8 @@ void GameCore::update_entities()
 
 	EntityType hitMarker = EntityType::Empty;
 	chech_position_in_map(moveAttempt, hitMarker);
+
+	//update entitys
 	if (hitMarker == EntityType::Empty) //check for any unblocking tiles 
 	{
 		m_entityTransform.coords = moveAttempt;
@@ -119,18 +126,17 @@ void GameCore::update_entities()
 
 void GameCore::PlayerControler::rotate(float angle) const
 {
-	gameCore->m_pInputCache.rotate += angle;
+	gameCore.m_pInputCache.rotate += angle;
 }
 void GameCore::PlayerControler::move_foreward(float amount) const
 {
-	gameCore->m_pInputCache.foreward += amount;
+	gameCore.m_pInputCache.foreward += amount;
 }
 
 void GameCore::PlayerControler::move_strafe(float amount) const
 {
-	gameCore->m_pInputCache.lateral += amount;
+	gameCore.m_pInputCache.lateral += amount;
 }
-
 
 bool GameCore::load_map(const std::string& filePath) 
 {
