@@ -3,25 +3,29 @@
 #include"utils.hpp"
 #include<fstream>
 #include<iostream>
-#include"utils.hpp"
-#include<glm/trigonometric.hpp>
+#include<thread>
+#include<stdexcept>
+#include<cmath>
 
-bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& filePath)
+RayInfo& RayInfoArr::at(int index)
 {
-	std::ifstream file(filePath);
-	if (file.is_open())
-	{
-		file >> map->x >> map->y >> et.coords[0] >> et.coords[1] >> et.forewardAngle;
-		et.forewardAngle = glm::radians(et.forewardAngle);
-		std::string line;
-		while (std::getline(file, line))
-		{
-			map->cells += line;
-		}
-		return true;
-	}
+	if (index < 0 || index >= arrSize)
+		throw std::invalid_argument("Index is out of range.");
 	else
-		return false;
+		return m_rayArr[index];
+}
+const RayInfo& RayInfoArr::const_at(int index) const 
+{
+	if (index < 0 || index >= arrSize)
+		throw std::invalid_argument("Index is out of range.");
+	else
+		return m_rayArr[index];
+}
+
+GameCore::GameCore(GameCamera gc) : m_gameCamera(gc), m_processorCount(std::thread::hardware_concurrency()), m_rayInfoArr(gc.pixelWidth)
+{
+	if (m_processorCount < 1)
+		m_processorCount = 1;
 }
 
 MapData GameCore::getMapData() const 
@@ -29,9 +33,9 @@ MapData GameCore::getMapData() const
 	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap };
 }
 
-bool GameCore::check_out_of_map_bounds(const glm::vec2& pos) const 
+bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
 {
-	return (pos[0] < 0 || pos[1] < 0 || pos[0] >= m_gameMap.x || pos[1] >= m_gameMap.y);
+	return (pos.x < 0 || pos.y < 0 || pos.x >= m_gameMap.x || pos.y >= m_gameMap.y);
 }
 
 void GameCore::start_internal_time()
@@ -39,11 +43,11 @@ void GameCore::start_internal_time()
 	m_lastTime = std::chrono::high_resolution_clock::now();
 }
 
-void GameCore::chech_position_in_map(const glm::vec2& rayPosInMap, EntityType& hitMarker) const
+void GameCore::chech_position_in_map(const math::Vect2& rayPosInMap, EntityType& hitMarker) const
 {
 	if (!check_out_of_map_bounds(rayPosInMap))
 	{
-		switch (m_gameMap.cells[glm::floor(rayPosInMap[0]) + glm::floor(rayPosInMap[1]) * m_gameMap.x])
+		switch (m_gameMap.cells[(int)rayPosInMap.x + (int)rayPosInMap.y * m_gameMap.x])
 		{
 		case 'w':
 			hitMarker = EntityType::Wall;
@@ -58,35 +62,76 @@ void GameCore::chech_position_in_map(const glm::vec2& rayPosInMap, EntityType& h
 	}
 }
 
-std::vector<RayInfo> GameCore::view_by_ray_casting() const
-{
-	std::vector<RayInfo> rayInfoVec;
-	rayInfoVec.reserve(m_gameCamera.pixelWidth);
-	
-	glm::mat2x2 rotationMat = vecMath::rotation_mat2x2(glm::degrees( m_gameCamera.fov ));
-	glm::vec2 playerForwDir{ glm::cos(m_entityTransform.forewardAngle), glm::sin(m_entityTransform.forewardAngle) };
-	glm::vec2 rayIncrement = (playerForwDir * rotationMat ) * m_gameCamera.rayPrecision;
-	glm::vec2 startPos = m_entityTransform.coords;
+void GameCore::view_by_ray_casting()
+{	
+	math::Mat2x2 rotationMat = math::rotation_mat2x2( m_gameCamera.fov /2);
+	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+	math::Vect2 rayIncrement = (playerForwDir * rotationMat ) * m_gameCamera.rayPrecision;
+	math::Vect2 startPos = m_entityTransform.coords;
 
-	for (int i = 0; i < m_gameCamera.pixelWidth; ++i) 
+	auto cast_in_interval = [this, &startPos ](int start, int end, math::Vect2 rayIncrement) mutable 
 	{
-		glm::vec2 currentRay{ 0,0 };
-		EntityType hitMarker = EntityType::Empty;
-
-		while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist)
+		for (int i = start; i < end; ++i)
 		{
-			glm::vec2 rayPosInMap = startPos + currentRay;
-			chech_position_in_map(rayPosInMap, hitMarker);
-			currentRay += rayIncrement;
-		}
-		//std::cout << i << " " << glm::length(currentRay) << " " << rayIncrement[0] << " " << rayIncrement[1] << " " << m_entityTransform.forewardAngle << std::endl;
-		rayInfoVec.push_back({hitMarker, currentRay});
+			math::Vect2 currentRay{ 0,0 };
+			//std::cout << "teat" << i << " " << std::endl;
+			EntityType hitMarker = EntityType::Empty;
 
-		rayIncrement = rayIncrement * vecMath::rotation_mat2x2(-m_gameCamera.fov/m_gameMap.x);
-		
+			while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
+			{
+				math::Vect2 rayPosInMap = startPos + currentRay;
+				chech_position_in_map(rayPosInMap, hitMarker);
+				currentRay += rayIncrement;
+			}
+			m_rayInfoArr.at(i) = { hitMarker, currentRay };
+			rayIncrement = rayIncrement * math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
+		}
+	};
+
+	int sectionsSize = m_gameCamera.pixelWidth / (m_processorCount*1);
+	std::vector<std::thread> threadVec;
+	int currentSection;
+	for (currentSection = 0; currentSection < m_gameCamera.pixelWidth - sectionsSize; currentSection += sectionsSize)
+	{
+		threadVec.push_back(std::thread(cast_in_interval, currentSection, (currentSection + sectionsSize), rayIncrement * math::rotation_mat2x2(-(m_gameCamera.fov / m_gameCamera.pixelWidth) * currentSection )));
 	}
-	return rayInfoVec;
+	//std::cout << "teat" << currentSection << " " << std::endl;
+	if (currentSection != m_gameCamera.pixelWidth)
+	{
+		int lastSectionSize = (m_gameCamera.pixelWidth - (currentSection));
+		cast_in_interval( m_gameCamera.pixelWidth - lastSectionSize, m_gameCamera.pixelWidth, rayIncrement * math::rotation_mat2x2(-(m_gameCamera.fov / m_gameCamera.pixelWidth) * currentSection));
+	}
+		
+	for (auto& t : threadVec) 
+	{
+		t.join();
+	}
 }
+
+//void GameCore::view_by_ray_casting()
+//{
+//	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
+//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+//	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
+//	math::Vect2 startPos = m_entityTransform.coords;
+//
+//	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
+//	{
+//		math::Vect2 currentRay{ 0,0 };
+//		//std::cout << "teat" << i << " " << std::endl;
+//		EntityType hitMarker = EntityType::Empty;
+//
+//		while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
+//		{
+//			math::Vect2 rayPosInMap = startPos + currentRay;
+//			chech_position_in_map(rayPosInMap, hitMarker);
+//			currentRay += rayIncrement;
+//		}
+//		
+//		m_rayInfoArr.at(i) = { hitMarker, currentRay };
+//		rayIncrement = rayIncrement * math::rotation_mat2x2( - m_gameCamera.fov / m_gameCamera.pixelWidth);
+//	}
+//}
 
 void GameCore::update_entities()
 {
@@ -97,20 +142,20 @@ void GameCore::update_entities()
 	float correctionFactor = 0.000000001f;
 
 	//check_collision
-	glm::vec2 moveAttempt = m_entityTransform.coords +
-		(glm::vec2(glm::cos(m_entityTransform.forewardAngle), 
-			glm::sin(m_entityTransform.forewardAngle))
+	math::Vect2 moveAttempt = m_entityTransform.coords +
+		(math::Vect2(std::cos(m_entityTransform.forewardAngle), 
+			std::sin(m_entityTransform.forewardAngle))
 			* (m_pInputCache.foreward * deltaTime * correctionFactor));
 
 	moveAttempt = moveAttempt +
-		(glm::vec2(-glm::sin(m_entityTransform.forewardAngle),
-			glm::cos(m_entityTransform.forewardAngle))
+		(math::Vect2(-std::sin(m_entityTransform.forewardAngle),
+			::cos(m_entityTransform.forewardAngle))
 			* (m_pInputCache.lateral * deltaTime * correctionFactor));
 
 	EntityType hitMarker = EntityType::Empty;
 	chech_position_in_map(moveAttempt, hitMarker);
 
-	//update entitys
+	//update entities
 	if (hitMarker == EntityType::Empty) //check for any unblocking tiles 
 	{
 		m_entityTransform.coords = moveAttempt;
@@ -141,4 +186,22 @@ void GameCore::PlayerControler::move_strafe(float amount) const
 bool GameCore::load_map(const std::string& filePath) 
 {
 	return fill_map_form_file(&m_gameMap, m_entityTransform, filePath);
+}
+
+bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& filePath)
+{
+	std::ifstream file(filePath);
+	if (file.is_open())
+	{
+		file >> map->x >> map->y >> et.coords.x >> et.coords.y >> et.forewardAngle;
+		et.forewardAngle = (et.forewardAngle * 3.14159265358979323846) / 180;
+		std::string line;
+		while (std::getline(file, line))
+		{
+			map->cells += line;
+		}
+		return true;
+	}
+	else
+		return false;
 }

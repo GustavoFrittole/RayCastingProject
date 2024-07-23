@@ -5,11 +5,23 @@
 #include<SFML/Graphics.hpp>
 
 
-namespace ScreenStats
+namespace screenStats
 {
     constexpr int g_screenWidth = 1280;
     constexpr int g_screenHeight = 720;
 }
+
+struct MinimapInfo
+{
+    MinimapInfo(int scale, float rayLenght) : minimapRelPos(scale),
+        minimapY(screenStats::g_screenHeight / minimapRelPos),
+        minimapX(screenStats::g_screenWidth - minimapY),
+        minimapScale(minimapY / (rayLenght)) {}
+    int minimapRelPos;
+    int minimapY;
+    int minimapX;
+    int minimapScale;
+};
 
 class GameGraphics
 {
@@ -25,16 +37,19 @@ public:
 private:
     GameCore& m_gameCore;
     sf::RenderWindow m_window;
-    std::vector<RayInfo> m_raysInfoVec;
+    const RayInfoArr& m_raysInfoVec;
     sf::Texture m_viewTexture;
     sf::Sprite m_viewSprite;
     GameCore::PlayerControler m_playerController;
     MapData m_mapData;
     sf::Uint8* m_screenPixels;
-    const int m_minimapY = ScreenStats::g_screenHeight / 8;
-    const int m_minimapX = (ScreenStats::g_screenWidth - ScreenStats::g_screenHeight/8);
+    const MinimapInfo m_minimapInfo{ 6, m_mapData.maxRenderDist };
+    sf::CircleShape m_minimapFrame;
+    bool m_hadFocus = false;
 
     void draw_camera_view();
-    void draw_minimap() ;
+    void draw_minimap();
+    void draw_minimap_rays();
+    void create_minimap_frame();
 };
 #endif

@@ -1,8 +1,21 @@
-11 7 4.5 2 90
-wwwwwwwwwww
-w       www
-w      wwww
-www     www
-ww      www
-w    w    w
-wwwwwwwwwww
+30 20 15 10 90
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   w                        w
+w  w      w       w     w    w
+w w               w          w
+ww   w     w      w   w      w
+w      w     w    w          w
+w    w     w         w       w
+w   w           w            w
+w   w       wwwwwwwwwwwwwwwwww
+w   w                        w
+w               w    w       w
+w                    w       w
+w    www    w   w    w       w
+w       w            w       w
+w w      w w  w  w   w  w w  w
+w         w          w       w
+w    w     w    w            w
+w    w      w                w
+w    w       w               w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwww

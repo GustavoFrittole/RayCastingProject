@@ -3,11 +3,12 @@
 
 #include<cstdint>
 #include<vector>
-#include<glm/vec2.hpp>
 #include<string>
 #include<chrono>
+#include"utils.hpp"
 
-enum class EntityType : char {
+enum class EntityType : char 
+{
 	Wall = 'w',
 	Oob = 'o',
 	Empty = '\0'
@@ -15,7 +16,7 @@ enum class EntityType : char {
 
 struct EntityTransform 
 {
-	glm::vec2 coords{};
+	math::Vect2 coords{};
 	float forewardAngle = 0;
 };
 
@@ -44,11 +45,24 @@ struct MapData
 
 struct RayInfo
 {
-	EntityType entityHit;
-	glm::vec2 hitPos;
+	EntityType entityHit = EntityType::Empty;
+	math::Vect2 hitPos = {0, 0};
 };
 
+class RayInfoArr 
+{
+public:
+	RayInfoArr(int size) : arrSize(size) { m_rayArr = new RayInfo[size]{}; }
+	~RayInfoArr() { delete [] m_rayArr; }
+	RayInfo& at(int);
+	const RayInfo& const_at(int) const;
+	RayInfoArr& operator=(const RayInfoArr&) = delete;
+	RayInfoArr(const RayInfoArr&) = delete;
 
+	const int arrSize;
+private:
+	RayInfo* m_rayArr;
+};
 struct PlayerInputCache
 {
 	float foreward = 0;
@@ -62,13 +76,14 @@ class GameCore
 {
 public:
 	GameCore() = delete;
-	GameCore(GameCamera gc) : m_gameCamera(gc) {}
+	GameCore(GameCamera gc);
 
 	bool load_map(const std::string&);
 	void update_entities();
-	std::vector<RayInfo>  view_by_ray_casting() const;
+	void view_by_ray_casting();
 	void start_internal_time();
 	MapData getMapData() const;
+	const RayInfoArr& getRayInfoArr() { return m_rayInfoArr; };
 
 	//get_minimap_info();
 
@@ -90,9 +105,11 @@ private:
 	GameMap m_gameMap{};
 	PlayerInputCache m_pInputCache{};
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
+	int m_processorCount = 1;
+	RayInfoArr m_rayInfoArr;
 	
-	inline void GameCore::chech_position_in_map(const glm::vec2&, EntityType&) const;
-	bool check_out_of_map_bounds(const glm::vec2 &) const;
+	inline void GameCore::chech_position_in_map(const math::Vect2&, EntityType&) const;
+	bool check_out_of_map_bounds(const math::Vect2 &) const;
 };
 
 #endif

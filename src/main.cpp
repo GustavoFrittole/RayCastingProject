@@ -5,7 +5,7 @@
 
 int main()
 {
-    GameCore gameCore{ {ScreenStats::g_screenWidth, ScreenStats::g_screenHeight, 0.5f * (1.6f), 8.f*8, 0.02f} };
+    GameCore gameCore{ {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 20.f, 0.02f} };
     if (!gameCore.load_map("map.txt"))
     {
         std::cerr << "Missing \"map\" file\n";
@@ -28,4 +28,11 @@ int main()
     return 0;
 }    
 
+/*
+TODO:
+-PRE RENDER BACKGROUND
+-IMPLEMENT MULTITHREADING IN TEXTURE GENERATION
+-IMPLEMENT PAUSE
+-IMPLEMENT DDA ALGORITHM
+*/
 
