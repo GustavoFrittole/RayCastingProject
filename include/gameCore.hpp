@@ -2,33 +2,30 @@
 #define GAMECORE_HPP
 
 #include<cstdint>
-#include<memory>
-#include<string>
-#include"utils.hpp"
 #include<vector>
+#include<string>
+#include<chrono>
+#include"utils.hpp"
 
-enum class EntityType : char {
+enum class EntityType : char 
+{
 	Wall = 'w',
 	Oob = 'o',
 	Empty = '\0'
 };
 
-struct  MinimapData 
-{
-	
-};
-
 struct EntityTransform 
 {
-	glm::vec2 coords{};
+	math::Vect2 coords{};
 	float forewardAngle = 0;
 };
 
 struct GameCamera 
 {
-	uint16_t screenXY[2]{};
-	float fov = 0.f;
-	float maxRenderDist = 0.f;
+	uint16_t pixelWidth{};
+	uint16_t pixelHeight{};
+	float fov = 90.f;
+	float maxRenderDist = 10.f;
 	float rayPrecision = 0.1f;
 };
 
@@ -38,10 +35,39 @@ struct GameMap
 	std::string cells;
 };
 
+struct MapData
+{
+	const float& fov;
+	const float& maxRenderDist;
+	const EntityTransform& playerTransform;
+	const GameMap& gameMap;
+};
+
 struct RayInfo
 {
-	EntityType entityHit;
-	glm::vec2 hitPos;
+	EntityType entityHit = EntityType::Empty;
+	math::Vect2 hitPos = {0, 0};
+};
+
+class RayInfoArr 
+{
+public:
+	RayInfoArr(int size) : arrSize(size) { m_rayArr = new RayInfo[size]{}; }
+	~RayInfoArr() { delete [] m_rayArr; }
+	RayInfo& at(int);
+	const RayInfo& const_at(int) const;
+	RayInfoArr& operator=(const RayInfoArr&) = delete;
+	RayInfoArr(const RayInfoArr&) = delete;
+
+	const int arrSize;
+private:
+	RayInfo* m_rayArr;
+};
+struct PlayerInputCache
+{
+	float foreward = 0;
+	float lateral = 0;
+	float rotate = 0;
 };
 
 bool fill_map_form_file(GameMap*, EntityTransform& , const std::string& );
@@ -49,21 +75,41 @@ bool fill_map_form_file(GameMap*, EntityTransform& , const std::string& );
 class GameCore 
 {
 public:
-	GameCore(GameCamera gc)
-		: m_gameCamera(gc) {}
+	GameCore() = delete;
+	GameCore(GameCamera gc);
 
 	bool load_map(const std::string&);
-
-	std::vector<RayInfo>  view_by_ray_casting();
+	void update_entities();
+	void view_by_ray_casting();
+	void start_internal_time();
+	MapData getMapData() const;
+	const RayInfoArr& getRayInfoArr() { return m_rayInfoArr; };
 
 	//get_minimap_info();
 
-private:
-	EntityTransform m_entityTransform;
-	GameCamera m_gameCamera;
-	GameMap m_gameMap;
+	//should be singelton
+	class PlayerControler 
+	{
+	public:
+		PlayerControler(GameCore& gc) : gameCore(gc){}
+		void rotate(float) const;
+		void move_foreward(float) const;
+		void move_strafe(float) const;
+	private:
+		GameCore& gameCore;
+	};
 
-	bool check_out_of_map_bounds(const glm::vec2 &);
+private:
+	EntityTransform m_entityTransform{};
+	GameCamera m_gameCamera{};
+	GameMap m_gameMap{};
+	PlayerInputCache m_pInputCache{};
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
+	int m_processorCount = 1;
+	RayInfoArr m_rayInfoArr;
+	
+	inline void GameCore::chech_position_in_map(const math::Vect2&, EntityType&) const;
+	bool check_out_of_map_bounds(const math::Vect2 &) const;
 };
 
 #endif
