@@ -188,6 +188,18 @@ bool GameCore::load_map(const std::string& filePath)
 	return fill_map_form_file(&m_gameMap, m_entityTransform, filePath);
 }
 
+bool GameCore::load_map()
+{
+	//should load config or whatever
+	if (fill_map_form_file(&m_gameMap, m_entityTransform, "map.txt"))
+	{
+		MapGenerator mg{};
+		fill_map_form_generator(&m_gameMap, m_entityTransform, mg);
+		return true;
+	}
+	return false;
+}
+
 bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& filePath)
 {
 	std::ifstream file(filePath);
@@ -208,5 +220,6 @@ bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& fi
 
 bool fill_map_form_generator(GameMap* map, EntityTransform& et, MapGenerator& mg)
 {
-		return false;
+	mg.generate_map(et.coords.x, et.coords.y, map->x, map->y, map->cells);
+	return false;
 }

@@ -7,11 +7,12 @@
 int main()
 {
     GameCore gameCore{ {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 15.f, 0.02f} };
-    if (!gameCore.load_map("map.txt"))
-    {
-        std::cerr << "Missing \"map\" file\n";
-        return -1;
-    }
+    //if (!gameCore.load_map("map.txt"))
+    //{
+    //    std::cerr << "Missing \"map\" file\n";
+    //    return -1;
+    //}
+    gameCore.load_map();
     GameGraphics gameGraphics(gameCore, "RayCastingWorld");
 
     gameGraphics.start();
