@@ -2,7 +2,7 @@
 #include<gameGraphics.hpp>
 #include<math.h>
 #include"utils.hpp"
-#include <iostream>
+#include<iostream>
 
 using namespace screenStats;
 
@@ -72,7 +72,7 @@ void GameGraphics::draw_camera_view()
                 sf::Uint8 floorShade;
                 if (y < wallHeightFromHorizon * 4)
                 {
-                    floorShade = 0xff * (std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 4);
+                    floorShade = 0x88 *(1- (std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 4));
                     pixelColor = { 0x77, 0x9a, 0xff, floorShade };
                 }
                 else 
@@ -80,8 +80,6 @@ void GameGraphics::draw_camera_view()
                     floorShade = 0xff * ((std::abs(g_screenHeight * 2 - y) * std::abs(g_screenHeight * 2 - y)) / (float)((g_screenHeight * 4) * (g_screenHeight * 4)));
                     pixelColor = { 0x33, 0xff, 0xff, floorShade };
                 }
-                   
-                
             }
             else
             {

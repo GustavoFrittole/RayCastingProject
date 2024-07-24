@@ -3,9 +3,9 @@
 
 #include<cstdint>
 #include<vector>
-#include<string>
 #include<chrono>
 #include"utils.hpp"
+#include"mapGenerator.hpp"
 
 enum class EntityType : char 
 {
@@ -71,6 +71,7 @@ struct PlayerInputCache
 };
 
 bool fill_map_form_file(GameMap*, EntityTransform& , const std::string& );
+bool fill_map_form_generator(GameMap* map, EntityTransform& et, MapGenerator& mg);
 
 class GameCore 
 {

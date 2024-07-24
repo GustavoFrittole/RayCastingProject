@@ -108,7 +108,7 @@ void GameCore::view_by_ray_casting()
 	}
 }
 
-//void GameCore::view_by_ray_casting()
+//void GameCore::view_by_ray_casting_nothreads()
 //{
 //	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
 //	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
@@ -203,5 +203,10 @@ bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& fi
 		return true;
 	}
 	else
+		return false;
+}
+
+bool fill_map_form_generator(GameMap* map, EntityTransform& et, MapGenerator& mg)
+{
 		return false;
 }
