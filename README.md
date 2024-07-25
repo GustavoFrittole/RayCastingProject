@@ -18,5 +18,3 @@ In game map display while game paused:
 In game minimap:
 
 ![minimap](https://github.com/user-attachments/assets/c6700558-e933-44c5-8c10-7b3721ebbfc1)
-
-
