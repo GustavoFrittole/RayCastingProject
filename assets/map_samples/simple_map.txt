@@ -1,4 +1,5 @@
-11 7 4.5 2 90
+map_w, map_h, player_x, player_y, player_f_angle, generate_maze [y/n]
+11 7 4.5 2 90 n
 wwwwwwwwwww
 w       www
 w      wwww

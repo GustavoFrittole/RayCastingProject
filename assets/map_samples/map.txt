@@ -1,21 +1,45 @@
-30 20 15 10 90
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-w   w                        w
-w  w      w       w     w    w
-w w               w          w
-ww   w     w      w   w      w
-w      w     w    w          w
-w    w     w         w       w
-w   w           w            w
-w   w       wwwwwwwwwwwwwwwwww
-w   w                        w
-w               w    w       w
-w                    w       w
-w    www    w   w    w       w
-w       w            w       w
-w w      w w  w  w   w  w w  w
-w         w          w       w
-w    w     w    w            w
-w    w      w                w
-w    w       w               w
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+map_w, map_h, player_x, player_y, player_f_angle, generate_maze [y/n]
+31 43 15 11 0 y
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+w   w                         w
+w   w                    w    w
+w  w      w       w     w     w
+w w               w           w
+ww   w     w      w   w       w
+w      w     w    w           w
+w    w     w         w        w
+w   w           w             w
+w   w       wwwwwwwwwwwwwwwwwww
+w   w                       w w
+w               w    w        w
+w                    w        w
+w    www    w   w    w        w
+w       w            w        w
+w w      w w  w  w   w  w  w  w
+w         w          w        w
+w    w     w    w             w
+w    w      w                 w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w w      w w  w  w   w  w  w  w
+w w      w w  w  w   w  w  w  w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+w    w       w                w
+wwwwwwwwwwwwwwwwwwwwwwwwwwwwwww

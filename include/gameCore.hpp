@@ -41,6 +41,7 @@ struct MapData
 	const float& maxRenderDist;
 	const EntityTransform& playerTransform;
 	const GameMap& gameMap;
+	const bool generated;
 };
 
 struct RayInfo
@@ -70,22 +71,20 @@ struct PlayerInputCache
 	float rotate = 0;
 };
 
-bool fill_map_form_file(GameMap*, EntityTransform& , const std::string& );
-bool fill_map_form_generator(GameMap* map, EntityTransform& et, MapGenerator& mg);
-
-class GameCore 
+class GameCore
 {
 public:
 	GameCore() = delete;
-	GameCore(GameCamera gc);
+	GameCore(GameCamera gc, const std::string&);
 
-	bool load_map(const std::string&);
-	bool load_map();
+	bool load_map_form_file();
 	void update_entities();
 	void view_by_ray_casting();
 	void start_internal_time();
 	MapData getMapData() const;
 	const RayInfoArr& getRayInfoArr() { return m_rayInfoArr; };
+	bool generate_map_step() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map_step()); };
+	bool generate_map() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map()); }
 
 	//get_minimap_info();
 
@@ -109,49 +108,11 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 	int m_processorCount = 1;
 	RayInfoArr m_rayInfoArr;
+	std::string m_gameMapFilePath = "map.txt";
+	std::unique_ptr<MapGenerator> m_mapGenerator;
 	
 	inline void GameCore::chech_position_in_map(const math::Vect2&, EntityType&) const;
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
-};
-
-class GameCoreV1
-{
-public:
-	GameCoreV1() = delete;
-	GameCoreV1(GameCamera gc);
-
-	bool load_map(const std::string&);
-	void update_entities();
-	void view_by_ray_casting();
-	void start_internal_time();
-	MapData getMapData() const;
-	const RayInfoArr& getRayInfoArr() { return m_rayInfoArr; };
-
-	//get_minimap_info();
-
-	//should be singelton
-	class PlayerControler
-	{
-	public:
-		PlayerControler(GameCore& gc) : gameCore(gc) {}
-		void rotate(float) const;
-		void move_foreward(float) const;
-		void move_strafe(float) const;
-	private:
-		GameCore& gameCore;
-	};
-
-private:
-	EntityTransform m_entityTransform{};
-	GameCamera m_gameCamera{};
-	GameMap m_gameMap{};
-	PlayerInputCache m_pInputCache{};
-	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
-	int m_processorCount = 1;
-	RayInfoArr m_rayInfoArr;
-
-	inline void GameCoreV1::chech_position_in_map(const math::Vect2&, EntityType&) const;
-	bool check_out_of_map_bounds(const math::Vect2&) const;
 };
 
 #endif

@@ -22,7 +22,8 @@ const RayInfo& RayInfoArr::const_at(int index) const
 		return m_rayArr[index];
 }
 
-GameCore::GameCore(GameCamera gc) : m_gameCamera(gc), m_processorCount(std::thread::hardware_concurrency()), m_rayInfoArr(gc.pixelWidth)
+GameCore::GameCore(GameCamera gc, const std::string& mapPath) : m_gameCamera(gc), m_processorCount(std::thread::hardware_concurrency()),
+																m_rayInfoArr(gc.pixelWidth), m_gameMapFilePath(mapPath)
 {
 	if (m_processorCount < 1)
 		m_processorCount = 1;
@@ -168,6 +169,32 @@ void GameCore::update_entities()
 	m_pInputCache.rotate = 0;
 }
 
+bool GameCore::load_map_form_file()
+{
+	std::ifstream file(m_gameMapFilePath);
+	char generate;
+	if (file.is_open())
+	{
+		std::string line;
+		std::getline(file, line);
+		file >> m_gameMap.x >> m_gameMap.y >> m_entityTransform.coords.x >> m_entityTransform.coords.y >> m_entityTransform.forewardAngle >> generate;
+		std::cout << m_gameMap.x << m_gameMap.y << m_entityTransform.coords.x << m_entityTransform.coords.y << m_entityTransform.forewardAngle << generate;
+		m_entityTransform.forewardAngle *= 3.14159265358979323846 / 180;
+		if (generate == 'y')
+		{
+			m_mapGenerator = std::make_unique<MapGenerator>((int)m_entityTransform.coords.x, (int)m_entityTransform.coords.y, m_gameMap.x, m_gameMap.y, m_gameMap.cells);
+			return true;
+		}
+		while (std::getline(file, line))
+		{
+			m_gameMap.cells += line;
+		}
+		return true;
+	}
+	else
+		return false;
+}
+
 
 void GameCore::PlayerControler::rotate(float angle) const
 {
@@ -181,45 +208,4 @@ void GameCore::PlayerControler::move_foreward(float amount) const
 void GameCore::PlayerControler::move_strafe(float amount) const
 {
 	gameCore.m_pInputCache.lateral += amount;
-}
-
-bool GameCore::load_map(const std::string& filePath) 
-{
-	return fill_map_form_file(&m_gameMap, m_entityTransform, filePath);
-}
-
-bool GameCore::load_map()
-{
-	//should load config or whatever
-	if (fill_map_form_file(&m_gameMap, m_entityTransform, "map.txt"))
-	{
-		MapGenerator mg{};
-		fill_map_form_generator(&m_gameMap, m_entityTransform, mg);
-		return true;
-	}
-	return false;
-}
-
-bool fill_map_form_file(GameMap* map, EntityTransform& et, const std::string& filePath)
-{
-	std::ifstream file(filePath);
-	if (file.is_open())
-	{
-		file >> map->x >> map->y >> et.coords.x >> et.coords.y >> et.forewardAngle;
-		et.forewardAngle = (et.forewardAngle * 3.14159265358979323846) / 180;
-		std::string line;
-		while (std::getline(file, line))
-		{
-			map->cells += line;
-		}
-		return true;
-	}
-	else
-		return false;
-}
-
-bool fill_map_form_generator(GameMap* map, EntityTransform& et, MapGenerator& mg)
-{
-	mg.generate_map(et.coords.x, et.coords.y, map->x, map->y, map->cells);
-	return false;
 }
