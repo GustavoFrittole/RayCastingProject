@@ -1,6 +1,6 @@
 # BAD RAY CASTING ENGINE
 Bare bones and badly optimized ray casting engine
-##Usage
+## Usage
 dont
-##Notes
+## Notes
 Will capture your mouse. Leave focus to escape
