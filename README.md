@@ -24,4 +24,5 @@ In game minimap:
  - The rendering process would gratly benefit form the employment of parallel computing (at least cpu multithreading).
  - Currently outer walls are not properly displayed.
  - Theres a glitch in wall shading that becomes evident when the rander distance radius is lower than 6 units (this is due to the imprecision of the ray casting, wich is to be replaced).
+ - Many static elements that are calculated per frame (textures and masks mainly) could be easly generated only once at start time.
 
