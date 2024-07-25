@@ -18,3 +18,10 @@ In game map display while game paused:
 In game minimap:
 
 ![minimap](https://github.com/user-attachments/assets/c6700558-e933-44c5-8c10-7b3721ebbfc1)
+
+## known issues
+ - The currently adopted ray casting tecnique is far inferior compared to algorithms like DDA and others.
+ - The rendering process would gratly benefit form the employment of parallel computing (at least cpu multithreading).
+ - Currently outer walls are not properly displayed.
+ - Theres a glitch in wall shading that becomes evident when the rander distance radius is lower than 6 units (this is due to the imprecision of the ray casting, wich is to be replaced).
+
