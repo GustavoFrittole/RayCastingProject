@@ -1,7 +1,7 @@
 # Silly ray casting engine
 Bare bones and badly optimized ray casting based game.
 ## Usage
-The map is are either loaded from "map.txt" of generated, depending on the raleted flag in the same file (see example in assets).
+The map is are either loaded from `map.txt` oe generated, depending on the ralative flag in the same file (see example in assets).
 The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm,
 and the process of creation is displayed at game start.
 ## Controls
