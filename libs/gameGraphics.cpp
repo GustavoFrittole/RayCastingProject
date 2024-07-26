@@ -76,10 +76,11 @@ void GameGraphics::performGameCycle()
     gt.reset_timer();
 
     m_gameCore.view_by_ray_casting();
-    //std::cout << " casting    \t" << gt.reset_timer() << std::endl;
+    std::cout << " casting    \t" << gt.reset_timer() << std::endl;
     draw_background();
+    std::cout << " draw back  \t" << gt.reset_timer() << std::endl;
     draw_camera_view();
-    //std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
+    std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
     if (m_paused)
     {
         draw_map();
@@ -94,7 +95,7 @@ void GameGraphics::performGameCycle()
             draw_end_screen();
         }
     }
-    //std::cout << " draw minimap\t" << gt.reset_timer() << std::endl;
+    std::cout << " draw minimap\t" << gt.reset_timer() << std::endl;
     m_window.display();
 }
 
@@ -139,41 +140,66 @@ void GameGraphics::draw_camera_view()
     float half_fov = m_mapData.fov * .5f;
     float halfWallHeight = HALF_WALL_HEIGHT;
     float oneOverVerticalVisibleAngle = (g_screenWidth / (g_screenHeight * half_fov));
-    for (int i = 0; i < m_raysInfoVec.arrSize; ++i)
-    {
 
-        float distance = m_raysInfoVec.const_at(i).hitPos.lenght();
-        float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(halfWallHeight / distance) * oneOverVerticalVisibleAngle)));
-        //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
-        sf::Color pixelColor;
-        sf::Uint8 wallShade = (1 - (distance/(m_mapData.maxRenderDist))) * 0xFF;
-        for (int y = 0; y < g_screenHeight * 4; y += 4)
+    auto draw_section = [this, &oneOverVerticalVisibleAngle, &halfWallHeight](int start, int end) mutable
         {
-            int x = i * 4;
-            if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
+            for (int i = start; i < end; ++i)
             {
-                switch (m_raysInfoVec.const_at(i).entityHit)
+
+                float distance = m_raysInfoVec.const_at(i).hitPos.lenght();
+                float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(halfWallHeight / distance) * oneOverVerticalVisibleAngle)));
+                //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
+                sf::Color pixelColor;
+                sf::Uint8 wallShade = (1 - (distance / (m_mapData.maxRenderDist))) * 0xFF;
+                for (int y = 0; y < g_screenHeight * 4; y += 4)
                 {
-                case EntityType::Wall:
-                    pixelColor = { 0xff, 0xff, 0xff , wallShade };
-                    break;
-                case EntityType::Baudry:
-                    pixelColor = { 0xff, 0xaa, 0xff , wallShade };
-                    break;
-                default: 
-                    pixelColor = sf::Color::Transparent;
-                    break;
+                    int x = i * 4;
+                    if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
+                    {
+                        switch (m_raysInfoVec.const_at(i).entityHit)
+                        {
+                        case EntityType::Wall:
+                            pixelColor = { 0xff, 0xff, 0xff , wallShade };
+                            break;
+                        case EntityType::Baudry:
+                            pixelColor = { 0xff, 0xaa, 0xff , wallShade };
+                            break;
+                        default:
+                            pixelColor = sf::Color::Transparent;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        pixelColor = sf::Color::Transparent;
+                    }
+                    m_mainView.m_pixels[y * g_screenWidth + x] = pixelColor.r;
+                    m_mainView.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
+                    m_mainView.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
+                    m_mainView.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
                 }
             }
-            else
-            {
-                pixelColor = sf::Color::Transparent;
-            }
-            m_mainView.m_pixels[y * g_screenWidth + x] = pixelColor.r;
-            m_mainView.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
-            m_mainView.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
-            m_mainView.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
-        }
+        };
+
+    std::vector<std::thread> threadVec;
+
+    int processorCount = std::thread::hardware_concurrency();
+    int sectionsSize = m_raysInfoVec.arrSize / (processorCount * 1);
+    int currentSection;
+    for (currentSection = 0; currentSection < m_raysInfoVec.arrSize - sectionsSize; currentSection += sectionsSize)
+    {
+        threadVec.push_back(std::thread(draw_section, currentSection, (currentSection + sectionsSize)));
+    }
+    
+    if (currentSection != m_raysInfoVec.arrSize)
+    {
+        int lastSectionSize = (m_raysInfoVec.arrSize - (currentSection));
+        draw_section(m_raysInfoVec.arrSize - lastSectionSize, m_raysInfoVec.arrSize);
+    }
+
+    for (auto& t : threadVec)
+    {
+        t.join();
     }
     m_mainView.m_texture.update(m_mainView.m_pixels);
     m_window.draw(m_mainView.m_sprite);

@@ -77,7 +77,6 @@ void GameCore::view_by_ray_casting()
 		for (int i = start; i < end; ++i)
 		{
 			math::Vect2 currentRay{ 0,0 };
-			//std::cout << "teat" << i << " " << std::endl;
 			EntityType hitMarker = EntityType::NoHit;
 
 			while (hitMarker == EntityType::NoHit && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
@@ -98,7 +97,6 @@ void GameCore::view_by_ray_casting()
 	{
 		threadVec.push_back(std::thread(cast_in_interval, currentSection, (currentSection + sectionsSize), rayIncrement * math::rotation_mat2x2(-(m_gameCamera.fov / m_gameCamera.pixelWidth) * currentSection )));
 	}
-	//std::cout << "teat" << currentSection << " " << std::endl;
 	if (currentSection != m_gameCamera.pixelWidth)
 	{
 		int lastSectionSize = (m_gameCamera.pixelWidth - (currentSection));
