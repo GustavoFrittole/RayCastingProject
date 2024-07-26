@@ -2,7 +2,6 @@
 #include<gameCore.hpp>
 #include"utils.hpp"
 #include<fstream>
-#include<iostream>
 #include<thread>
 #include<stdexcept>
 #include<cmath>
@@ -21,7 +20,7 @@ const RayInfo& RayInfoArr::const_at(int index) const
 	else
 		return m_rayArr[index];
 }
-
+//TODO: check order of initializer List
 GameCore::GameCore(GameCamera gc, const std::string& mapPath) : m_gameCamera(gc), m_processorCount(std::thread::hardware_concurrency()),
 																m_rayInfoArr(gc.pixelWidth), m_gameMapFilePath(mapPath)
 {
@@ -31,7 +30,7 @@ GameCore::GameCore(GameCamera gc, const std::string& mapPath) : m_gameCamera(gc)
 
 MapData GameCore::getMapData() const 
 {
-	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap };
+	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_map_is_generated};
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
@@ -53,8 +52,11 @@ void GameCore::chech_position_in_map(const math::Vect2& rayPosInMap, EntityType&
 		case 'w':
 			hitMarker = EntityType::Wall;
 			break;
-		case ' ': default:
-			break; //todo: add map features
+		case 'b':
+			hitMarker = EntityType::Baudry;
+			break;
+		default:
+			break;
 		}
 	}
 	else
@@ -76,9 +78,9 @@ void GameCore::view_by_ray_casting()
 		{
 			math::Vect2 currentRay{ 0,0 };
 			//std::cout << "teat" << i << " " << std::endl;
-			EntityType hitMarker = EntityType::Empty;
+			EntityType hitMarker = EntityType::NoHit;
 
-			while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
+			while (hitMarker == EntityType::NoHit && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
 			{
 				math::Vect2 rayPosInMap = startPos + currentRay;
 				chech_position_in_map(rayPosInMap, hitMarker);
@@ -153,11 +155,11 @@ void GameCore::update_entities()
 			::cos(m_entityTransform.forewardAngle))
 			* (m_pInputCache.lateral * deltaTime * correctionFactor));
 
-	EntityType hitMarker = EntityType::Empty;
+	EntityType hitMarker = EntityType::NoHit;
 	chech_position_in_map(moveAttempt, hitMarker);
 
 	//update entities
-	if (hitMarker == EntityType::Empty) //check for any unblocking tiles 
+	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
 	{
 		m_entityTransform.coords = moveAttempt;
 	}
@@ -178,11 +180,12 @@ bool GameCore::load_map_form_file()
 		std::string line;
 		std::getline(file, line);
 		file >> m_gameMap.x >> m_gameMap.y >> m_entityTransform.coords.x >> m_entityTransform.coords.y >> m_entityTransform.forewardAngle >> generate;
-		std::cout << m_gameMap.x << m_gameMap.y << m_entityTransform.coords.x << m_entityTransform.coords.y << m_entityTransform.forewardAngle << generate;
+		//std::cout << m_gameMap.x << m_gameMap.y << m_entityTransform.coords.x << m_entityTransform.coords.y << m_entityTransform.forewardAngle << generate;
 		m_entityTransform.forewardAngle *= 3.14159265358979323846 / 180;
 		if (generate == 'y')
 		{
 			m_mapGenerator = std::make_unique<MapGenerator>((int)m_entityTransform.coords.x, (int)m_entityTransform.coords.y, m_gameMap.x, m_gameMap.y, m_gameMap.cells);
+			m_map_is_generated = true;
 			return true;
 		}
 		while (std::getline(file, line))

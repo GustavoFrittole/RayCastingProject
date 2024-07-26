@@ -1,8 +1,8 @@
 #ifndef MAPGENERATOR_HPP
 #define MAPGENERATOR_HPP
 #include<string>
-#include <random>
-#include <stack>
+#include<random>
+#include<stack>
 class MapGenerator
 {
 public:

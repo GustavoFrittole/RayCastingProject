@@ -1,6 +1,5 @@
 #include"mapGenerator.hpp"
 #include<stack>
-#include <iostream>
 
 
 MapGenerator::MapGenerator(int startX, int startY, int width, int height, std::string& tiles) :
@@ -15,11 +14,11 @@ MapGenerator::MapGenerator(int startX, int startY, int width, int height, std::s
 	{
 		if (i == 0 || i == m_height - 1)
 			for (int c = 0; c < m_width; ++c)
-				m_tiles.at(i * m_width + c) = 'e';
+				m_tiles.at(i * m_width + c) = 'b';
 		else
 		{
-			m_tiles.at(i * m_width + 0) = 'e';
-			m_tiles.at(i * m_width + m_width - 1) = 'e';
+			m_tiles.at(i * m_width + 0) = 'b';
+			m_tiles.at(i * m_width + m_width - 1) = 'b';
 		}
 	}
 
@@ -32,6 +31,7 @@ bool MapGenerator::generate_map()
 	if (!m_active || m_done)
 		return false;
 	while(generate_map_step()){}
+	return true;
 }
 
 bool MapGenerator::generate_map_step()
@@ -100,6 +100,14 @@ bool MapGenerator::generate_map_step()
 		m_tiles.at(m_finish.first + m_width * m_finish.second) = 'g';
 		m_active = false;
 		m_done = true;
+		//std::cout << std::endl;
+		//for (int i = 0; i < m_height; ++i)
+		//{
+		//	for (int c = 0; c < m_width; ++c) {
+		//		std::cout << m_tiles.at(i*m_width + c) << " ";
+		//	}
+		//	std::cout << std::endl;
+		//}
 	}
 	return true;
 }
