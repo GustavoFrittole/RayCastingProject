@@ -1,27 +1,27 @@
 #ifndef GAMEGRAPHICS_HPP
 #define GAMEGRAPHICS_HPP
-
-#define MINIMAP_SCALE 6
  
 #include"gameCore.hpp"
 #include<SFML/Graphics.hpp>
 
+#define GENERATION_TIME_STEP_MS 5
 
 namespace screenStats
 {
     constexpr int g_screenHeight = 720;
     constexpr int g_screenWidth = g_screenHeight* 16/9;
+    constexpr int minimap_scale = 6;
 }
 
 struct MinimapInfo
 {
-    MinimapInfo(int scale, float rayLenght) : minimapRelPos(scale),
-        minimapY(screenStats::g_screenHeight / minimapRelPos),
-        minimapX(screenStats::g_screenWidth - minimapY),
-        minimapScale(minimapY / (rayLenght)) {}
+    MinimapInfo(int scaleToScreen, float rayLenght) : minimapRelPos(scaleToScreen),
+        minimapH(screenStats::g_screenHeight / minimapRelPos),
+        minimapW(screenStats::g_screenWidth - minimapH),
+        minimapScale(minimapH / rayLenght) {}
     int minimapRelPos;
-    int minimapY;
-    int minimapX;
+    int minimapH;
+    int minimapW;
     int minimapScale;
 };
 
@@ -34,31 +34,48 @@ public:
     bool is_running() const { return m_window.isOpen(); }
     void start();
     void performGameCycle();
-    ~GameGraphics() { delete[] m_screenPixels; }
+    bool goal_reached();
 private:
+    struct GameAsset
+    {
+        GameAsset() = default;
+        GameAsset(int, int, bool);
+        void create(int, int, bool);
+        GameAsset& operator=(const GameAsset&) = delete;
+        GameAsset(const GameAsset&) = delete;
+        ~GameAsset() { if (m_hasPixelArray) delete[] m_pixels; }
+        sf::Texture m_texture;
+        sf::Sprite m_sprite;
+        sf::Uint8* m_pixels = nullptr;
+    private:
+        bool m_hasPixelArray = false;
+    };
+
     GameCore& m_gameCore;
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
-    sf::Uint8* m_screenPixels;
-    sf::Texture m_viewTexture;
-    sf::Sprite m_viewSprite;
-    sf::Uint8* m_mapPixels;
-    sf::Texture m_mapTexture;
-    sf::Sprite m_mapSprite;
+    GameAsset m_mainView;
+    GameAsset m_mainBackground;
+    sf::Text m_endGameText;
+    sf::Font m_endGameFont;
     GameCore::PlayerControler m_playerController;
     MapData m_mapData;
     
-    const MinimapInfo m_minimapInfo{ MINIMAP_SCALE, m_mapData.maxRenderDist };
+    const MinimapInfo m_minimapInfo{ screenStats::minimap_scale, m_mapData.maxRenderDist };
     sf::CircleShape m_minimapFrame;
     bool m_hadFocus = false;
     bool m_paused = false;
 
     void draw_camera_view();
-    void draw_minimap();
+    void draw_minimap_triangles();
     void draw_minimap_rays();
-    void draw_map_back();
+    void draw_minimap_background();
     void draw_map();
+    void draw_end_screen();
+    void draw_background();
     void create_minimap_frame();
+    void load_end_screen();
+    void generate_background();
     void handle_events();
 };
 #endif

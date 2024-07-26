@@ -7,11 +7,17 @@
 #include"utils.hpp"
 #include"mapGenerator.hpp"
 
-enum class EntityType : char 
+#define DEFAULT_MAP_PATH "map.txt"
+
+enum class EntityType : char
 {
 	Wall = 'w',
+	Baudry = 'b',
+	Nothing = 'n',
+	Goal = 'g',
 	Oob = 'o',
-	Empty = '\0'
+	NoHit = '\0'
+
 };
 
 struct EntityTransform 
@@ -46,7 +52,7 @@ struct MapData
 
 struct RayInfo
 {
-	EntityType entityHit = EntityType::Empty;
+	EntityType entityHit = EntityType::NoHit;
 	math::Vect2 hitPos = {0, 0};
 };
 
@@ -108,8 +114,9 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 	int m_processorCount = 1;
 	RayInfoArr m_rayInfoArr;
-	std::string m_gameMapFilePath = "map.txt";
+	std::string m_gameMapFilePath = DEFAULT_MAP_PATH;
 	std::unique_ptr<MapGenerator> m_mapGenerator;
+	bool m_map_is_generated = false;
 	
 	inline void GameCore::chech_position_in_map(const math::Vect2&, EntityType&) const;
 	bool check_out_of_map_bounds(const math::Vect2 &) const;

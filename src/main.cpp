@@ -6,7 +6,7 @@
 
 int main()
 {
-    GameCore gameCore{ {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 8.f, 0.02f}, "map.txt" };
+    GameCore gameCore{ {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 8.f, 0.02f}, "assets\\map.txt" };
     GameGraphics gameGraphics(gameCore, "RayCastingWorld");
 
     gameGraphics.start();
@@ -21,15 +21,12 @@ int main()
         {
             std::cout << gt.get_frame_rate() << std::endl;
         }
-        
     }
-
     return 0;
 }    
 
 /*
 TODO:
--PRE RENDER BACKGROUND
 -IMPLEMENT MULTITHREADING IN TEXTURE GENERATION
 -IMPLEMENT DDA ALGORITHM
 -IMPLEMENT ZBUFFER
