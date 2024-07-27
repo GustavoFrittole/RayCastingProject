@@ -2,21 +2,13 @@
 #include<gameGraphics.hpp>
 #include<math.h>
 #include"utils.hpp"
-#include<thread>
 #include<chrono>
 #include<stdexcept>
-#include <iostream>
+
+
 using namespace screenStats;
 
-constexpr float HALF_WALL_HEIGHT = 0.5f;
-
-
-GameGraphics::GameAsset::GameAsset(int width, int height, bool createPixelArray = false)
-{
-    create(width, height, createPixelArray);
-}
-
-void GameGraphics::GameAsset::create(int width, int height, bool createPixelArray )
+void GameGraphics::GameAsset::create(int width, int height, bool createPixelArray)
 {
     m_hasPixelArray = createPixelArray;
     if (createPixelArray)
@@ -25,28 +17,38 @@ void GameGraphics::GameAsset::create(int width, int height, bool createPixelArra
     m_sprite.setTexture(m_texture);
 }
 
-GameGraphics::GameGraphics(GameCore& gameCore, const std::string& gameName) 
-    : m_gameCore(gameCore), m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
-    m_raysInfoVec(gameCore.getRayInfoArr()), m_playerController(gameCore), m_mapData(gameCore.getMapData())
+inline GameGraphics::GameAsset::GameAsset(int width, int height, bool createPixelArray = false)
+{
+    create(width, height, createPixelArray);
+}
+
+GameGraphics::GameGraphics(const GameCamera& gameCam, const std::string& mapFilePath, const std::string& gameName)
+    : m_gameCore(gameCam, mapFilePath), m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
+    m_raysInfoVec(m_gameCore.getRayInfoArr()), m_playerController(m_gameCore), m_mapData(m_gameCore.getMapData()), m_renderingThreadPool(*this), m_pathToGoal(0)
 {
     m_window.clear(sf::Color::Black);
+    create_assets();
+    //create_minimap_frame();
+}
+
+void inline GameGraphics::create_assets()
+{
     m_mainView.create(g_screenWidth, g_screenHeight, true);
     m_mainBackground.create(g_screenWidth, g_screenHeight, true);
     generate_background();
     load_end_screen();
-    //create_minimap_frame();
+    m_gameCore.load_map_form_file();
+    m_pathFinder = std::make_unique<PathFinder>(m_mapData.gameMap.x, m_mapData.gameMap.y, m_mapData.gameMap.cells, m_pathToGoal);
+    m_igMapAssets.create(*this);
 }
 
 void GameGraphics::start()
 {
-    m_gameCore.load_map_form_file();
-
-    //step by step map generation (if requested)
+    //step by step map generation (if generation is requested)
     while (m_gameCore.generate_map_step())
     {
         std::thread sleep([]{ std::this_thread::sleep_for(std::chrono::milliseconds(GENERATION_TIME_STEP_MS)); });
         sf::Event event;
-        //could be handled in handle_events() but requires the addition of a dedicated object state
         while (m_window.pollEvent(event))
         {
             switch (event.type)
@@ -72,18 +74,27 @@ void GameGraphics::performGameCycle()
     handle_events();
     m_gameCore.update_entities();
 
-    debug::GameTimer gt;
-    gt.reset_timer();
+    if (m_findPathRequested && m_mapData.generated)
+    {
+        m_pathFinder->find_path(m_mapData.playerTransform.coords.x, m_mapData.playerTransform.coords.y);
+        m_findPathRequested = false;
+    }
+
+    //debug::GameTimer gt;
+    //gt.reset_timer();
 
     m_gameCore.view_by_ray_casting();
-    std::cout << " casting    \t" << gt.reset_timer() << std::endl;
+    //std::cout << " casting    \t" << gt.reset_timer() << std::endl;
+    
     draw_background();
-    std::cout << " draw back  \t" << gt.reset_timer() << std::endl;
-    draw_camera_view();
-    std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
-    if (m_paused)
+    //std::cout << " draw back  \t" << gt.reset_timer() << std::endl;
+    //std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
+    draw_view();
+    //gt.reset_timer();
+    if (m_paused || m_tabbed)
     {
         draw_map();
+        draw_path_out();
     }
     else
     {
@@ -91,15 +102,14 @@ void GameGraphics::performGameCycle()
         draw_minimap_triangles();
         if (goal_reached())
         {
-            //TODO not to call every cycle
             draw_end_screen();
         }
     }
-    std::cout << " draw minimap\t" << gt.reset_timer() << std::endl;
+    //std::cout << " draw minimap\t" << gt.reset_timer() << std::endl;
     m_window.display();
 }
 
-bool GameGraphics::goal_reached()
+inline bool GameGraphics::goal_reached()
 {
     return (m_mapData.gameMap.cells.at(static_cast<int>(m_mapData.playerTransform.coords.x)
         + static_cast<int>(m_mapData.playerTransform.coords.y) * m_mapData.gameMap.x) == 'g');
@@ -126,81 +136,124 @@ void GameGraphics::draw_end_screen()
 
 void GameGraphics::create_minimap_frame() 
 {
-    float frameRadius = m_minimapInfo.minimapH;
+    float frameRadius = m_minimapInfo.minimapCenterX;
     m_minimapFrame.setRadius(frameRadius);
-    m_minimapFrame.setPosition(m_minimapInfo.minimapW - frameRadius, m_minimapInfo.minimapH - frameRadius);
+    m_minimapFrame.setPosition(m_minimapInfo.minimapCenterY - frameRadius, m_minimapInfo.minimapCenterX - frameRadius);
     m_minimapFrame.setFillColor(sf::Color::Transparent);
     m_minimapFrame.setOutlineThickness(3.f);
     m_minimapFrame.setOutlineColor(sf::Color::Cyan);
 }
 
-//Very unoptimized. all static textures should not be re-generated every frame (mini map "light fade off", fp "radial light")
-void GameGraphics::draw_camera_view()
+
+GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) : m_poolSize(get_thread_number()), 
+                                   m_threads(0), m_mutexVecStart(m_poolSize), m_mutexVecEnd(m_poolSize), m_gameGraphics(gg), jobs(0)
 {
-    float half_fov = m_mapData.fov * .5f;
-    float halfWallHeight = HALF_WALL_HEIGHT;
-    float oneOverVerticalVisibleAngle = (g_screenWidth / (g_screenHeight * half_fov));
+    for (int i = 0; i < m_poolSize; ++i)
+    {
+        m_mutexVecStart.at(i).lock();
+    }
 
-    auto draw_section = [this, &oneOverVerticalVisibleAngle, &halfWallHeight](int start, int end) mutable
-        {
-            for (int i = start; i < end; ++i)
+    int sectionsSize = m_gameGraphics.m_raysInfoVec.arrSize / (m_poolSize);
+    int currentSection;
+    int id = 0;
+    for (currentSection = 0; currentSection < m_gameGraphics.m_raysInfoVec.arrSize - sectionsSize; currentSection += sectionsSize, ++id)
+    {
+        m_threads.emplace_back([this, currentSection, sectionsSize, id] () mutable
             {
-
-                float distance = m_raysInfoVec.const_at(i).hitPos.lenght();
-                float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(halfWallHeight / distance) * oneOverVerticalVisibleAngle)));
-                //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
-                sf::Color pixelColor;
-                sf::Uint8 wallShade = (1 - (distance / (m_mapData.maxRenderDist))) * 0xFF;
-                for (int y = 0; y < g_screenHeight * 4; y += 4)
+                while (true)
                 {
-                    int x = i * 4;
-                    if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
                     {
-                        switch (m_raysInfoVec.const_at(i).entityHit)
-                        {
-                        case EntityType::Wall:
-                            pixelColor = { 0xff, 0xff, 0xff , wallShade };
-                            break;
-                        case EntityType::Baudry:
-                            pixelColor = { 0xff, 0xaa, 0xff , wallShade };
-                            break;
-                        default:
-                            pixelColor = sf::Color::Transparent;
-                            break;
+                        std::unique_lock<std::mutex> lock(m_mutexVecStart.at(id));
+                        if (!m_isActive) {
+                            return;
                         }
                     }
-                    else
-                    {
-                        pixelColor = sf::Color::Transparent;
-                    }
-                    m_mainView.m_pixels[y * g_screenWidth + x] = pixelColor.r;
-                    m_mainView.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
-                    m_mainView.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
-                    m_mainView.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
+                    draw_section(currentSection, (currentSection + sectionsSize));
+                    jobs++;
+                    std::unique_lock<std::mutex> lock(m_mutexVecEnd.at(id));
                 }
-            }
-        };
-
-    std::vector<std::thread> threadVec;
-
-    int processorCount = std::thread::hardware_concurrency();
-    int sectionsSize = m_raysInfoVec.arrSize / (processorCount * 1);
-    int currentSection;
-    for (currentSection = 0; currentSection < m_raysInfoVec.arrSize - sectionsSize; currentSection += sectionsSize)
-    {
-        threadVec.push_back(std::thread(draw_section, currentSection, (currentSection + sectionsSize)));
+            });
     }
-    
-    if (currentSection != m_raysInfoVec.arrSize)
-    {
-        int lastSectionSize = (m_raysInfoVec.arrSize - (currentSection));
-        draw_section(m_raysInfoVec.arrSize - lastSectionSize, m_raysInfoVec.arrSize);
-    }
+    m_lastSectionSize = m_gameGraphics.m_raysInfoVec.arrSize - currentSection;
+}
 
-    for (auto& t : threadVec)
+GameGraphics::RenderingThreadPool::~RenderingThreadPool()
+{
+    m_isActive = false;
+    for (auto& m : m_mutexVecStart)
+        m.unlock();
+
+    for (auto& t : m_threads)
     {
         t.join();
     }
+}
+
+void GameGraphics::RenderingThreadPool::render_view()
+{
+    for (auto& m : m_mutexVecEnd)
+        m.lock();
+    for (auto& m : m_mutexVecStart)
+        m.unlock();
+
+    if (m_lastSectionSize != 0)
+    {
+        draw_section(m_gameGraphics.m_raysInfoVec.arrSize - m_lastSectionSize, m_gameGraphics.m_raysInfoVec.arrSize);
+    }
+
+    while (jobs != m_poolSize)
+        std::this_thread::sleep_for(std::chrono::milliseconds(0));
+
+    jobs = 0;
+    for (auto& m : m_mutexVecStart)
+        m.lock();
+    for (auto& m : m_mutexVecEnd)
+        m.unlock();
+}
+
+void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
+{
+    for (int i = start; i < end; ++i)
+    {
+        
+        float distance = m_gameGraphics.m_raysInfoVec.const_at(i).hitPos.lenght();
+        float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(m_halfWallHeight / distance) * m_oneOverVerticalVisibleAngle)));
+        //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
+        sf::Color pixelColor;
+        sf::Uint8 wallShade = (1 - (distance / (m_gameGraphics.m_mapData.maxRenderDist))) * 0xFF;
+        for (int y = 0; y < g_screenHeight * 4; y += 4)
+        {
+            int x = i * 4;
+            if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
+            {
+                switch (m_gameGraphics.m_raysInfoVec.const_at(i).entityHit)
+                {
+                case EntityType::Wall:
+                    pixelColor = { 0xff, 0xff, 0xff , wallShade };
+                    break;
+                case EntityType::Baudry:
+                    pixelColor = { 0xff, 0xaa, 0xff , wallShade };
+                    break;
+                default:
+                    pixelColor = sf::Color::Transparent;
+                    break;
+                }
+            }
+            else
+            {
+                pixelColor = sf::Color::Transparent;
+            }
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = pixelColor.r;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
+        }
+    }
+}
+
+inline void GameGraphics::draw_view()
+{
+    m_renderingThreadPool.render_view();
     m_mainView.m_texture.update(m_mainView.m_pixels);
     m_window.draw(m_mainView.m_sprite);
 }
@@ -234,7 +287,7 @@ void GameGraphics::generate_background()
     m_mainBackground.m_texture.update(m_mainBackground.m_pixels);
 }
 
-void GameGraphics::draw_background()
+inline void GameGraphics::draw_background()
 {
     m_window.draw(m_mainBackground.m_sprite);
 }
@@ -244,9 +297,9 @@ void GameGraphics::draw_minimap_rays()
     sf::VertexArray lines(sf::Lines, m_raysInfoVec.arrSize*2);
     for (int i = 0; i < m_raysInfoVec.arrSize; ++i)
     {
-        lines[i * 2] = sf::Vector2f(m_minimapInfo.minimapW, m_minimapInfo.minimapH);
-        lines[i * 2 + 1] = { { m_minimapInfo.minimapW + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale,
-            m_minimapInfo.minimapH + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale}, sf::Color::Cyan };
+        lines[i * 2] = sf::Vector2f(m_minimapInfo.minimapCenterY, m_minimapInfo.minimapCenterX);
+        lines[i * 2 + 1] = { { m_minimapInfo.minimapCenterY + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale,
+            m_minimapInfo.minimapCenterX + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale}, sf::Color::Cyan };
     }
     m_window.draw(lines);
 }
@@ -254,25 +307,28 @@ void GameGraphics::draw_minimap_rays()
 void GameGraphics::draw_minimap_triangles()
 {
     sf::VertexArray triangles(sf::TriangleFan, m_raysInfoVec.arrSize + 1);
-    triangles[0] = sf::Vertex{ {(float)m_minimapInfo.minimapW, (float)m_minimapInfo.minimapH}, sf::Color::Cyan };
+    triangles[0] = sf::Vertex{ {(float)m_minimapInfo.minimapCenterY, (float)m_minimapInfo.minimapCenterX}, sf::Color::Cyan };
     for (int i = 0; i < m_raysInfoVec.arrSize; ++i)
     {
-        triangles[i + 1] = { { m_minimapInfo.minimapW + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale, m_minimapInfo.minimapH + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale},
+        triangles[i + 1] = { { m_minimapInfo.minimapCenterY + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale, m_minimapInfo.minimapCenterX + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale},
         sf::Color(0, 0xFF, 0xFF, (1 - m_raysInfoVec.const_at(i).hitPos.lenght() / m_mapData.maxRenderDist) * 0xFF) };
     }
     m_window.draw(triangles);
 }
 
+void GameGraphics::inGameMapAssets::create(const GameGraphics& gg)
+{
+    int xoverw = g_screenWidth / gg.m_mapData.gameMap.x;
+    int yoverh = g_screenHeight / gg.m_mapData.gameMap.y;
+    tileDim = std::min(xoverw, yoverh);
+    //float tileThick = tileDim/10.f;
+    xoffset = (g_screenWidth - gg.m_mapData.gameMap.x * tileDim) / 2;
+    yoffset = (g_screenHeight - gg.m_mapData.gameMap.y * tileDim) / 2;
+    wallRect.setSize({ (float)tileDim, (float)tileDim });
+}
+
 void GameGraphics::draw_map()
 {
-    int xoverw = g_screenWidth / m_mapData.gameMap.x;
-    int yoverh = g_screenHeight / m_mapData.gameMap.y;
-    int tileDim = std::min(xoverw, yoverh);
-    //float tileThick = tileDim/10.f;
-    int xoffset = (g_screenWidth - m_mapData.gameMap.x * tileDim)/2;
-    int yoffset = (g_screenHeight - m_mapData.gameMap.y * tileDim)/2;
-    sf::RectangleShape wallRect({ (float)tileDim, (float)tileDim });
-
     for (int i = 0; i < m_mapData.gameMap.y; ++i)
     {
         for (int c = 0; c < m_mapData.gameMap.x; ++c)
@@ -282,31 +338,55 @@ void GameGraphics::draw_map()
             if (currentCell != ' ')
             {
                 if(currentCell == 'b')
-                    wallRect.setFillColor(sf::Color::Black);
+                    m_igMapAssets.wallRect.setFillColor(sf::Color::Black);
                 if (currentCell == 'w')
-                    wallRect.setFillColor(sf::Color::Magenta);
+                    m_igMapAssets.wallRect.setFillColor(sf::Color::Magenta);
                 if (currentCell == 'g')
-                    wallRect.setFillColor(sf::Color::Blue);
+                    m_igMapAssets.wallRect.setFillColor(sf::Color::Blue);
 
-                wallRect.setPosition({ (float)c * tileDim + xoffset, (float)i * tileDim + yoffset});
-                m_window.draw(wallRect);
+                m_igMapAssets.wallRect.setPosition({ (float)c * m_igMapAssets.tileDim + m_igMapAssets.xoffset, (float)i * m_igMapAssets.tileDim + m_igMapAssets.yoffset});
+                m_window.draw(m_igMapAssets.wallRect);
             }
         }
     }
 
-    sf::CircleShape playerC(tileDim / 2.f);
+    sf::CircleShape playerC(m_igMapAssets.tileDim / 2.f);
     playerC.setFillColor(sf::Color::Cyan);
-    playerC.setPosition({ (float)(int(m_mapData.playerTransform.coords.x) * tileDim + xoffset),
-                          (float)(int(m_mapData.playerTransform.coords.y) * tileDim + yoffset )});
+    playerC.setPosition({ (float)(int(m_mapData.playerTransform.coords.x) * m_igMapAssets.tileDim + m_igMapAssets.xoffset),
+                          (float)(int(m_mapData.playerTransform.coords.y) * m_igMapAssets.tileDim + m_igMapAssets.yoffset )});
     
     m_window.draw(playerC);
+}
+
+void GameGraphics::draw_path_out()
+{
+    if (goal_reached() || m_pathToGoal.empty())
+        return;
+    sf::VertexArray lines(sf::Lines, m_pathToGoal.size()*2);
+
+    lines[0] = { sf::Vector2f(m_igMapAssets.xoffset + m_igMapAssets.tileDim * (m_pathToGoal.at(0).first + 0.5f),
+        m_igMapAssets.yoffset + m_igMapAssets.tileDim * (m_pathToGoal.at(0).second + 0.5f)), sf::Color::Cyan };
+
+    lines[1] = { sf::Vector2f(m_igMapAssets.xoffset + m_igMapAssets.tileDim * (m_pathToGoal.at(1).first + 0.5f),
+        m_igMapAssets.yoffset + m_igMapAssets.tileDim * (m_pathToGoal.at(1).second + 0.5f)),  sf::Color::Blue};
+
+    for (int i = 2; i < m_pathToGoal.size(); ++i)
+    {
+        lines[(i-1) * 2] = lines[(i-1) * 2 - 1];
+
+        lines[(i - 1) * 2].color = sf::Color::Blue;
+
+        lines[(i - 1) * 2 + 1] = { sf::Vector2f(m_igMapAssets.xoffset + m_igMapAssets.tileDim * (m_pathToGoal.at(i).first + 0.5f),
+            m_igMapAssets.yoffset + m_igMapAssets.tileDim * (m_pathToGoal.at(i).second + 0.5f)), sf::Color::Blue };
+    }
+    m_window.draw(lines);
 }
 
 void GameGraphics::draw_minimap_background()
 {
     int tileDim = m_minimapInfo.minimapScale;
-    int xoffset = m_minimapInfo.minimapW;
-    int yoffset = m_minimapInfo.minimapH;
+    int xoffset = m_minimapInfo.minimapCenterY;
+    int yoffset = m_minimapInfo.minimapCenterX;
     int startX = m_mapData.playerTransform.coords.x - m_mapData.maxRenderDist;
     if (startX < 0)
         startX = 0;
@@ -366,6 +446,10 @@ void GameGraphics::handle_events()
                 else
                     m_paused = true;
             }
+            if (event.key.scancode == sf::Keyboard::Scan::E)
+            {
+                m_findPathRequested = true;
+            }
         }
     }
     if (m_window.hasFocus())
@@ -409,6 +493,15 @@ void GameGraphics::handle_events()
             {
                 m_playerController.rotate(-2.0f);
             }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
+            {
+                m_tabbed = true;
+            }
+            else
+            {
+                m_tabbed = false;
+            }
+
         }
         else
         {
@@ -422,3 +515,73 @@ void GameGraphics::handle_events()
             m_hadFocus = false;
     }
 }
+
+//void GameGraphics::draw_camera_view()
+//{
+//    float half_fov = m_mapData.fov * .5f;
+//    float halfWallHeight = HALF_WALL_HEIGHT;
+//    float oneOverVerticalVisibleAngle = (g_screenWidth / (g_screenHeight * half_fov));
+//
+//    auto draw_section = [this, &oneOverVerticalVisibleAngle, &halfWallHeight](int start, int end) mutable
+//        {
+//            for (int i = start; i < end; ++i)
+//            {
+//
+//                float distance = m_raysInfoVec.const_at(i).hitPos.lenght();
+//                float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(halfWallHeight / distance) * oneOverVerticalVisibleAngle)));
+//                //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
+//                sf::Color pixelColor;
+//                sf::Uint8 wallShade = (1 - (distance / (m_mapData.maxRenderDist))) * 0xFF;
+//                for (int y = 0; y < g_screenHeight * 4; y += 4)
+//                {
+//                    int x = i * 4;
+//                    if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
+//                    {
+//                        switch (m_raysInfoVec.const_at(i).entityHit)
+//                        {
+//                        case EntityType::Wall:
+//                            pixelColor = { 0xff, 0xff, 0xff , wallShade };
+//                            break;
+//                        case EntityType::Baudry:
+//                            pixelColor = { 0xff, 0xaa, 0xff , wallShade };
+//                            break;
+//                        default:
+//                            pixelColor = sf::Color::Transparent;
+//                            break;
+//                        }
+//                    }
+//                    else
+//                    {
+//                        pixelColor = sf::Color::Transparent;
+//                    }
+//                    m_mainView.m_pixels[y * g_screenWidth + x] = pixelColor.r;
+//                    m_mainView.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
+//                    m_mainView.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
+//                    m_mainView.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
+//                }
+//            }
+//        };
+//
+//    std::vector<std::thread> threadVec;
+//
+//    int processorCount = std::thread::hardware_concurrency();
+//    int sectionsSize = m_raysInfoVec.arrSize / (processorCount * 1);
+//    int currentSection;
+//    for (currentSection = 0; currentSection < m_raysInfoVec.arrSize - sectionsSize; currentSection += sectionsSize)
+//    {
+//        threadVec.push_back(std::thread(draw_section, currentSection, (currentSection + sectionsSize)));
+//    }
+//    
+//    if (currentSection != m_raysInfoVec.arrSize)
+//    {
+//        int lastSectionSize = (m_raysInfoVec.arrSize - (currentSection));
+//        draw_section(m_raysInfoVec.arrSize - lastSectionSize, m_raysInfoVec.arrSize);
+//    }
+//
+//    for (auto& t : threadVec)
+//    {
+//        t.join();
+//    }
+//    m_mainView.m_texture.update(m_mainView.m_pixels);
+//    m_window.draw(m_mainView.m_sprite);
+//}

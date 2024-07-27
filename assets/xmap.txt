@@ -1,0 +1,8 @@
+11 7 4.5 2 90 n
+wwwwwwwwwww
+w       www
+w      wwww
+www     www
+ww      www
+w    w    w
+wwwwwwwwwww

@@ -50,8 +50,8 @@ bool MapGenerator::generate_map_step()
 	};
 	auto checkWalkable = [this](int indexS, int indexF) -> bool
 	{
-		return (m_tiles.at(indexF) == 'w' &&
-			m_tiles.at(indexS + (indexF - indexS) / 2) == 'w');
+		return m_tiles.at(indexS + (indexF - indexS) / 2) == 'w'
+							&& (m_tiles.at(indexF)) == 'w';
 	};
 
 	int startI = m_startX + m_width * m_startY;

@@ -17,7 +17,6 @@ enum class EntityType : char
 	Goal = 'g',
 	Oob = 'o',
 	NoHit = '\0'
-
 };
 
 struct EntityTransform 
@@ -28,8 +27,8 @@ struct EntityTransform
 
 struct GameCamera 
 {
-	uint16_t pixelWidth{};
-	uint16_t pixelHeight{};
+	int pixelWidth = 0;
+	int pixelHeight = 0;
 	float fov = 90.f;
 	float maxRenderDist = 10.f;
 	float rayPrecision = 0.1f;
@@ -47,7 +46,7 @@ struct MapData
 	const float& maxRenderDist;
 	const EntityTransform& playerTransform;
 	const GameMap& gameMap;
-	const bool generated;
+	const bool& generated;
 };
 
 struct RayInfo

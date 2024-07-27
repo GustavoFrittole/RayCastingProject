@@ -18,7 +18,7 @@ include_directories(include)
 add_subdirectory(libs)
 
 target_link_libraries(gameCore PRIVATE utils mapGenerator)
-target_link_libraries(gameGraphics PUBLIC gameCore sfml-graphics utils mapGenerator)
+target_link_libraries(gameGraphics PUBLIC gameCore sfml-graphics utils mapGenerator pathFinder)
 target_link_libraries(main PUBLIC gameGraphics)
 
 target_compile_features(main PRIVATE cxx_std_17)

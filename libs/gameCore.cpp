@@ -1,5 +1,5 @@
 
-#include<gameCore.hpp>
+#include"gameCore.hpp"
 #include"utils.hpp"
 #include<fstream>
 #include<thread>
@@ -21,7 +21,7 @@ const RayInfo& RayInfoArr::const_at(int index) const
 		return m_rayArr[index];
 }
 //TODO: check order of initializer List
-GameCore::GameCore(GameCamera gc, const std::string& mapPath) : m_gameCamera(gc), m_processorCount(std::thread::hardware_concurrency()),
+GameCore::GameCore(GameCamera gc, const std::string& mapPath) : m_gameCamera(gc), m_processorCount(get_thread_number()),
 																m_rayInfoArr(gc.pixelWidth), m_gameMapFilePath(mapPath)
 {
 	if (m_processorCount < 1)
@@ -72,7 +72,7 @@ void GameCore::view_by_ray_casting()
 	math::Vect2 rayIncrement = (playerForwDir * rotationMat ) * m_gameCamera.rayPrecision;
 	math::Vect2 startPos = m_entityTransform.coords;
 
-	auto cast_in_interval = [this, &startPos ](int start, int end, math::Vect2 rayIncrement) mutable 
+	auto cast_in_interval = [this, &startPos](int start, int end, math::Vect2 rayIncrement) mutable 
 	{
 		for (int i = start; i < end; ++i)
 		{
@@ -108,31 +108,6 @@ void GameCore::view_by_ray_casting()
 		t.join();
 	}
 }
-
-//void GameCore::view_by_ray_casting_nothreads()
-//{
-//	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
-//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
-//	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
-//	math::Vect2 startPos = m_entityTransform.coords;
-//
-//	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
-//	{
-//		math::Vect2 currentRay{ 0,0 };
-//		//std::cout << "teat" << i << " " << std::endl;
-//		EntityType hitMarker = EntityType::Empty;
-//
-//		while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
-//		{
-//			math::Vect2 rayPosInMap = startPos + currentRay;
-//			chech_position_in_map(rayPosInMap, hitMarker);
-//			currentRay += rayIncrement;
-//		}
-//		
-//		m_rayInfoArr.at(i) = { hitMarker, currentRay };
-//		rayIncrement = rayIncrement * math::rotation_mat2x2( - m_gameCamera.fov / m_gameCamera.pixelWidth);
-//	}
-//}
 
 void GameCore::update_entities()
 {
@@ -178,7 +153,6 @@ bool GameCore::load_map_form_file()
 		std::string line;
 		std::getline(file, line);
 		file >> m_gameMap.x >> m_gameMap.y >> m_entityTransform.coords.x >> m_entityTransform.coords.y >> m_entityTransform.forewardAngle >> generate;
-		//std::cout << m_gameMap.x << m_gameMap.y << m_entityTransform.coords.x << m_entityTransform.coords.y << m_entityTransform.forewardAngle << generate;
 		m_entityTransform.forewardAngle *= 3.14159265358979323846 / 180;
 		if (generate == 'y')
 		{
@@ -196,7 +170,6 @@ bool GameCore::load_map_form_file()
 		return false;
 }
 
-
 void GameCore::PlayerControler::rotate(float angle) const
 {
 	gameCore.m_pInputCache.rotate += angle;
@@ -205,8 +178,32 @@ void GameCore::PlayerControler::move_foreward(float amount) const
 {
 	gameCore.m_pInputCache.foreward += amount;
 }
-
 void GameCore::PlayerControler::move_strafe(float amount) const
 {
 	gameCore.m_pInputCache.lateral += amount;
 }
+
+//void GameCore::view_by_ray_casting_nothreads()
+//{
+//	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
+//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+//	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
+//	math::Vect2 startPos = m_entityTransform.coords;
+//
+//	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
+//	{
+//		math::Vect2 currentRay{ 0,0 };
+//		//std::cout << "teat" << i << " " << std::endl;
+//		EntityType hitMarker = EntityType::Empty;
+//
+//		while (hitMarker == EntityType::Empty && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
+//		{
+//			math::Vect2 rayPosInMap = startPos + currentRay;
+//			chech_position_in_map(rayPosInMap, hitMarker);
+//			currentRay += rayIncrement;
+//		}
+//		
+//		m_rayInfoArr.at(i) = { hitMarker, currentRay };
+//		rayIncrement = rayIncrement * math::rotation_mat2x2( - m_gameCamera.fov / m_gameCamera.pixelWidth);
+//	}
+//}

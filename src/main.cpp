@@ -1,13 +1,10 @@
 
-#include "utils.hpp"
 #include <iostream>
 #include "gameGraphics.hpp"
-#include <random>
 
 int main()
 {
-    GameCore gameCore{ {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 8.f, 0.02f}, "assets\\map.txt" };
-    GameGraphics gameGraphics(gameCore, "RayCastingWorld");
+    GameGraphics gameGraphics( {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 8.f, 0.02f}, "assets\\map.txt" , "RayCastingWorld");
 
     gameGraphics.start();
 
@@ -27,7 +24,6 @@ int main()
 
 /*
 TODO:
--IMPLEMENT MULTITHREADING IN TEXTURE GENERATION
 -IMPLEMENT DDA ALGORITHM
 -IMPLEMENT ZBUFFER
 -ACCELLERATION IN CONTROLS
