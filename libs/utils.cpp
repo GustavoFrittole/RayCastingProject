@@ -33,7 +33,7 @@ math::Mat2x2 math::rotation_mat2x2(float angle)
 		std::sin(angRads), std::cos(angRads)};
 }
 
-math::Vect2 math::Vect2::operator*(math::Mat2x2& mat2x2)
+math::Vect2 math::Vect2::operator*(const math::Mat2x2& mat2x2)
 {
 	return math::Vect2{ x * mat2x2.params[0][0] + y * mat2x2.params[0][1], x * mat2x2.params[1][0] + y * mat2x2.params[1][1] };
 }
@@ -43,11 +43,11 @@ float math::Vect2::lenght() const
 	return std::sqrt(x * x + y * y);
 }
 
-math::Vect2 math::Vect2::operator+(Vect2& other)
+math::Vect2 math::Vect2::operator+(const Vect2& other)
 {
 	return { x + other.x, y + other.y };
 }
-math::Vect2& math::Vect2::operator+=(Vect2& other)
+math::Vect2& math::Vect2::operator+=(const Vect2& other)
 {
 	this->x += other.x;
 	this->y += other.y;

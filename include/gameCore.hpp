@@ -6,6 +6,7 @@
 #include<chrono>
 #include"utils.hpp"
 #include"mapGenerator.hpp"
+#include<memory>
 
 #define DEFAULT_MAP_PATH "map.txt"
 
@@ -118,7 +119,7 @@ private:
 	std::unique_ptr<MapGenerator> m_mapGenerator;
 	bool m_map_is_generated = false;
 	
-	inline void GameCore::chech_position_in_map(const math::Vect2&, EntityType&) const;
+	void chech_position_in_map(const math::Vect2&, EntityType&) const;
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
 };
 

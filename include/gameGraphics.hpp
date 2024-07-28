@@ -30,7 +30,7 @@ class GameGraphics
 public:
     GameGraphics() = delete;
     GameGraphics(GameCore& gameCore, const std::string&);
-    inline void GameGraphics::handle_events(sf::Window&, const GameCore::PlayerControler&);
+    void handle_events(sf::Window&, const GameCore::PlayerControler&);
     bool is_running() const { return m_window.isOpen(); }
     void start();
     void performGameCycle();
