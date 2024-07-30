@@ -20,9 +20,9 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 	try
 	{
 		json data = json::parse(configF);
-		gameData->playerTrasform.forewardAngle = data["entityTransform"]["forewardAngleDeg"].get<float>() * (3.14159265358979323846f / 180);
-		gameData->playerTrasform.coords.x = data["entityTransform"]["pos"]["x"].get<int>();
-		gameData->playerTrasform.coords.y = data["entityTransform"]["pos"]["y"].get<int>();
+		gameData->playerTrasform.forewardAngle = data["playerTransform"]["forewardAngleDeg"].get<float>() * (3.14159265358979323846f / 180);
+		gameData->playerTrasform.coords.x = data["playerTransform"]["pos"]["x"].get<int>();
+		gameData->playerTrasform.coords.y = data["playerTransform"]["pos"]["y"].get<int>();
 		//wip
 		gameData->gCamera.pixelWidth = screenStats::g_screenWidth;
 		gameData->gCamera.pixelHeight = screenStats::g_screenHeight;

@@ -14,7 +14,7 @@ private:
 	std::unique_ptr<GameGraphics> m_gameGraphics;
 	std::unique_ptr<DataUtils::GameData> m_gameData;
 	bool load_game_data(const std::string&) override;
-	bool m_isGood;
+	bool m_isGood = true;
 	std::string m_errors;
 };
 
@@ -28,7 +28,6 @@ bool GameHandler::load_game_data(const std::string& filePath)
 	try
 	{
 		m_gameData = DataUtils::load_game_data(filePath);
-		m_isGood = true;
 	}
 	catch (std::exception& e)
 	{
