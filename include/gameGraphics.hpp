@@ -11,15 +11,6 @@
 
 #define GENERATION_TIME_STEP_MS 5
 
-
-namespace screenStats
-{
-    constexpr int g_screenHeight = 720;
-    constexpr int g_screenWidth = g_screenHeight* 16/9;
-    constexpr int MINIMAP_SCALE = 6;
-    constexpr float HALF_WALL_HEIGHT = 0.5f;
-}
-
 struct MinimapInfo
 {
     MinimapInfo(int scaleToScreen, float rayLenght) : minimapRelPos(scaleToScreen),
@@ -35,14 +26,15 @@ struct MinimapInfo
 class GameGraphics
 {
 public:
-    GameGraphics(const GameCamera&, const std::string&, const std::string&);
+    GameGraphics(std::unique_ptr<DataUtils::GameData>&, const std::string&);
     GameGraphics() = delete;
     GameGraphics& operator=(const GameGraphics&) = delete;
-    inline void GameGraphics::handle_events(sf::Window&, const GameCore::PlayerControler&);
+    void handle_events(sf::Window&, const GameCore::PlayerControler&);
     bool is_running() const { return m_window.isOpen(); }
     void start();
     void performGameCycle();
     bool goal_reached();
+
 private:
     struct GameAsset
     {
@@ -59,31 +51,6 @@ private:
         bool m_hasPixelArray = false;
     };
 
-    class RenderingThreadPool 
-    {
-    public:
-        RenderingThreadPool(GameGraphics&);
-        ~RenderingThreadPool();
-        void render_view();
-        //bool is_buisy();
-
-    private:
-        int m_poolSize = 0;
-        GameGraphics& m_gameGraphics;
-        std::vector<std::thread> m_threads;
-        std::vector<std::mutex> m_mutexVecStart;
-        std::vector<std::mutex> m_mutexVecEnd;
-        std::atomic_int jobs;
-        int m_lastSectionSize = 0;
-        bool m_isActive = true;
-
-        float m_half_fov = m_gameGraphics.m_mapData.fov * .5f;
-        float m_halfWallHeight = screenStats::HALF_WALL_HEIGHT;
-        float m_oneOverVerticalVisibleAngle = (screenStats::g_screenWidth / (screenStats::g_screenHeight * m_half_fov));
-
-        void draw_section(int start, int end);
-    };
-
     struct inGameMapAssets
     {
         void create(const GameGraphics&);
@@ -97,16 +64,17 @@ private:
     GameCore m_gameCore;
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
+    GameCore::PlayerControler m_playerController;
+    MapData m_mapData;
+    std::vector<std::pair<int, int>> m_pathToGoal;
+    std::unique_ptr<PathFinder> m_pathFinder;
+    const MinimapInfo m_minimapInfo;
+    float m_halfWallHeight = 0.5f;
+
     GameAsset m_mainView;
     GameAsset m_mainBackground;
     sf::Text m_endGameText;
     sf::Font m_endGameFont;
-    GameCore::PlayerControler m_playerController;
-    MapData m_mapData;
-    RenderingThreadPool m_renderingThreadPool;
-    std::vector<std::pair<int, int>> m_pathToGoal;
-    std::unique_ptr<PathFinder> m_pathFinder;
-    const MinimapInfo m_minimapInfo{ screenStats::MINIMAP_SCALE, m_mapData.maxRenderDist };
     sf::CircleShape m_minimapFrame;
     inGameMapAssets m_igMapAssets;
 
@@ -129,5 +97,32 @@ private:
     void load_end_screen();
     void generate_background();
     void handle_events();
+
+    class RenderingThreadPool
+    {
+    public:
+        RenderingThreadPool(GameGraphics&);
+        ~RenderingThreadPool();
+        void render_view();
+        //bool is_buisy();
+
+    private:
+        int m_poolSize = 0;
+        GameGraphics& m_gameGraphics;
+        std::vector<std::thread> m_threads;
+        std::vector<std::mutex> m_mutexVecStart;
+        std::vector<std::mutex> m_mutexVecEnd;
+        std::atomic_int jobs;
+        int m_lastSectionSize = 0;
+        bool m_isActive = true;
+
+        float m_half_fov = m_gameGraphics.m_mapData.fov * .5f;
+        float m_halfWallHeight = m_gameGraphics.m_halfWallHeight;
+        float m_oneOverVerticalVisibleAngle = (screenStats::g_screenWidth / (screenStats::g_screenHeight * m_half_fov));
+
+        void draw_section(int start, int end);
+    };
+
+    RenderingThreadPool m_renderingThreadPool;
 };
 #endif

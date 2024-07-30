@@ -1,6 +1,5 @@
 
 #include"gameCore.hpp"
-#include"utils.hpp"
 #include<fstream>
 #include<thread>
 #include<stdexcept>
@@ -21,16 +20,25 @@ const RayInfo& RayInfoArr::const_at(int index) const
 		return m_rayArr[index];
 }
 //TODO: check order of initializer List
-GameCore::GameCore(GameCamera gc, const std::string& mapPath) : m_gameCamera(gc), m_processorCount(get_thread_number()),
-																m_rayInfoArr(gc.pixelWidth), m_gameMapFilePath(mapPath)
+GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTransform) : m_gameCamera(gc), m_entityTransform(entityTransform),
+										m_processorCount(get_thread_number()), m_rayInfoArr(gc.pixelWidth)
 {
-	if (m_processorCount < 1)
-		m_processorCount = 1;
+	m_gameMap.x = gameMap.x;
+	m_gameMap.y = gameMap.y;
+	m_gameMap.generated = gameMap.generated;
+	m_gameMap.cells.swap(gameMap.cells);
+	if (m_gameMap.generated)
+	{
+		if (m_gameMap.cells.get() == nullptr)
+			m_gameMap.cells = std::make_unique<std::string>();
+		m_mapGenerator = std::make_unique<MapGenerator>((int)m_entityTransform.coords.x, (int)m_entityTransform.coords.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
+	}
+		
 }
 
 MapData GameCore::getMapData() const 
 {
-	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_map_is_generated};
+	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap};
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
@@ -47,7 +55,7 @@ void GameCore::chech_position_in_map(const math::Vect2& rayPosInMap, EntityType&
 {
 	if (!check_out_of_map_bounds(rayPosInMap))
 	{
-		switch (m_gameMap.cells[(int)rayPosInMap.x + (int)rayPosInMap.y * m_gameMap.x])
+		switch (m_gameMap.cells->at((int)rayPosInMap.x + (int)rayPosInMap.y * m_gameMap.x))
 		{
 		case 'w':
 			hitMarker = EntityType::Wall;
@@ -117,16 +125,13 @@ void GameCore::update_entities()
 	m_lastTime = currentTime;
 	float correctionFactor = 0.000000001f;
 
-	//check_collision
-	math::Vect2 moveAttempt = m_entityTransform.coords +
-		(math::Vect2(std::cos(m_entityTransform.forewardAngle), 
-			std::sin(m_entityTransform.forewardAngle))
-			* (m_pInputCache.foreward * deltaTime * correctionFactor));
+	//decompose movment in x and y(world) axis and check collions separatly
 
-	moveAttempt = moveAttempt +
-		(math::Vect2(-std::sin(m_entityTransform.forewardAngle),
-			::cos(m_entityTransform.forewardAngle))
-			* (m_pInputCache.lateral * deltaTime * correctionFactor));
+	//check_collision X axis
+	math::Vect2 moveAttempt = m_entityTransform.coords +
+		(math::Vect2(std::cos(m_entityTransform.forewardAngle) * m_pInputCache.foreward 
+					-std::sin(m_entityTransform.forewardAngle) * m_pInputCache.lateral, 0)
+					* (deltaTime * correctionFactor));
 
 	EntityType hitMarker = EntityType::NoHit;
 	chech_position_in_map(moveAttempt, hitMarker);
@@ -137,37 +142,31 @@ void GameCore::update_entities()
 		m_entityTransform.coords = moveAttempt;
 	}
 
+
+	//check_collision Y axis
+	moveAttempt = m_entityTransform.coords +
+		(math::Vect2(0, std::sin(m_entityTransform.forewardAngle) * m_pInputCache.foreward +
+					std::cos(m_entityTransform.forewardAngle) * m_pInputCache.lateral)
+					* ( deltaTime * correctionFactor));
+
+
+
+	hitMarker = EntityType::NoHit;
+	chech_position_in_map(moveAttempt, hitMarker);
+
+	//update entities
+	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
+	{
+		m_entityTransform.coords = moveAttempt;
+	}
+
+	//rotate
 	m_entityTransform.forewardAngle += m_pInputCache.rotate * deltaTime * correctionFactor;
 
+	//reset cached values
 	m_pInputCache.foreward = 0;
 	m_pInputCache.lateral = 0;
 	m_pInputCache.rotate = 0;
-}
-
-bool GameCore::load_map_form_file()
-{
-	std::ifstream file(m_gameMapFilePath);
-	char generate;
-	if (file.is_open())
-	{
-		std::string line;
-		std::getline(file, line);
-		file >> m_gameMap.x >> m_gameMap.y >> m_entityTransform.coords.x >> m_entityTransform.coords.y >> m_entityTransform.forewardAngle >> generate;
-		m_entityTransform.forewardAngle *= 3.14159265358979323846 / 180;
-		if (generate == 'y')
-		{
-			m_mapGenerator = std::make_unique<MapGenerator>((int)m_entityTransform.coords.x, (int)m_entityTransform.coords.y, m_gameMap.x, m_gameMap.y, m_gameMap.cells);
-			m_map_is_generated = true;
-			return true;
-		}
-		while (std::getline(file, line))
-		{
-			m_gameMap.cells += line;
-		}
-		return true;
-	}
-	else
-		return false;
 }
 
 void GameCore::PlayerControler::rotate(float angle) const

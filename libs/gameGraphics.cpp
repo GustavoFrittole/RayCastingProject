@@ -1,8 +1,6 @@
 
 #include<gameGraphics.hpp>
 #include<math.h>
-#include"utils.hpp"
-#include<chrono>
 #include<stdexcept>
 
 
@@ -22,9 +20,10 @@ inline GameGraphics::GameAsset::GameAsset(int width, int height, bool createPixe
     create(width, height, createPixelArray);
 }
 
-GameGraphics::GameGraphics(const GameCamera& gameCam, const std::string& mapFilePath, const std::string& gameName)
-    : m_gameCore(gameCam, mapFilePath), m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
-    m_raysInfoVec(m_gameCore.getRayInfoArr()), m_playerController(m_gameCore), m_mapData(m_gameCore.getMapData()), m_renderingThreadPool(*this), m_pathToGoal(0)
+GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const std::string& gameName)
+    : m_gameCore(gameData->gCamera, gameData->gMap, gameData->playerTrasform), m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
+        m_raysInfoVec(m_gameCore.getRayInfoArr()), m_playerController(m_gameCore), m_pathToGoal(0), m_minimapInfo(gameData->screenStats.minimapScale, m_mapData.maxRenderDist),
+        m_halfWallHeight(gameData->screenStats.halfWallHeight), m_mapData(m_gameCore.getMapData()), m_renderingThreadPool(*this)
 {
     m_window.clear(sf::Color::Black);
     create_assets();
@@ -37,8 +36,7 @@ void inline GameGraphics::create_assets()
     m_mainBackground.create(g_screenWidth, g_screenHeight, true);
     generate_background();
     load_end_screen();
-    m_gameCore.load_map_form_file();
-    m_pathFinder = std::make_unique<PathFinder>(m_mapData.gameMap.x, m_mapData.gameMap.y, m_mapData.gameMap.cells, m_pathToGoal);
+    m_pathFinder = std::make_unique<PathFinder>(m_mapData.gameMap.x, m_mapData.gameMap.y, *(m_mapData.gameMap.cells), m_pathToGoal);
     m_igMapAssets.create(*this);
 }
 
@@ -74,7 +72,7 @@ void GameGraphics::performGameCycle()
     handle_events();
     m_gameCore.update_entities();
 
-    if (m_findPathRequested && m_mapData.generated)
+    if (m_findPathRequested && m_mapData.gameMap.generated)
     {
         m_pathFinder->find_path(m_mapData.playerTransform.coords.x, m_mapData.playerTransform.coords.y);
         m_findPathRequested = false;
@@ -111,17 +109,16 @@ void GameGraphics::performGameCycle()
 
 inline bool GameGraphics::goal_reached()
 {
-    return (m_mapData.gameMap.cells.at(static_cast<int>(m_mapData.playerTransform.coords.x)
+    return (m_mapData.gameMap.cells->at(static_cast<int>(m_mapData.playerTransform.coords.x)
         + static_cast<int>(m_mapData.playerTransform.coords.y) * m_mapData.gameMap.x) == 'g');
 }
 
 void GameGraphics::load_end_screen()
 {
-    if (!m_endGameFont.loadFromFile("assets\\Roboto-Regular.ttf"))
+    if (m_endGameFont.loadFromFile("assets\\Roboto-Regular.ttf"))
     {
-        throw std::runtime_error("Could not load asset: font.");
+        m_endGameText.setFont(m_endGameFont);
     }
-    m_endGameText.setFont(m_endGameFont);
     m_endGameText.setString("GOAL REACHED");
     m_endGameText.setCharacterSize(50);
     m_endGameText.setFillColor(sf::Color::Magenta);
@@ -226,6 +223,7 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
             int x = i * 4;
             if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
             {
+                
                 switch (m_gameGraphics.m_raysInfoVec.const_at(i).entityHit)
                 {
                 case EntityType::Wall:
@@ -333,7 +331,7 @@ void GameGraphics::draw_map()
     {
         for (int c = 0; c < m_mapData.gameMap.x; ++c)
         {
-            char currentCell = m_mapData.gameMap.cells.at(i * m_mapData.gameMap.x + c);
+            char currentCell = m_mapData.gameMap.cells->at(i * m_mapData.gameMap.x + c);
 
             if (currentCell != ' ')
             {
@@ -406,11 +404,11 @@ void GameGraphics::draw_minimap_background()
     {
         for (int c = startX; c < endX; ++c)
         {
-            char currentCell = m_mapData.gameMap.cells.at(i * m_mapData.gameMap.x + c);
+            char currentCell = m_mapData.gameMap.cells->at(i * m_mapData.gameMap.x + c);
 
             if (currentCell != ' ')
             {
-                char currentCell = m_mapData.gameMap.cells.at(i * m_mapData.gameMap.x + c);
+                char currentCell = m_mapData.gameMap.cells->at(i * m_mapData.gameMap.x + c);
                 if (currentCell == 'b' || currentCell == 'w')
                     wallRect.setFillColor(sf::Color::Black);
                 else if (currentCell == 'g')
