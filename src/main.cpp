@@ -1,34 +1,22 @@
 
-#include "utils.hpp"
 #include <iostream>
-#include "gameGraphics.hpp"
-#include <random>
+#include "gameHandler.hpp"
+#include <memory>
 
 int main()
 {
-    GameCore gameCore{ {screenStats::g_screenWidth, screenStats::g_screenHeight, 0.5f * (3.14f), 8.f, 0.02f}, "assets\\map.txt" };
-    GameGraphics gameGraphics(gameCore, "RayCastingWorld");
-
-    gameGraphics.start();
-
-    debug::GameTimer gt;
-
-    while (gameGraphics.is_running())
-    {  
-        gameGraphics.performGameCycle();
-        gt.add_frame();
-        if (gt.get_frame_count() > 20)
-        {
-            std::cout << gt.get_frame_rate() << std::endl;
-        }
-    }
+    std::unique_ptr<rcm::IGameHandler> gameHandler(rcm::create_gameHandler("assets\\config.json"));
+    if (gameHandler->is_good())
+        gameHandler->run_game();
+    else
+        std::cerr << gameHandler->get_errors();
     return 0;
 }    
 
 /*
 TODO:
--IMPLEMENT MULTITHREADING IN TEXTURE GENERATION
 -IMPLEMENT DDA ALGORITHM
 -IMPLEMENT ZBUFFER
+-COMMENT THE CODE
 */
 

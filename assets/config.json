@@ -1,0 +1,24 @@
+{
+    "playerTransform": {
+        "forewardAngleDeg": 0,
+        "pos": {
+            "x": 15,
+            "y": 11
+        }
+    },
+    "gameCamera": {
+        "FOV": 90,
+        "maxRenderDist": 8.0,
+        "rayPrecision": 0.02
+    },
+    "gameMap": {
+        "mapW": 31,
+        "mapH": 43,
+        "generated" : true,
+        "mapCellsFile": "assets\\map.txt"
+    },
+    "screenStats" : {
+        "minimapScale" : 6,
+	    "halfWallHeight" : 0.5
+    }
+}

@@ -6,6 +6,7 @@
 class MapGenerator
 {
 public:
+	MapGenerator() = delete;
 	MapGenerator(int, int, int, int, std::string&);
 
 	bool generate_map();

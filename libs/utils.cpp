@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include<cmath>
+#include<thread>
 
 int debug::GameTimer::get_frame_rate()
 {
@@ -56,4 +57,10 @@ math::Vect2& math::Vect2::operator+=(const Vect2& other)
 math::Vect2 math::Vect2::operator*(float scal)
 {
 	return { x * scal, y * scal };
+}
+
+int get_thread_number()
+{
+	int t = std::thread::hardware_concurrency();
+	return t == 0 ? 1 : t;
 }
