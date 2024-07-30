@@ -1,4 +1,5 @@
 # Ray casting based maze explorer
+Personal project exploring the concept of ray casting
 ## How to build
 ```
 git clone https://github.com/GustavoFrittole/RayCastingProject.git
@@ -10,13 +11,13 @@ cmake -G"MinGW Makefiles" -DCMAKE_BUILD_TYPE=release -DSFML_BUILD_NETWORK=false 
 ```
 cmake --build ./build/release
 ```
-Cmake will copy the asset folder in the specified binary folder (./build/release). To run the code directly, move the copied asset folder in the same dir of the executable.
+Cmake will copy the asset folder in the user specified binary folder (./build/release). To run the code directly, move the copied asset folder in the same dir of the executable.
 ```
 ./build/rel/bin/app.exe
 ```
 The project relies on SFML (for controls, handling and drawing on windows) and will attempt to fetch it unless the package can be retrieved. When building on linux having this dependency installed in advance might be more practical.
 ## Usage
-The map is either loaded from `map.txt` or generated, depending on the relative flag in the same file (see example in assets).
+Various variables will be imported from the json file `config.json` that can be found in the asset folder. Amongst other options, the user can choose to load their own map by turning "gameMap" -> "generated" to false and specifying a file path. If the map is generated, there's no need to provide a map file.
 The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm,
 and the process of creation is displayed at game start.
 ## Controls
@@ -26,25 +27,7 @@ and the process of creation is displayed at game start.
 - `tab` to view full screen map without pausing,
 - `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
 ## 
-Pre game maze generation:
-
-![mazegen](https://github.com/user-attachments/assets/3bf60432-273b-4bbc-b7fd-d76891879657)
-
-In game map display while game paused:
-
-![map](https://github.com/user-attachments/assets/be7005ea-6335-411e-824a-6ce9ebf63a94)
-
-In game minimap:
-
-![minimap](https://github.com/user-attachments/assets/c6700558-e933-44c5-8c10-7b3721ebbfc1)
-
-Goal reached display, outer pink walls:
-
-![goal](https://github.com/user-attachments/assets/1487f270-17d1-4839-a431-0cd6be634573)
-
-Display calculated path to goal:
-
-![path](https://github.com/user-attachments/assets/a99333a5-a15f-419f-9b8c-f10a07a279ad)
+![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
 
 ## known issues
  - The currently adopted ray casting technique is far inferior compared to algorithms like DDA and others.
