@@ -1,3 +1,4 @@
+
 # Ray casting based maze explorer
 Personal project exploring the concept of ray casting
 ## How to build
@@ -35,4 +36,5 @@ and the process of creation is displayed at game start.
  - There's a glitch in wall shading that becomes evident when the render distance radius is lower than 6 units (this is due to the imprecision of the ray casting, which is to be replaced).
  - ~~Many static elements that are calculated per frame (textures and masks mainly) could be easily generated only once at start time.~~
  - ~~Current implementation of multi threading is inefficient due to recreation of threads~~
+
 
