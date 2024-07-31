@@ -29,12 +29,11 @@ public:
     GameGraphics(std::unique_ptr<DataUtils::GameData>&, const std::string&);
     GameGraphics() = delete;
     GameGraphics& operator=(const GameGraphics&) = delete;
-    void handle_events(sf::Window&, const GameCore::PlayerControler&);
+    void handle_events(sf::Window&, const GameCore::PlayerController&);
     bool is_running() const { return m_window.isOpen(); }
     void start();
     void performGameCycle();
     bool goal_reached();
-
 private:
     struct GameAsset
     {
@@ -64,7 +63,7 @@ private:
     GameCore m_gameCore;
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
-    GameCore::PlayerControler m_playerController;
+    GameCore::PlayerController& m_playerController;
     MapData m_mapData;
     std::vector<std::pair<int, int>> m_pathToGoal;
     std::unique_ptr<PathFinder> m_pathFinder;

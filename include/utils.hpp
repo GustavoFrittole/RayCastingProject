@@ -34,6 +34,7 @@ namespace math
 		Vect2() = default;
 		Vect2 (float a, float b) : x(a), y(b) {}
 		Vect2 operator*(Mat2x2&);
+		Vect2& operator*=(Mat2x2&);
 		Vect2 operator+(Vect2&);
 		Vect2& operator+=(Vect2&);
 		Vect2 operator*(float);

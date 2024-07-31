@@ -22,7 +22,7 @@ inline GameGraphics::GameAsset::GameAsset(int width, int height, bool createPixe
 
 GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const std::string& gameName)
     : m_gameCore(gameData->gCamera, gameData->gMap, gameData->playerTrasform), m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
-        m_raysInfoVec(m_gameCore.getRayInfoArr()), m_playerController(m_gameCore), m_pathToGoal(0), m_minimapInfo(gameData->screenStats.minimapScale, m_mapData.maxRenderDist),
+        m_raysInfoVec(m_gameCore.getRayInfoArr()), m_playerController(m_gameCore.get_playerController()), m_pathToGoal(0), m_minimapInfo(gameData->screenStats.minimapScale, m_mapData.maxRenderDist),
         m_halfWallHeight(gameData->screenStats.halfWallHeight), m_mapData(m_gameCore.getMapData()), m_renderingThreadPool(*this)
 {
     m_window.clear(sf::Color::Black);
@@ -97,7 +97,7 @@ void GameGraphics::performGameCycle()
     else
     {
         draw_minimap_background();
-        draw_minimap_triangles();
+        draw_minimap_rays();
         if (goal_reached())
         {
             draw_end_screen();
