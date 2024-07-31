@@ -28,7 +28,7 @@ and the process of creation is displayed at game start.
 - `tab` to view full screen map without pausing,
 - `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
 ## Functionalities
-Pre game map generation, full screen map and mini map, graphical diplay of shortest path, customizable parameters (FOV 360° in image 5).
+Pre-game map generation, full screen map and mini map, graphical display of shortest path, customizable parameters (FOV 360° in image 5).
 
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
 ## Basic class diagram
@@ -38,7 +38,7 @@ Pre game map generation, full screen map and mini map, graphical diplay of short
 
 ## known issues
  - The currently adopted ray casting technique is far inferior compared to algorithms like DDA and others.
- -  - There's a glitch in wall shading that becomes evident when the render distance radius is lower than 6 units (this is due to the imprecision of the ray casting, which is to be replaced).
+ - There's a glitch in wall shading that becomes evident when the render distance radius is lower than 6 units (this is due to the imprecision of the ray casting, which is to be replaced).
  - GameGraphics is bloated.
  - ~~The rendering process would greatly benefit form the employment of parallel computing (at least cpu multithreading).~~
  - ~~Many static elements that are calculated per frame (textures and masks mainly) could be easily generated only once at start time.~~
