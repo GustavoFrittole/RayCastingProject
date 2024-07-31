@@ -46,7 +46,7 @@ math::Vect2& math::Vect2::operator*=(math::Mat2x2& mat2x2)
 	return *this;
 }
 
-float math::Vect2::lenght() const
+float math::Vect2::Length() const
 {
 	return std::sqrt(x * x + y * y);
 }

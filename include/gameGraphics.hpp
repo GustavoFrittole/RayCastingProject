@@ -13,10 +13,10 @@
 
 struct MinimapInfo
 {
-    MinimapInfo(int scaleToScreen, float rayLenght) : minimapRelPos(scaleToScreen),
+    MinimapInfo(int scaleToScreen, float rayLength) : minimapRelPos(scaleToScreen),
         minimapCenterX(screenStats::g_screenHeight / minimapRelPos),
         minimapCenterY(screenStats::g_screenWidth - minimapCenterX),
-        minimapScale(minimapCenterX / rayLenght) {}
+        minimapScale(minimapCenterX / rayLength) {}
     int minimapRelPos;
     int minimapCenterX;
     int minimapCenterY;

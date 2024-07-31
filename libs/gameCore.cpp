@@ -82,59 +82,13 @@ void GameCore::chech_position_in_map(int rayPosInMapX, int rayPosInMapY, EntityT
 	}
 }
 
-
-//Thread version that recretes the threads every frame (worse than no threads)
-//void GameCore::view_by_ray_casting()
-//{	
-//	math::Mat2x2 rotationMat = math::rotation_mat2x2( m_gameCamera.fov /2);
-//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
-//	math::Vect2 rayIncrement = (playerForwDir * rotationMat ) * m_gameCamera.rayPrecision;
-//	math::Vect2 startPos = m_entityTransform.coords;
-//
-//	auto cast_in_interval = [this, &startPos](int start, int end, math::Vect2 rayIncrement) mutable 
-//	{
-//		for (int i = start; i < end; ++i)
-//		{
-//			math::Vect2 currentRay{ 0,0 };
-//			EntityType hitMarker = EntityType::NoHit;
-//
-//			while (hitMarker == EntityType::NoHit && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
-//			{
-//				math::Vect2 rayPosInMap = startPos + currentRay;
-//				chech_position_in_map(rayPosInMap, hitMarker);
-//				currentRay += rayIncrement;
-//			}
-//			m_rayInfoArr.at(i) = { hitMarker, currentRay, currentRay.lenght()};
-//			rayIncrement = rayIncrement * math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
-//		}
-//	};
-//
-//	int sectionsSize = m_gameCamera.pixelWidth / (m_processorCount*1);
-//	std::vector<std::thread> threadVec;
-//	int currentSection;
-//	for (currentSection = 0; currentSection < m_gameCamera.pixelWidth - sectionsSize; currentSection += sectionsSize)
-//	{
-//		threadVec.push_back(std::thread(cast_in_interval, currentSection, (currentSection + sectionsSize), rayIncrement * math::rotation_mat2x2(-(m_gameCamera.fov / m_gameCamera.pixelWidth) * currentSection )));
-//	}
-//	if (currentSection != m_gameCamera.pixelWidth)
-//	{
-//		int lastSectionSize = (m_gameCamera.pixelWidth - (currentSection));
-//		cast_in_interval( m_gameCamera.pixelWidth - lastSectionSize, m_gameCamera.pixelWidth, rayIncrement * math::rotation_mat2x2(-(m_gameCamera.fov / m_gameCamera.pixelWidth) * currentSection));
-//	}
-//		
-//	for (auto& t : threadVec) 
-//	{
-//		t.join();
-//	}
-//}
-
 void GameCore::update_entities()
 {
 	//calculate delta time and update internal clock
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	int deltaTime = (currentTime - m_lastTime).count();
 	m_lastTime = currentTime;
-	float correctionFactor = 0.000000001f;
+	float correctionFactor = 0.000000001f * deltaTime;
 
 	//decompose movment in x and y(world) axis and check collions separatly
 
@@ -142,7 +96,7 @@ void GameCore::update_entities()
 	math::Vect2 moveAttempt = m_entityTransform.coords +
 		(math::Vect2(std::cos(m_entityTransform.forewardAngle) * m_pInputCache.foreward 
 					-std::sin(m_entityTransform.forewardAngle) * m_pInputCache.lateral, 0)
-					* (deltaTime * correctionFactor));
+					* (correctionFactor));
 
 	EntityType hitMarker = EntityType::NoHit;
 	chech_position_in_map(moveAttempt, hitMarker);
@@ -158,7 +112,7 @@ void GameCore::update_entities()
 	moveAttempt = m_entityTransform.coords +
 		(math::Vect2(0, std::sin(m_entityTransform.forewardAngle) * m_pInputCache.foreward +
 					std::cos(m_entityTransform.forewardAngle) * m_pInputCache.lateral)
-					* ( deltaTime * correctionFactor));
+					* (correctionFactor));
 
 
 
@@ -172,7 +126,7 @@ void GameCore::update_entities()
 	}
 
 	//rotate
-	m_entityTransform.forewardAngle += m_pInputCache.rotate * deltaTime * correctionFactor;
+	m_entityTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
 
 	//reset cached values
 	m_pInputCache.foreward = 0;
@@ -193,29 +147,7 @@ void GameCore::PlayerController::move_strafe(float amount) const
 	gameCore.m_pInputCache.lateral += amount;
 }
 
-//void GameCore::view_by_ray_casting()
-//{
-//	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
-//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
-//	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
-//	math::Vect2 startPos = m_entityTransform.coords;
-//
-//	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
-//	{
-//		math::Vect2 currentRay{ 0,0 };
-//		EntityType hitMarker = EntityType::Nothing;
-//
-//		while (hitMarker == EntityType::Nothing && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
-//		{
-//			math::Vect2 rayPosInMap = startPos + currentRay;
-//			chech_position_in_map(rayPosInMap, hitMarker);
-//			currentRay += rayIncrement;
-//		}
-//		
-//		m_rayInfoArr.at(i) = { hitMarker, currentRay };
-//		rayIncrement = rayIncrement * math::rotation_mat2x2( - m_gameCamera.fov / m_gameCamera.pixelWidth);
-//	}
-//}
+
 
 void GameCore::view_by_ray_casting()
 {
@@ -240,134 +172,98 @@ void GameCore::view_by_ray_casting()
 		int currentPosInMap[2] = { startingPos.x, startingPos.y };
 
 		//length of the ray at progressive intersections with cell on the x and y axis
-		float rayLenghtAtIntersectX;
-		float rayLenghtAtIntersectY;
+		float rayLengthAtIntersectX;
+		float rayLengthAtIntersectY;
 
 		int unitaryStepX;
 		int unitaryStepY;
 
-		float currentRayLength = 0;
+		float rayLength = 0;
 		//initialize steps so they match the ray direction
 		//also take care of the first shorter not unitary step
 		if (currentRayDir.x < 0)
 		{
 			unitaryStepX = -1;
-			rayLenghtAtIntersectX = (startingPos.x - currentPosInMap[0]) * lengthIncrementX;
+			rayLengthAtIntersectX = (startingPos.x - currentPosInMap[0]) * lengthIncrementX;
 		}
 		else
 		{
 			unitaryStepX = 1;
-			rayLenghtAtIntersectX = (float(currentPosInMap[0] + 1) - startingPos.x) * lengthIncrementX;
+			rayLengthAtIntersectX = (float(currentPosInMap[0] + 1) - startingPos.x) * lengthIncrementX;
 		}
 		if (currentRayDir.y < 0)
 		{
 			unitaryStepY = -1;
-			rayLenghtAtIntersectY = (startingPos.y - currentPosInMap[1]) * lengthIncrementY;
+			rayLengthAtIntersectY = (startingPos.y - currentPosInMap[1]) * lengthIncrementY;
 		}
 		else
 		{
 			unitaryStepY = 1;
-			rayLenghtAtIntersectY = (float(currentPosInMap[1] +1 ) - startingPos.y ) * lengthIncrementY;
+			rayLengthAtIntersectY = (float(currentPosInMap[1] +1 ) - startingPos.y ) * lengthIncrementY;
 		}
+
+
+		//keeps track of what was the last cell side checkd (-1 x, +1 y)
+		int lastSideChecked = 0;
 
 		//The ray is incremented in order to reach the next cell intersection
 		//switching axis when one side becomes shorter then the other
-		while (hitMarker == EntityType::Nothing && currentRayLength < m_gameCamera.maxRenderDist)
+		while (hitMarker == EntityType::Nothing)
 		{
-			if (rayLenghtAtIntersectX < rayLenghtAtIntersectY)
+			if (rayLengthAtIntersectX < rayLengthAtIntersectY)
 			{
+				if (rayLengthAtIntersectX > m_gameCamera.maxRenderDist)
+					break;
 				currentPosInMap[0] += unitaryStepX;
-				currentRayLength = rayLenghtAtIntersectX;
-				rayLenghtAtIntersectX += lengthIncrementX;
+				lastSideChecked = -1;
+				rayLengthAtIntersectX += lengthIncrementX;
 			}
 			else
 			{
+				if (rayLengthAtIntersectY > m_gameCamera.maxRenderDist)
+					break;
 				currentPosInMap[1] += unitaryStepY;
-				currentRayLength = rayLenghtAtIntersectY;
-				rayLenghtAtIntersectY += lengthIncrementY;
+				lastSideChecked = 1;
+				rayLengthAtIntersectY += lengthIncrementY;
 			}
 			chech_position_in_map(currentPosInMap[0], currentPosInMap[1], hitMarker);
 			
 		}
 
-		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * currentRayLength, currentRayLength };
+		if (lastSideChecked == -1)
+			rayLength = rayLengthAtIntersectX - lengthIncrementX;
+		else 
+			rayLength = rayLengthAtIntersectY - lengthIncrementY;
+
+		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked};
 		//std::cout << currentRayLength << " " << currentRayDir.y << std::endl;
 		//rotate ray for next iteration
 		currentRayDir *= math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
 	}
 }
-/*
-{
-	for (int x = 0; x < w; x++)
-	{
-		//calculate ray position and direction
-		//double cameraX = 2 * x / (double)w - 1; //x-coordinate in camera space
-		//double rayDirX = dirX + planeX * cameraX;
-		//double rayDirY = dirY + planeY * cameraX;
 
-		//which box of the map we're in
-		int mapX = int(posX);
-		int mapY = int(posY);
-
-		//length of ray from current position to next x or y-side
-		double sideDistX;
-		double sideDistY;
-
-		//length of ray from one x or y-side to next x or y-side
-		double deltaDistX = (rayDirX == 0) ? 1e30 : std::abs(1 / rayDirX);
-		double deltaDistY = (rayDirY == 0) ? 1e30 : std::abs(1 / rayDirY);
-		double perpWallDist;
-
-		//what direction to step in x or y-direction (either +1 or -1)
-		int stepX;
-		int stepY;
-
-		int hit = 0; //was there a wall hit?
-		int side; //was a NS or a EW wall hit?
-
-		//calculate step and initial sideDist
-		if (rayDirX < 0)
-		{
-			stepX = -1;
-			sideDistX = (posX - mapX) * deltaDistX;
-		}
-		else
-		{
-			stepX = 1;
-			sideDistX = (mapX + 1.0 - posX) * deltaDistX;
-		}
-		if (rayDirY < 0)
-		{
-			stepY = -1;
-			sideDistY = (posY - mapY) * deltaDistY;
-		}
-		else
-		{
-			stepY = 1;
-			sideDistY = (mapY + 1.0 - posY) * deltaDistY;
-		}
-		//perform DDA
-		while (hit == 0)
-		{
-			//jump to next map square, either in x-direction, or in y-direction
-			if (sideDistX < sideDistY)
-			{
-				sideDistX += deltaDistX;
-				mapX += stepX;
-				side = 0;
-			}
-			else
-			{
-				sideDistY += deltaDistY;
-				mapY += stepY;
-				side = 1;
-			}
-			//Check if ray has hit a wall
-			if (worldMap[mapX][mapY] > 0) hit = 1;
-		}
-
-		//Calculate distance of perpendicular ray (Euclidean distance would give fisheye effect!)
-		if (side == 0) perpWallDist = (sideDistX - deltaDistX);
-		else          perpWallDist = (sideDistY - deltaDistY);
-
-}*/
+//Simple but inefficient ray casting 
+//  
+//void GameCore::view_by_ray_casting()
+//{
+//	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
+//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+//	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
+//	math::Vect2 startPos = m_entityTransform.coords;
+//
+//	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
+//	{
+//		math::Vect2 currentRay{ 0,0 };
+//		EntityType hitMarker = EntityType::Nothing;
+//
+//		while (hitMarker == EntityType::Nothing && (currentRay.x * currentRay.x + currentRay.y * currentRay.y) < m_gameCamera.maxRenderDist * m_gameCamera.maxRenderDist)
+//		{
+//			math::Vect2 rayPosInMap = startPos + currentRay;
+//			chech_position_in_map(rayPosInMap, hitMarker);
+//			currentRay += rayIncrement;
+//		}
+//		
+//		m_rayInfoArr.at(i) = { hitMarker, currentRay };
+//		rayIncrement = rayIncrement * math::rotation_mat2x2( - m_gameCamera.fov / m_gameCamera.pixelWidth);
+//	}
+//}

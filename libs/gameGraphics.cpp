@@ -27,6 +27,7 @@ GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const
 {
     m_window.clear(sf::Color::Black);
     create_assets();
+    m_window.setFramerateLimit(0);
     //create_minimap_frame();
 }
 
@@ -213,7 +214,7 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
     for (int i = start; i < end; ++i)
     {
         
-        float distance = m_gameGraphics.m_raysInfoVec.const_at(i).hitPos.lenght();
+        float distance = m_gameGraphics.m_raysInfoVec.const_at(i).hitPos.Length();
         float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(m_halfWallHeight / distance) * m_oneOverVerticalVisibleAngle)));
         //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
         sf::Color pixelColor;
@@ -227,7 +228,8 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
                 switch (m_gameGraphics.m_raysInfoVec.const_at(i).entityHit)
                 {
                 case EntityType::Wall:
-                    pixelColor = { 0xff, 0xff, 0xff , wallShade };
+                    pixelColor = { 0xff, (m_gameGraphics.m_raysInfoVec.const_at(i).lastSideChecked
+                         == 1) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , wallShade };
                     break;
                 case EntityType::Baudry:
                     pixelColor = { 0xff, 0xaa, 0xff , wallShade };
@@ -309,7 +311,7 @@ void GameGraphics::draw_minimap_triangles()
     for (int i = 0; i < m_raysInfoVec.arrSize; ++i)
     {
         triangles[i + 1] = { { m_minimapInfo.minimapCenterY + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale, m_minimapInfo.minimapCenterX + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale},
-        sf::Color(0, 0xFF, 0xFF, (1 - m_raysInfoVec.const_at(i).hitPos.lenght() / m_mapData.maxRenderDist) * 0xFF) };
+        sf::Color(0, 0xFF, 0xFF, (1 - m_raysInfoVec.const_at(i).hitPos.Length() / m_mapData.maxRenderDist) * 0xFF) };
     }
     m_window.draw(triangles);
 }
@@ -460,12 +462,12 @@ void GameGraphics::handle_events()
                 justUnpaused = false;
                 m_window.setMouseCursorVisible(false);
                 m_window.setMouseCursorGrabbed(true);
-                sf::Mouse::setPosition(sf::Vector2i(100, 0), m_window);
+                sf::Mouse::setPosition(sf::Vector2i(g_screenWidth / 2, 0), m_window);
             }
             else
             {
-                m_playerController.rotate((-sf::Mouse::getPosition(m_window).x + 100) * 0.1);
-                sf::Mouse::setPosition(sf::Vector2i(100, 0), m_window);
+                m_playerController.rotate((g_screenWidth/2 - sf::Mouse::getPosition(m_window).x) * 0.1f);
+                sf::Mouse::setPosition(sf::Vector2i(g_screenWidth / 2, 0), m_window);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
             {
@@ -525,7 +527,7 @@ void GameGraphics::handle_events()
 //            for (int i = start; i < end; ++i)
 //            {
 //
-//                float distance = m_raysInfoVec.const_at(i).hitPos.lenght();
+//                float distance = m_raysInfoVec.const_at(i).hitPos.Length();
 //                float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(halfWallHeight / distance) * oneOverVerticalVisibleAngle)));
 //                //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
 //                sf::Color pixelColor;

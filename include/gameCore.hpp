@@ -30,6 +30,7 @@ struct RayInfo
 	EntityType entityHit = EntityType::NoHit;
 	math::Vect2 hitPos = {0, 0};
 	float dist = 0;
+	int lastSideChecked = 0;
 };
 
 class RayInfoArr 

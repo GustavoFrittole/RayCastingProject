@@ -38,7 +38,7 @@ namespace math
 		Vect2 operator+(Vect2&);
 		Vect2& operator+=(Vect2&);
 		Vect2 operator*(float);
-		float lenght() const;
+		float Length() const;
 	};
 
 	Mat2x2 rotation_mat2x2(float angle);
