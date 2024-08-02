@@ -33,10 +33,10 @@ namespace math
 		float x=0, y=0;
 		Vect2() = default;
 		Vect2 (float a, float b) : x(a), y(b) {}
-		Vect2 operator*(Mat2x2&);
-		Vect2& operator*=(Mat2x2&);
-		Vect2 operator+(Vect2&);
-		Vect2& operator+=(Vect2&);
+		Vect2 operator*(const Mat2x2&);
+    Vect2& operator*=(const Mat2x2&);
+		Vect2 operator+(const Vect2&);
+		Vect2& operator+=(const Vect2&);
 		Vect2 operator*(float);
 		float Length() const;
 	};
