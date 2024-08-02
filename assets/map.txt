@@ -7,7 +7,7 @@ ww   w     w      w   w       w
 w      w     w    w           w
 w    w     w         w        w
 w   w           w             w
-w   w       wwwwwwwwwwwwwwwwwww
+w   w     bbwwwwwwwwwwwwwwwwwww
 w   w                       w w
 w               w    w        w
 w                    w        w
@@ -16,11 +16,11 @@ w       w            w        w
 w w      w w  w  w   w  w  w  w
 w         w          w        w
 w    w     w    w             w
-w    w      w                 w
-w    w       w                w
-w    w       w                w
-w    w       w                w
-w    w       w                w
+w    w      w                 e
+w    w       w          b     e
+w    w       w          b     e
+w    w       w          b     e
+w    w       w          b     e
 w    w       w                w
 w    w       w                w
 w    w       w                w

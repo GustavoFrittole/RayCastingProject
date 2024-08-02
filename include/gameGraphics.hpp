@@ -13,14 +13,45 @@
 
 struct MinimapInfo
 {
-    MinimapInfo(int scaleToScreen, float rayLenght) : minimapRelPos(scaleToScreen),
+    MinimapInfo(int scaleToScreen, float rayLength) : minimapRelPos(scaleToScreen),
         minimapCenterX(screenStats::g_screenHeight / minimapRelPos),
         minimapCenterY(screenStats::g_screenWidth - minimapCenterX),
-        minimapScale(minimapCenterX / rayLenght) {}
+        minimapScale(minimapCenterX / rayLength) {}
     int minimapRelPos;
     int minimapCenterX;
     int minimapCenterY;
     int minimapScale;
+};
+
+struct GameAsset
+{
+    GameAsset() = default;
+    GameAsset(int, int, bool);
+    void create(int, int, bool);
+    GameAsset& operator=(const GameAsset&) = delete;
+    GameAsset(const GameAsset&) = delete;
+    ~GameAsset() { if (m_hasPixelArray) delete[] m_pixels; }
+    sf::Texture m_texture;
+    sf::Sprite m_sprite;
+    sf::Uint8* m_pixels = nullptr;
+private:
+    bool m_hasPixelArray = false;
+};
+
+struct Texture
+{
+public:
+    Texture() = default;
+    Texture(const std::string& filePath) { create(filePath); }
+    void create(const std::string&);
+    const sf::Uint8& get_pixel_at(int) const;
+    int width() const { return m_texture.getSize().x; }
+    int height() const { return m_texture.getSize().y; }
+    const sf::Uint8* m_texturePixels = nullptr;
+private:
+    sf::Image m_texture;
+    int m_width = 0;
+    int m_height = 0;
 };
 
 class GameGraphics
@@ -29,29 +60,13 @@ public:
     GameGraphics(std::unique_ptr<DataUtils::GameData>&, const std::string&);
     GameGraphics() = delete;
     GameGraphics& operator=(const GameGraphics&) = delete;
-    void handle_events(sf::Window&, const GameCore::PlayerControler&);
+    void handle_events(sf::Window&, const GameCore::PlayerController&);
     bool is_running() const { return m_window.isOpen(); }
     void start();
     void performGameCycle();
     bool goal_reached();
-
 private:
-    struct GameAsset
-    {
-        GameAsset() = default;
-        GameAsset(int, int, bool);
-        void create(int, int, bool);
-        GameAsset& operator=(const GameAsset&) = delete;
-        GameAsset(const GameAsset&) = delete;
-        ~GameAsset() { if (m_hasPixelArray) delete[] m_pixels; }
-        sf::Texture m_texture;
-        sf::Sprite m_sprite;
-        sf::Uint8* m_pixels = nullptr;
-    private:
-        bool m_hasPixelArray = false;
-    };
-
-    struct inGameMapAssets
+    struct InGameMapAssets
     {
         void create(const GameGraphics&);
         int tileDim = 0;
@@ -64,7 +79,7 @@ private:
     GameCore m_gameCore;
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
-    GameCore::PlayerControler m_playerController;
+    GameCore::PlayerController& m_playerController;
     MapData m_mapData;
     std::vector<std::pair<int, int>> m_pathToGoal;
     std::unique_ptr<PathFinder> m_pathFinder;
@@ -75,15 +90,16 @@ private:
     GameAsset m_mainBackground;
     sf::Text m_endGameText;
     sf::Font m_endGameFont;
-    sf::CircleShape m_minimapFrame;
-    inGameMapAssets m_igMapAssets;
+    InGameMapAssets m_igMapAssets;
+    GameAssets m_gameAssets;
+    Texture m_wallTexture;
+    Texture m_baundryTexture;
 
     bool m_hadFocus = false;
     bool m_paused = false;
     bool m_findPathRequested = false;
     bool m_tabbed = false;
 
-    void create_assets();
     void draw_camera_view();
     void draw_minimap_triangles();
     void draw_minimap_rays();
@@ -93,10 +109,10 @@ private:
     void draw_background();
     void draw_view();
     void draw_path_out();
-    void create_minimap_frame();
     void load_end_screen();
     void generate_background();
     void handle_events();
+    inline void create_assets();
 
     class RenderingThreadPool
     {
@@ -116,9 +132,7 @@ private:
         int m_lastSectionSize = 0;
         bool m_isActive = true;
 
-        float m_half_fov = m_gameGraphics.m_mapData.fov * .5f;
-        float m_halfWallHeight = m_gameGraphics.m_halfWallHeight;
-        float m_oneOverVerticalVisibleAngle = (screenStats::g_screenWidth / (screenStats::g_screenHeight * m_half_fov));
+        float m_verticalVisibleAngle = ((screenStats::g_screenHeight * m_gameGraphics.m_mapData.fov)/screenStats::g_screenWidth);
 
         void draw_section(int start, int end);
     };

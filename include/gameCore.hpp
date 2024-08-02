@@ -17,6 +17,13 @@ enum class EntityType : char
 	NoHit = '\0'
 };
 
+enum class CellSide 
+{
+	Vert,
+	Hori,
+	Unknown
+};
+
 struct MapData
 {
 	const float& fov;
@@ -29,6 +36,8 @@ struct RayInfo
 {
 	EntityType entityHit = EntityType::NoHit;
 	math::Vect2 hitPos = {0, 0};
+	float length = 0;
+	CellSide lastSideChecked = CellSide::Unknown;
 };
 
 class RayInfoArr 
@@ -56,12 +65,8 @@ class GameCore
 {
 public:
 	GameCore() = delete;
-
-	//TOCHANGE entitnyt + game map
 	GameCore(GameCamera gc, GameMap&, EntityTransform&);
 
-
-	//TOCHANGE
 	void update_entities();
 	void view_by_ray_casting();
 	void start_internal_time();
@@ -70,13 +75,11 @@ public:
 	bool generate_map_step() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map_step()); }
 	bool generate_map() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map()); }
 
-	//get_minimap_info();
-
 	//should be singelton
-	class PlayerControler 
+	class PlayerController 
 	{
 	public:
-		PlayerControler(GameCore& gc) : gameCore(gc){}
+		PlayerController(GameCore& gc) : gameCore(gc){}
 		void rotate(float) const;
 		void move_foreward(float) const;
 		void move_strafe(float) const;
@@ -84,18 +87,24 @@ public:
 		GameCore& gameCore;
 	};
 
+	PlayerController& get_playerController() { return m_playerController; }
+
 private:
 	GameCamera m_gameCamera{};
 	EntityTransform m_entityTransform{};
 	GameMap m_gameMap{};
 	PlayerInputCache m_pInputCache{};
+	PlayerController m_playerController;
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 	int m_processorCount = 1;
 	RayInfoArr m_rayInfoArr;
 	std::unique_ptr<MapGenerator> m_mapGenerator;
 	
+	void chech_position_in_map(int, int, EntityType&) const;
 	void chech_position_in_map(const math::Vect2&, EntityType&) const;
+
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
+	bool check_out_of_map_bounds(int, int) const;
 };
 
 #endif

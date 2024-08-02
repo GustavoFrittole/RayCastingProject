@@ -14,8 +14,6 @@ private:
 	std::unique_ptr<GameGraphics> m_gameGraphics;
 	std::unique_ptr<DataUtils::GameData> m_gameData;
 	bool load_game_data(const std::string&) override;
-	bool m_isGood = true;
-	std::string m_errors;
 };
 
 GameHandler::GameHandler(const std::string& configPath) 
@@ -34,14 +32,23 @@ bool GameHandler::load_game_data(const std::string& filePath)
 		m_errors.append(e.what());
 		return false;
 	}
-
 	m_gameGraphics = std::make_unique<GameGraphics>(m_gameData, "pippo");
+
 	return true;
 }
 void GameHandler::run_game()
 {
-	m_gameGraphics->start();
-
+	try
+	{
+		m_gameGraphics->start();
+	}
+	catch(std::exception& e)
+	{
+		std::string err(e.what());
+		err.append("\nError while loading asset files.\n");
+		throw std::runtime_error(err);
+	}
+	
 	debug::GameTimer gt;
 
 	while (m_gameGraphics->is_running())

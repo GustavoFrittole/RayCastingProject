@@ -34,10 +34,11 @@ namespace math
 		Vect2() = default;
 		Vect2 (float a, float b) : x(a), y(b) {}
 		Vect2 operator*(const Mat2x2&);
+    Vect2& operator*=(const Mat2x2&);
 		Vect2 operator+(const Vect2&);
 		Vect2& operator+=(const Vect2&);
 		Vect2 operator*(float);
-		float lenght() const;
+		float Length() const;
 	};
 
 	Mat2x2 rotation_mat2x2(float angle);
