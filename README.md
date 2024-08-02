@@ -32,7 +32,7 @@ Note: the game starts paused. Press `ESC` to gain control
 
 ## known issues
 - mouse speed lowers as the frame rate increases (whilst arrows rotation behaves correctly);
-- rendering thread pool is deadlocked if width%12 = 0;
-- json parser doest return error when options are missing, making the bug difficult to read;
-- texture are not inverted in accordance with the orientation of the faces of the cube.
+- rendering thread pool is deadlocked if width%12 = 0; (P.S. : was not able to reproduce bug)
+- ~~json parser doest return error when options are missing, making the bug difficult to read;~~
+- ~~texture are not inverted in accordance with the orientation of the faces of the cube.~~
 

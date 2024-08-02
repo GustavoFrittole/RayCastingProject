@@ -156,8 +156,13 @@ void GameGraphics::draw_end_screen()
     m_window.draw(m_endGameText);
 }
 
-GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) : m_poolSize(get_thread_number()), 
-                                   m_threads(0), m_mutexVecStart(m_poolSize), m_mutexVecEnd(m_poolSize), m_gameGraphics(gg), jobs(0)
+GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) : 
+                                    m_poolSize(get_thread_number()), 
+                                    m_threads(0), 
+                                    m_mutexVecStart(m_poolSize),
+                                    m_mutexVecEnd(m_poolSize),
+                                    m_gameGraphics(gg),
+                                    jobs(0)
 {
     for (int i = 0; i < m_poolSize; ++i)
     {
@@ -167,7 +172,7 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) : m_poo
     int sectionsSize = m_gameGraphics.m_raysInfoVec.arrSize / (m_poolSize);
     int currentSection;
     int id = 0;
-    for (currentSection = 0; currentSection < m_gameGraphics.m_raysInfoVec.arrSize - sectionsSize; currentSection += sectionsSize, ++id)
+    for (currentSection = 0; currentSection + sectionsSize <= m_gameGraphics.m_raysInfoVec.arrSize; currentSection += sectionsSize, ++id)
     {
         m_threads.emplace_back([this, currentSection, sectionsSize, id] () mutable
             {
@@ -213,7 +218,9 @@ void GameGraphics::RenderingThreadPool::render_view()
     }
 
     while (jobs != m_poolSize)
+    {
         std::this_thread::sleep_for(std::chrono::milliseconds(0));
+    }
 
     jobs = 0;
     for (auto& m : m_mutexVecStart)
@@ -268,10 +275,10 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
         float posOnWallSide = 0;
 
         //x alias u
-        int textureX = 0;
+        int textureU = 0;
         //y alias v
-        float textureY = 0;
-        float texYStep = 0;
+        float textureV = 0;
+        float texVStep = 0;
 
         if(!flatShading)
         {
@@ -282,12 +289,17 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
 
             posOnWallSide -= std::floorf(posOnWallSide);
 
-            texYStep = currentTexture->height() / screenWallHeight;
+            texVStep = currentTexture->height() / screenWallHeight;
 
-            textureX = (int)(posOnWallSide * currentTexture->width());
+            textureU = (int)(posOnWallSide * currentTexture->width());
+
+            //if the wall is seen from the south or west side, its texture's us need to be inverted 
+            if (currRay.lastSideChecked == CellSide::Hori && currRay.hitPos.y < 0 ||
+                currRay.lastSideChecked == CellSide::Vert && currRay.hitPos.x > 0) 
+                textureU = currentTexture->width() - textureU - 1;
 
             //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
-            textureY = (screenWallHeight > g_screenHeight) ? texYStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
+            textureV = (screenWallHeight > g_screenHeight) ? texVStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
         }
 
         //scan y axis
@@ -304,19 +316,19 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
                 else
                 {
                     //if the end of the texture is reached, start over
-                    if (textureY >= currentTexture->height())
-                        textureY = 0;
-                    //or textureY = textureY%currentTexture->height();
+                    if (textureV >= currentTexture->height())
+                        textureV = 0;
+                    //or textureV = textureV%currentTexture->height();
 
                     currentColor.r = currentTexture->m_texturePixels
-                        [(textureX + int(textureY) * currentTexture->width())*4 +0];
+                        [(textureU + int(textureV) * currentTexture->width())*4 +0];
                     currentColor.g = currentTexture->m_texturePixels
-                        [(textureX + int(textureY) * currentTexture->width())*4 +1];
+                        [(textureU + int(textureV) * currentTexture->width())*4 +1];
                     currentColor.b = currentTexture->m_texturePixels
-                        [(textureX + int(textureY) * currentTexture->width())*4 +2];
+                        [(textureU + int(textureV) * currentTexture->width())*4 +2];
                     currentColor.a = boxShade;
 
-                    textureY += texYStep;
+                    textureV += texVStep;
                 }    
             }
             else

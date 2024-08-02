@@ -13,7 +13,7 @@ namespace rcm
 		std::string get_errors() const { return m_isGood ? "All good" : m_errors; }
 	protected:
 		virtual bool load_game_data(const std::string&) = 0;
-		bool m_isGood;
+		bool m_isGood = true;
 		std::string m_errors;
 	};
 
