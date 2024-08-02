@@ -39,7 +39,7 @@ math::Vect2 math::Vect2::operator*(const math::Mat2x2& mat2x2)
 	return math::Vect2{ x * mat2x2.params[0][0] + y * mat2x2.params[0][1], x * mat2x2.params[1][0] + y * mat2x2.params[1][1] };
 }
 
-math::Vect2& math::Vect2::operator*=(math::Mat2x2& mat2x2)
+math::Vect2& math::Vect2::operator*=(const math::Mat2x2& mat2x2)
 {
 	this->x = x * mat2x2.params[0][0] + y * mat2x2.params[0][1];
 	this->y = x * mat2x2.params[1][0] + y * mat2x2.params[1][1];
