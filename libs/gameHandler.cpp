@@ -36,10 +36,12 @@ bool GameHandler::load_game_data(const std::string& filePath)
 	}
 
 	m_gameGraphics = std::make_unique<GameGraphics>(m_gameData, "pippo");
+
 	return true;
 }
 void GameHandler::run_game()
 {
+	//try catch
 	m_gameGraphics->start();
 
 	debug::GameTimer gt;

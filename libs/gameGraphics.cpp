@@ -2,11 +2,11 @@
 #include<gameGraphics.hpp>
 #include<math.h>
 #include<stdexcept>
-
+#include <iostream>
 
 using namespace screenStats;
 
-void GameGraphics::GameAsset::create(int width, int height, bool createPixelArray)
+void GameAsset::create(int width, int height, bool createPixelArray = false)
 {
     m_hasPixelArray = createPixelArray;
     if (createPixelArray)
@@ -15,23 +15,43 @@ void GameGraphics::GameAsset::create(int width, int height, bool createPixelArra
     m_sprite.setTexture(m_texture);
 }
 
-inline GameGraphics::GameAsset::GameAsset(int width, int height, bool createPixelArray = false)
+inline GameAsset::GameAsset(int width, int height, bool createPixelArray = false)
 {
     create(width, height, createPixelArray);
 }
 
-GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const std::string& gameName)
-    : m_gameCore(gameData->gCamera, gameData->gMap, gameData->playerTrasform), m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
-        m_raysInfoVec(m_gameCore.getRayInfoArr()), m_playerController(m_gameCore.get_playerController()), m_pathToGoal(0), m_minimapInfo(gameData->screenStats.minimapScale, m_mapData.maxRenderDist),
-        m_halfWallHeight(gameData->screenStats.halfWallHeight), m_mapData(m_gameCore.getMapData()), m_renderingThreadPool(*this)
+void Texture::create(const std::string& filePath)
 {
-    m_window.clear(sf::Color::Black);
-    create_assets();
-    m_window.setFramerateLimit(0);
-    //create_minimap_frame();
+    m_texture.loadFromFile(filePath);
+    m_texturePixels = m_texture.getPixelsPtr();
+}
+const
+sf::Uint8& Texture::get_pixel_at(int index) const
+{
+    if (index < 0 || index >= width() * height())
+        throw std::invalid_argument("Index is out of range.");
+    else
+        return m_texturePixels[index];
 }
 
-void inline GameGraphics::create_assets()
+
+GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const std::string& gameName)
+    : m_gameCore(gameData->gCamera, gameData->gMap, gameData->playerTrasform), 
+    m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
+    m_raysInfoVec(m_gameCore.getRayInfoArr()), 
+    m_playerController(m_gameCore.get_playerController()),
+    m_pathToGoal(0), 
+    m_minimapInfo(gameData->screenStats.minimapScale, m_mapData.maxRenderDist),
+    m_halfWallHeight(gameData->screenStats.halfWallHeight),
+    m_mapData(m_gameCore.getMapData()),
+    m_gameAssets(gameData->gAssets),
+    m_renderingThreadPool(*this)
+{
+    m_window.clear(sf::Color::Black);
+    m_window.setFramerateLimit(0);
+}
+
+void GameGraphics::create_assets()
 {
     m_mainView.create(g_screenWidth, g_screenHeight, true);
     m_mainBackground.create(g_screenWidth, g_screenHeight, true);
@@ -39,10 +59,14 @@ void inline GameGraphics::create_assets()
     load_end_screen();
     m_pathFinder = std::make_unique<PathFinder>(m_mapData.gameMap.x, m_mapData.gameMap.y, *(m_mapData.gameMap.cells), m_pathToGoal);
     m_igMapAssets.create(*this);
+    //wip
+    m_wallTexture.create(m_gameAssets.wallTexFilePath);
+    m_baundryTexture.create(m_gameAssets.boundryTexFilePath);
 }
 
 void GameGraphics::start()
 {
+    create_assets();
     //step by step map generation (if generation is requested)
     while (m_gameCore.generate_map_step())
     {
@@ -98,7 +122,7 @@ void GameGraphics::performGameCycle()
     else
     {
         draw_minimap_background();
-        draw_minimap_rays();
+        draw_minimap_triangles();
         if (goal_reached())
         {
             draw_end_screen();
@@ -131,17 +155,6 @@ void GameGraphics::draw_end_screen()
 {
     m_window.draw(m_endGameText);
 }
-
-void GameGraphics::create_minimap_frame() 
-{
-    float frameRadius = m_minimapInfo.minimapCenterX;
-    m_minimapFrame.setRadius(frameRadius);
-    m_minimapFrame.setPosition(m_minimapInfo.minimapCenterY - frameRadius, m_minimapInfo.minimapCenterX - frameRadius);
-    m_minimapFrame.setFillColor(sf::Color::Transparent);
-    m_minimapFrame.setOutlineThickness(3.f);
-    m_minimapFrame.setOutlineColor(sf::Color::Cyan);
-}
-
 
 GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) : m_poolSize(get_thread_number()), 
                                    m_threads(0), m_mutexVecStart(m_poolSize), m_mutexVecEnd(m_poolSize), m_gameGraphics(gg), jobs(0)
@@ -213,40 +226,107 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
 {
     for (int i = start; i < end; ++i)
     {
+        const RayInfo& currRay = m_gameGraphics.m_raysInfoVec.const_at(i);
+        float distance = currRay.length;
+
+        //--this version maintains correct proportions, but causes texture distortion--
+        //float wallAngle = (std::atan(m_gameGraphics.m_halfWallHeight / distance) );
+        //float screenWallHeight = g_screenHeight  * wallAngle / (m_verticalVisibleAngle * m_gameGraphics.m_halfWallHeight);
+
+        //--this version is faster, has easy texture mapping but locks th evertical view angle at 90° (45° up 45° down)--
+        float screenWallHeight = (g_screenHeight / distance);
+        float floorHeight = (g_screenHeight - screenWallHeight) / 2;
         
-        float distance = m_gameGraphics.m_raysInfoVec.const_at(i).hitPos.Length();
-        float wallHeightFromHorizon = (0.5f * g_screenHeight * (1 - (std::atan(m_halfWallHeight / distance) * m_oneOverVerticalVisibleAngle)));
-        //float wallHeightFromHorizon = (g_height * ( 1 -  1/distance))*0.5f; //faster
-        sf::Color pixelColor;
-        sf::Uint8 wallShade = (1 - (distance / (m_gameGraphics.m_mapData.maxRenderDist))) * 0xFF;
+
+        //can multiply with the alpha of walls, bleanding them with the dark backgroud 
+        sf::Uint8 boxShade = (1 - (distance / (m_gameGraphics.m_mapData.maxRenderDist))) * 0xFF;
+
+        bool flatShading = false;
+        Texture* currentTexture;
+        sf::Color flatColor;
+        switch (currRay.entityHit)
+        {
+        case EntityType::Wall:
+            currentTexture = &m_gameGraphics.m_wallTexture;
+            break;
+        case EntityType::Baudry:
+            currentTexture = &m_gameGraphics.m_baundryTexture;
+
+            //flatShading = true;
+            //flatColor = { 0xff, (currRay.lastSideChecked == CellSide::Hori) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , boxShade };
+            break;
+        default:
+            flatShading = true;
+            flatColor = sf::Color::Transparent;
+            break;
+        }
+
+        sf::Color currentColor;
+
+        //--variables for texture navigation--
+        //relative position in wall based on what face is being textured
+        float posOnWallSide = 0;
+
+        //x alias u
+        int textureX = 0;
+        //y alias v
+        float textureY = 0;
+        float texYStep = 0;
+
+        if(!flatShading)
+        {
+            if (currRay.lastSideChecked == CellSide::Hori)
+                posOnWallSide = currRay.hitPos.x + m_gameGraphics.m_mapData.playerTransform.coords.x;
+            else
+                posOnWallSide = currRay.hitPos.y + m_gameGraphics.m_mapData.playerTransform.coords.y;
+
+            posOnWallSide -= std::floorf(posOnWallSide);
+
+            texYStep = currentTexture->height() / screenWallHeight;
+
+            textureX = (int)(posOnWallSide * currentTexture->width());
+
+            //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
+            textureY = (screenWallHeight > g_screenHeight) ? texYStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
+        }
+
+        //scan y axis
+        int x = i * 4;
         for (int y = 0; y < g_screenHeight * 4; y += 4)
         {
-            int x = i * 4;
-            if (y > wallHeightFromHorizon * 4 && y <= (g_screenHeight - wallHeightFromHorizon) * 4)
+            //wall or ceiling\floor?
+            if (y > floorHeight * 4 && y <= (g_screenHeight - floorHeight) * 4)
             {
-                
-                switch (m_gameGraphics.m_raysInfoVec.const_at(i).entityHit)
+                if (flatShading)
                 {
-                case EntityType::Wall:
-                    pixelColor = { 0xff, (m_gameGraphics.m_raysInfoVec.const_at(i).lastSideChecked
-                         == 1) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , wallShade };
-                    break;
-                case EntityType::Baudry:
-                    pixelColor = { 0xff, 0xaa, 0xff , wallShade };
-                    break;
-                default:
-                    pixelColor = sf::Color::Transparent;
-                    break;
+                    currentColor = flatColor;
                 }
+                else
+                {
+                    //if the end of the texture is reached, start over
+                    if (textureY >= currentTexture->height())
+                        textureY = 0;
+                    //or textureY = textureY%currentTexture->height();
+
+                    currentColor.r = currentTexture->m_texturePixels
+                        [(textureX + int(textureY) * currentTexture->width())*4 +0];
+                    currentColor.g = currentTexture->m_texturePixels
+                        [(textureX + int(textureY) * currentTexture->width())*4 +1];
+                    currentColor.b = currentTexture->m_texturePixels
+                        [(textureX + int(textureY) * currentTexture->width())*4 +2];
+                    currentColor.a = boxShade;
+
+                    textureY += texYStep;
+                }    
             }
             else
             {
-                pixelColor = sf::Color::Transparent;
+                currentColor = sf::Color::Transparent;
             }
-            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = pixelColor.r;
-            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
-            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
-            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = currentColor.r;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = currentColor.g;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = currentColor.b;
+            m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = currentColor.a;
         }
     }
 }
@@ -271,11 +351,13 @@ void GameGraphics::generate_background()
             if (y < g_screenHeight * 2)
             {
                 floorShade = 0x88 * ((std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 2));
+                //floorShade = 0xff * (1 -((std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 2)));
                 pixelColor = { 0x88, 0x88, 0xff, floorShade };
             }
             else
             {
                 floorShade = 0xff * ((std::abs(g_screenHeight * 2 - y) * std::abs(g_screenHeight * 2 - y)) / (float)((g_screenHeight * 2) * (g_screenHeight * 2)));
+                //floorShade = 0xff * (1 - ((std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 2)));
                 pixelColor = { 0x88, 0x88, 0xff, floorShade };
             }
             m_mainBackground.m_pixels[y * g_screenWidth + x] = pixelColor.r;
@@ -311,12 +393,12 @@ void GameGraphics::draw_minimap_triangles()
     for (int i = 0; i < m_raysInfoVec.arrSize; ++i)
     {
         triangles[i + 1] = { { m_minimapInfo.minimapCenterY + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale, m_minimapInfo.minimapCenterX + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale},
-        sf::Color(0, 0xFF, 0xFF, (1 - m_raysInfoVec.const_at(i).hitPos.Length() / m_mapData.maxRenderDist) * 0xFF) };
+        sf::Color(0, 0xFF, 0xFF, (1 - m_raysInfoVec.const_at(i).length / m_mapData.maxRenderDist) * 0xFF) };
     }
     m_window.draw(triangles);
 }
 
-void GameGraphics::inGameMapAssets::create(const GameGraphics& gg)
+void GameGraphics::InGameMapAssets::create(const GameGraphics& gg)
 {
     int xoverw = g_screenWidth / gg.m_mapData.gameMap.x;
     int yoverh = g_screenHeight / gg.m_mapData.gameMap.y;

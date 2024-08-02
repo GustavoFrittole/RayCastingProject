@@ -31,9 +31,9 @@ Note: the game starts paused. Press `ESC` to gain control
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
 
 ## known issues
- - There's a glitch in wall shading due to a change in casting algorithms.
- - ~~The currently adopted ray casting technique is far inferior compared to algorithms like DDA and others.~~
+ - The currently adopted ray casting technique is far inferior compared to algorithms like DDA and others.
  - ~~The rendering process would greatly benefit form the employment of parallel computing (at least cpu multithreading).~~
+ - There's a glitch in wall shading that becomes evident when the render distance radius is lower than 6 units (this is due to the imprecision of the ray casting, which is to be replaced).
  - ~~Many static elements that are calculated per frame (textures and masks mainly) could be easily generated only once at start time.~~
  - ~~Current implementation of multi threading is inefficient due to recreation of threads~~
 

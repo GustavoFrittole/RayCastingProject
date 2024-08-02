@@ -20,7 +20,7 @@ const RayInfo& RayInfoArr::const_at(int index) const
 	else
 		return m_rayArr[index];
 }
-//TODO: check order of initializer List
+
 GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTransform) : m_gameCamera(gc), m_entityTransform(entityTransform),
 										m_playerController(*this),  m_processorCount(get_thread_number()), m_rayInfoArr(gc.pixelWidth)
 {
@@ -204,7 +204,7 @@ void GameCore::view_by_ray_casting()
 
 
 		//keeps track of what was the last cell side checkd (-1 x, +1 y)
-		int lastSideChecked = 0;
+		CellSide lastSideChecked = CellSide::Unknown;
 
 		//The ray is incremented in order to reach the next cell intersection
 		//switching axis when one side becomes shorter then the other
@@ -215,7 +215,7 @@ void GameCore::view_by_ray_casting()
 				if (rayLengthAtIntersectX > m_gameCamera.maxRenderDist)
 					break;
 				currentPosInMap[0] += unitaryStepX;
-				lastSideChecked = -1;
+				lastSideChecked = CellSide::Vert;
 				rayLengthAtIntersectX += lengthIncrementX;
 			}
 			else
@@ -223,26 +223,26 @@ void GameCore::view_by_ray_casting()
 				if (rayLengthAtIntersectY > m_gameCamera.maxRenderDist)
 					break;
 				currentPosInMap[1] += unitaryStepY;
-				lastSideChecked = 1;
+				lastSideChecked = CellSide::Hori;
 				rayLengthAtIntersectY += lengthIncrementY;
 			}
 			chech_position_in_map(currentPosInMap[0], currentPosInMap[1], hitMarker);
 			
 		}
 
-		if (lastSideChecked == -1)
+		if (lastSideChecked == CellSide::Vert)
 			rayLength = rayLengthAtIntersectX - lengthIncrementX;
 		else 
 			rayLength = rayLengthAtIntersectY - lengthIncrementY;
 
 		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked};
-		//std::cout << currentRayLength << " " << currentRayDir.y << std::endl;
+
 		//rotate ray for next iteration
 		currentRayDir *= math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
 	}
 }
 
-//Simple but inefficient ray casting 
+//Simple but inefficient form of ray casting 
 //  
 //void GameCore::view_by_ray_casting()
 //{

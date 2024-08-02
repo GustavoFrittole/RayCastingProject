@@ -17,6 +17,13 @@ enum class EntityType : char
 	NoHit = '\0'
 };
 
+enum class CellSide 
+{
+	Vert,
+	Hori,
+	Unknown
+};
+
 struct MapData
 {
 	const float& fov;
@@ -29,8 +36,8 @@ struct RayInfo
 {
 	EntityType entityHit = EntityType::NoHit;
 	math::Vect2 hitPos = {0, 0};
-	float dist = 0;
-	int lastSideChecked = 0;
+	float length = 0;
+	CellSide lastSideChecked = CellSide::Unknown;
 };
 
 class RayInfoArr 

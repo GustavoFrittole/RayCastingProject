@@ -41,6 +41,12 @@ struct GameMap
 	std::unique_ptr<std::string> cells;
 };
 
+struct GameAssets
+{
+	std::string wallTexFilePath;
+	std::string boundryTexFilePath;
+};
+
 namespace DataUtils
 {
 	struct GameData
@@ -49,6 +55,7 @@ namespace DataUtils
 		GameCamera gCamera;
 		GameMap gMap;
 		ScreenStats screenStats;
+		GameAssets gAssets;
 	};
 
 	std::unique_ptr<GameData> load_game_data(const std::string&);

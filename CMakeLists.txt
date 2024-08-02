@@ -4,24 +4,12 @@ project(CMakeSFMLProject LANGUAGES CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
-
-## move assets to the solution
+#copy assets folder in root
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(DEST_DIR "${CMAKE_BINARY_DIR}/assets")
-
-set(FILES_TO_COPY
-    "${SOURCE_DIR}/Roboto-Regular.ttf"
-    "${SOURCE_DIR}/map.txt"
-    "${SOURCE_DIR}/config.json"
-)
-
-foreach(file ${FILES_TO_COPY})
-    get_filename_component(filename ${file} NAME)
-    file(COPY ${file} DESTINATION ${DEST_DIR})
-endforeach()
+set(DEST_DIR "${CMAKE_BINARY_DIR}")
+file(COPY ${SOURCE_DIR} DESTINATION ${DEST_DIR})
 
 include(FetchContent)
-
 ## search for sfml
 find_package(SFML 2.6 COMPONENTS system window graphics QUIET)
 

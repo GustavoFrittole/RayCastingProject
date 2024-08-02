@@ -15,8 +15,8 @@ int main()
 
 /*
 TODO:
--IMPLEMENT DDA ALGORITHM
--IMPLEMENT ZBUFFER
--COMMENT THE CODE
+-Implement camera plane (camera vector)
+-Floor and sky textures
+-Comment code
 */
 

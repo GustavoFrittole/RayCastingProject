@@ -3,6 +3,9 @@
 #include<fstream>
 #include<nlohmann/json.hpp>
 #include<exception>
+#include <iostream>
+
+#define PI 3.14159265358979f
 
 using json = nlohmann::json;
 
@@ -27,8 +30,7 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->gCamera.pixelWidth = screenStats::g_screenWidth;
 		gameData->gCamera.pixelHeight = screenStats::g_screenHeight;
 
-
-		gameData->gCamera.fov = data["gameCamera"]["FOV"].get<float>() * (3.14159265358979323846f / 180);
+		gameData->gCamera.fov = data["gameCamera"]["FOV"].get<float>() * (PI/ 180);
 		gameData->gCamera.maxRenderDist = data["gameCamera"]["maxRenderDist"].get<float>();
 		gameData->gCamera.rayPrecision = data["gameCamera"]["rayPrecision"].get<float>();
 
@@ -39,7 +41,11 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->screenStats.minimapScale = data["screenStats"]["minimapScale"].get<float>();
 		gameData->screenStats.halfWallHeight = data["screenStats"]["halfWallHeight"].get<float>();
 
+		gameData->gAssets.wallTexFilePath = data["assets"]["wallTexPath"].get<std::string>();
+		gameData->gAssets.boundryTexFilePath = data["assets"]["boundryTexPath"].get<std::string>();
+
 		mapFilePath = data["gameMap"]["mapCellsFile"].get<std::string>();
+		std::cout << data.dump(4);
 	}
 	catch (std::exception& e)
 	{
