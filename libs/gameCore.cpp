@@ -165,11 +165,11 @@ void GameCore::view_by_ray_casting()
 		EntityType hitMarker = EntityType::Nothing;
 
 		//increment in ray length that projects in an unitaty movement (unitaryStep) in X and Y direction
-		float lengthIncrementX = std::sqrtf(1 + std::powf(currentRayDir.y / currentRayDir.x, 2));
-		float lengthIncrementY = std::sqrtf(1 + std::powf(currentRayDir.x / currentRayDir.y, 2));
+		float lengthIncrementX = std::sqrt(1 + std::pow(currentRayDir.y / currentRayDir.x, 2));
+		float lengthIncrementY = std::sqrt(1 + std::pow(currentRayDir.x / currentRayDir.y, 2));
 
 		//same as currentRay but rounded to int 
-		int currentPosInMap[2] = { startingPos.x, startingPos.y };
+		int currentPosInMap[2] = { (int)startingPos.x, (int)startingPos.y };
 
 		//length of the ray at progressive intersections with cell on the x and y axis
 		float rayLengthAtIntersectX;
@@ -189,7 +189,7 @@ void GameCore::view_by_ray_casting()
 		else
 		{
 			unitaryStepX = 1;
-			rayLengthAtIntersectX = (float(currentPosInMap[0] + 1) - startingPos.x) * lengthIncrementX;
+			rayLengthAtIntersectX = ((currentPosInMap[0] + 1) - startingPos.x) * lengthIncrementX;
 		}
 		if (currentRayDir.y < 0)
 		{
@@ -199,7 +199,7 @@ void GameCore::view_by_ray_casting()
 		else
 		{
 			unitaryStepY = 1;
-			rayLengthAtIntersectY = (float(currentPosInMap[1] +1 ) - startingPos.y ) * lengthIncrementY;
+			rayLengthAtIntersectY = ((currentPosInMap[1] + 1) - startingPos.y ) * lengthIncrementY;
 		}
 
 
