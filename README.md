@@ -1,3 +1,4 @@
+
 # Ray casting based maze explorer
 Personal project exploring the concept of ray casting
 ## How to build
@@ -26,13 +27,23 @@ and the process of creation is displayed at game start.
 - `ESC` to pause and view map, 
 - `tab` to view full screen map without pausing,
 - `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
+
 Note: the game starts paused. Press `ESC` to gain control
-## 
+
+## Functionalities
+Pre-game map generation, full screen map and mini map, graphical display of shortest path, customizable parameters (FOV 360° in image 5).
+
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
+## Basic class diagram
+![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25)
+
+*All not specified relations are 1:1*
 
 ## known issues
 - mouse speed lowers as the frame rate increases (whilst arrows rotation behaves correctly);
 - ~~rendering thread pool is deadlocked if width%12 = 0;~~
 - ~~json parser doest return error when options are missing, making the bug difficult to read;~~
 - ~~texture are not inverted in accordance with the orientation of the faces of the cube.~~
+
+
 
