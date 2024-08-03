@@ -26,22 +26,28 @@ namespace math
 	struct Mat2x2 
 	{
 		float params[2][2]{};
-		Mat2x2() = default;
+		Mat2x2(float, float, float, float);
 	};
 	struct Vect2
 	{
 		float x=0, y=0;
 		Vect2() = default;
 		Vect2 (float a, float b) : x(a), y(b) {}
-		Vect2 operator*(Mat2x2&);
-		Vect2& operator*=(Mat2x2&);
-		Vect2 operator+(Vect2&);
-		Vect2& operator+=(Vect2&);
-		Vect2 operator*(float);
+		Vect2 operator*(const Mat2x2&) const;
+		Vect2& operator*=(const Mat2x2&);
+		Vect2 operator+(const Vect2&) const;
+		Vect2 operator-(const Vect2&) const;
+		Vect2& operator+=(const Vect2&);
+		Vect2 operator*(float) const;
+		Vect2 operator/(float) const;
 		float Length() const;
 	};
 
 	Mat2x2 rotation_mat2x2(float angle);
+
+	float rad_to_deg(float rad);
+	float deg_to_rad(float deg);
+	float vec_to_rad(Vect2 v);
 }
 
 int get_thread_number();

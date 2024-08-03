@@ -2,6 +2,8 @@
 #include<cmath>
 #include<thread>
 
+#define PI 3.14159265359f
+
 int debug::GameTimer::get_frame_rate()
 {
 	int fr = ((double)m_frameCounter / (double)(std::chrono::high_resolution_clock::now() - tStart).count()) * 1000000000;
@@ -27,22 +29,32 @@ int debug::GameTimer::reset_timer()
 	return dt;
 }
 
+math::Mat2x2::Mat2x2(float xx, float xy, float yx, float yy)
+{
+	params[0][0] = xx;
+	params[0][1] = xy;
+	params[1][0] = yx;
+	params[1][1] = yy;
+};
+
 math::Mat2x2 math::rotation_mat2x2(float angle)
 {
 	float angRads = angle;
-	return math::Mat2x2{std::cos(angRads), -std::sin(angRads),
-		std::sin(angRads), std::cos(angRads)};
+	return math::Mat2x2(std::cos(angRads), -std::sin(angRads),
+		std::sin(angRads), std::cos(angRads));
 }
 
-math::Vect2 math::Vect2::operator*(math::Mat2x2& mat2x2)
+math::Vect2 math::Vect2::operator*(const math::Mat2x2& mat2x2) const
 {
 	return math::Vect2{ x * mat2x2.params[0][0] + y * mat2x2.params[0][1], x * mat2x2.params[1][0] + y * mat2x2.params[1][1] };
 }
 
-math::Vect2& math::Vect2::operator*=(math::Mat2x2& mat2x2)
+math::Vect2& math::Vect2::operator*=(const math::Mat2x2& mat2x2)
 {
-	this->x = x * mat2x2.params[0][0] + y * mat2x2.params[0][1];
-	this->y = x * mat2x2.params[1][0] + y * mat2x2.params[1][1];
+	float oldX = x;
+	float oldY = y;
+	this->x = oldX * mat2x2.params[0][0] + oldY * mat2x2.params[0][1];
+	this->y = oldX * mat2x2.params[1][0] + oldY * mat2x2.params[1][1];
 	return *this;
 }
 
@@ -51,19 +63,43 @@ float math::Vect2::Length() const
 	return std::sqrt(x * x + y * y);
 }
 
-math::Vect2 math::Vect2::operator+(Vect2& other)
+math::Vect2 math::Vect2::operator+(const Vect2& other) const
 {
 	return { x + other.x, y + other.y };
 }
-math::Vect2& math::Vect2::operator+=(Vect2& other)
+
+math::Vect2 math::Vect2::operator-(const Vect2& other) const
+{
+	return { x - other.x, y - other.y };
+}
+
+math::Vect2& math::Vect2::operator+=(const Vect2& other)
 {
 	this->x += other.x;
 	this->y += other.y;
 	return *this;
 }
-math::Vect2 math::Vect2::operator*(float scal)
+math::Vect2 math::Vect2::operator*(float scal) const
 {
 	return { x * scal, y * scal };
+}
+
+math::Vect2 math::Vect2::operator/(float scal) const
+{
+	return { x / scal, y / scal };
+}
+
+float math::rad_to_deg(float rad) {
+	return rad * 180 / PI;
+}
+
+float math::deg_to_rad(float deg) {
+	return deg * PI / 180;
+}
+
+float math::vec_to_rad(math::Vect2 v)
+{
+	return std::atan(v.y / v.x);
 }
 
 int get_thread_number()

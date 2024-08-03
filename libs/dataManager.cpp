@@ -5,8 +5,6 @@
 #include<exception>
 #include <iostream>
 
-#define PI 3.14159265358979f
-
 using json = nlohmann::json;
 
 void load_map_from_file(std::unique_ptr<std::string>& tiles, const std::string&);
@@ -30,7 +28,7 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->gCamera.pixelWidth = screenStats::g_screenWidth;
 		gameData->gCamera.pixelHeight = screenStats::g_screenHeight;
 
-		gameData->gCamera.fov = data.at("gameCamera").at("FOV").get<float>() * (PI/ 180);
+		gameData->gCamera.fov = math::deg_to_rad( data.at("gameCamera").at("FOV").get<float>() );
 		gameData->gCamera.maxRenderDist = data.at("gameCamera").at("maxRenderDist").get<float>();
 		gameData->gCamera.rayPrecision = data.at("gameCamera").at("rayPrecision").get<float>();
 
@@ -43,6 +41,7 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 
 		gameData->gAssets.wallTexFilePath = data.at("assets").at("wallTexPath").get<std::string>();
 		gameData->gAssets.boundryTexFilePath = data.at("assets").at("boundryTexPath").get<std::string>();
+		gameData->gAssets.floorTexFilePath = data.at("assets").at("floorTexPath").get<std::string>();
 
 		mapFilePath = data.at("gameMap").at("mapCellsFile").get<std::string>();
 		std::cout << data.dump(4);

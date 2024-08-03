@@ -4,7 +4,6 @@
 #include<thread>
 #include<stdexcept>
 #include<cmath>
-#include <iostream>
 
 RayInfo& RayInfoArr::at(int index)
 {

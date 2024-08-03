@@ -94,6 +94,7 @@ private:
     GameAssets m_gameAssets;
     Texture m_wallTexture;
     Texture m_baundryTexture;
+    Texture m_floorTexture;
 
     bool m_hadFocus = false;
     bool m_paused = false;
@@ -109,6 +110,7 @@ private:
     void draw_background();
     void draw_view();
     void draw_path_out();
+    void draw_textured_background();
     void load_end_screen();
     void generate_background();
     void handle_events();
@@ -120,7 +122,6 @@ private:
         RenderingThreadPool(GameGraphics&);
         ~RenderingThreadPool();
         void render_view();
-        //bool is_buisy();
 
     private:
         int m_poolSize = 0;

@@ -19,10 +19,11 @@
     },
     "screenStats" : {
         "minimapScale" : 6,
-	    "halfWallHeight" : 0.5
+	    "halfWallHeight" : 1
     },
     "assets" : {
         "wallTexPath" : "assets\\wall.png",
-        "boundryTexPath" : "assets\\boundry.png"
+        "boundryTexPath" : "assets\\boundry.png",
+        "floorTexPath" : "assets\\floor.jpg"
     }
 }
