@@ -42,6 +42,7 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->gAssets.wallTexFilePath = data.at("assets").at("wallTexPath").get<std::string>();
 		gameData->gAssets.boundryTexFilePath = data.at("assets").at("boundryTexPath").get<std::string>();
 		gameData->gAssets.floorTexFilePath = data.at("assets").at("floorTexPath").get<std::string>();
+		gameData->gAssets.skyTexFilePath = data.at("assets").at("skyTexPath").get<std::string>();
 
 		mapFilePath = data.at("gameMap").at("mapCellsFile").get<std::string>();
 		std::cout << data.dump(4);

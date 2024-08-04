@@ -44,11 +44,7 @@ math::Mat2x2 math::rotation_mat2x2(float angle)
 		std::sin(angRads), std::cos(angRads));
 }
 
-<<<<<<< HEAD
 math::Vect2 math::Vect2::operator*(const math::Mat2x2& mat2x2) const
-=======
-math::Vect2 math::Vect2::operator*(const math::Mat2x2& mat2x2)
->>>>>>> 8a9f4bbdf1384779666525eec1847ff10d92dfc2
 {
 	return math::Vect2{ x * mat2x2.params[0][0] + y * mat2x2.params[0][1], x * mat2x2.params[1][0] + y * mat2x2.params[1][1] };
 }

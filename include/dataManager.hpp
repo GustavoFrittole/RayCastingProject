@@ -46,6 +46,7 @@ struct GameAssets
 	std::string wallTexFilePath;
 	std::string boundryTexFilePath;
 	std::string floorTexFilePath;
+	std::string skyTexFilePath;
 };
 
 namespace DataUtils

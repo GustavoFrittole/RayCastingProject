@@ -95,6 +95,7 @@ private:
     Texture m_wallTexture;
     Texture m_baundryTexture;
     Texture m_floorTexture;
+    Texture m_skyTexture;
 
     bool m_hadFocus = false;
     bool m_paused = false;

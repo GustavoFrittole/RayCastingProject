@@ -24,6 +24,7 @@
     "assets" : {
         "wallTexPath" : "assets\\wall.png",
         "boundryTexPath" : "assets\\boundry.png",
-        "floorTexPath" : "assets\\floor.jpg"
+        "floorTexPath" : "assets\\floor.jpg",
+        "skyTexPath" : "assets\\sky.jpg"
     }
 }
