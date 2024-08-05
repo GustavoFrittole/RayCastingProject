@@ -101,6 +101,7 @@ private:
     bool m_paused = false;
     bool m_findPathRequested = false;
     bool m_tabbed = false;
+    bool m_linear = true;
 
     void draw_camera_view();
     void draw_minimap_triangles();

@@ -84,6 +84,11 @@ math::Vect2 math::Vect2::operator*(float scal) const
 	return { x * scal, y * scal };
 }
 
+float math::Vect2::operator*(const Vect2& other) const
+{
+	return  x * other.x + y * other.y ;
+}
+
 math::Vect2 math::Vect2::operator/(float scal) const
 {
 	return { x / scal, y / scal };

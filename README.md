@@ -27,6 +27,7 @@ and the process of creation is displayed at game start.
 - `ESC` to pause and view map, 
 - `tab` to view full screen map without pausing,
 - `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
+- `space` to toggle camera plane on and off.
 
 Note: the game starts paused. Press `ESC` to gain control
 

@@ -114,10 +114,10 @@ void GameGraphics::performGameCycle()
     //debug::GameTimer gt;
     //gt.reset_timer();
 
-    m_gameCore.view_by_ray_casting();
+    m_gameCore.view_by_ray_casting(m_linear);
     //std::cout << " casting    \t" << gt.reset_timer() << std::endl;
     draw_textured_background();
-    draw_background();
+    //draw_background();
     //std::cout << " draw back  \t" << gt.reset_timer() << std::endl;
     //std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
     draw_view();
@@ -273,8 +273,6 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
         float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
         float floorHeight = (g_screenHeight - screenWallHeight) / 2;
 
-        
-
         //can multiply with the alpha of walls, bleanding them with the dark backgroud 
         sf::Uint8 boxShade = (1 - (distance / (m_gameGraphics.m_mapData.maxRenderDist))) * 0xFF;
 
@@ -287,6 +285,8 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
         case EntityType::Wall:
             currentTexture = &m_gameGraphics.m_wallTexture;
             flatShading = false;
+            //flatShading = true;
+            //flatColor = { 0xff, (currRay.lastSideChecked == CellSide::Hori) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , boxShade };
             break;
         case EntityType::Baudry:
             currentTexture = &m_gameGraphics.m_baundryTexture;
@@ -299,49 +299,49 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
             break;
         }
 
-        sf::Color currentColor;
-
-        //--variables for texture navigation--
-        //relative position in wall based on what face is being textured
-        float posOnWallSide = 0;
-
-        //x alias u
-        int textureU = 0;
-        //y alias v
-        float textureV = 0;
-        float texVStep = 0;
-
-        //dont set up texture variables if not needed 
-        if(!flatShading)
-        {
-            if (currRay.lastSideChecked == CellSide::Hori)
-                posOnWallSide = currRay.hitPos.x + m_gameGraphics.m_mapData.playerTransform.coords.x;
-            else
-                posOnWallSide = currRay.hitPos.y + m_gameGraphics.m_mapData.playerTransform.coords.y;
-
-            posOnWallSide -= std::floorf(posOnWallSide);
-
-            texVStep = currentTexture->height() / screenWallHeight;
-
-            textureU = (int)(posOnWallSide * currentTexture->width());
-
-            //if the wall is seen from the south or west side, its texture's us need to be inverted 
-            if (currRay.lastSideChecked == CellSide::Hori && currRay.hitPos.y < 0 ||
-                currRay.lastSideChecked == CellSide::Vert && currRay.hitPos.x > 0) 
-                textureU = currentTexture->width() - textureU - 1;
-
-            //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
-            textureV = (screenWallHeight > g_screenHeight) ? texVStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
-        }
-
         //if there's something to be drawn
-        if(!dontDraw)
+        if (!dontDraw)
         {
+            sf::Color currentColor;
+
+            //--variables for texture navigation--
+            //relative position in wall based on what face is being textured
+            float posOnWallSide = 0;
+
+            //x alias u
+            int textureU = 0;
+            //y alias v
+            float textureV = 0;
+            float texVStep = 0;
+
+            //dont set up texture variables if not needed 
+            if (!flatShading)
+            {
+                if (currRay.lastSideChecked == CellSide::Hori)
+                    posOnWallSide = currRay.hitPos.x + m_gameGraphics.m_mapData.playerTransform.coords.x;
+                else
+                    posOnWallSide = currRay.hitPos.y + m_gameGraphics.m_mapData.playerTransform.coords.y;
+
+                posOnWallSide -= std::floorf(posOnWallSide);
+
+                texVStep = currentTexture->height() / screenWallHeight;
+
+                textureU = (int)(posOnWallSide * currentTexture->width());
+
+                //if the wall is seen from the south or west side, its texture's u needs to be inverted 
+                if (currRay.lastSideChecked == CellSide::Hori && currRay.hitPos.y < 0 ||
+                    currRay.lastSideChecked == CellSide::Vert && currRay.hitPos.x > 0)
+                    textureU = currentTexture->width() - textureU - 1;
+
+                //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
+                textureV = (screenWallHeight > g_screenHeight) ? texVStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
+            }
+
             int x = i * 4;
             //vertical scan line
             for (int y = 0; y < g_screenHeight * 4; y += 4)
             {
-                //is a wall being drawn
+                //in the wall range
                 if (y > floorHeight * 4 && y <= (g_screenHeight - floorHeight) * 4)
                 {
                     if (flatShading)
@@ -366,7 +366,6 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
                         m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = boxShade;
 
                         textureV += texVStep;
-
                     }
                 }
             }
@@ -419,17 +418,17 @@ void GameGraphics::draw_textured_background()
 {
     //the algorithm operates by linear inerpolating between the left and rightmost rays cast by the camera to obtain world coordinates 
     //that are then translated into uv space. The lenght of the rays is calculated each scanline from the corresponding screen height.
-    math::Vect2 leftmostRayDir = { std::cos(m_mapData.playerTransform.forewardAngle), std::sin(m_mapData.playerTransform.forewardAngle)};
-    math::Vect2 rightmostRayDir = leftmostRayDir;
-    leftmostRayDir *= math::rotation_mat2x2( + m_mapData.fov/2 );
-    rightmostRayDir *= math::rotation_mat2x2( - m_mapData.fov/2 );
+    math::Vect2 leftmostRayDir = m_gameCore.m_cameraDir - m_gameCore.m_cameraPlane / 2;
+    math::Vect2 rightmostRayDir = m_gameCore.m_cameraDir + m_gameCore.m_cameraPlane / 2;
+
+    //std::cout << leftmostRayDir.Length() << " " << rightmostRayDir.Length() << math:: leftmostRayDir.Length() << " " << rightmostRayDir.Length() << std::endl;
 
     for (int y = 0; y < g_screenHeight/2; ++y)
     {
         //inverse of the formula used in draw_view() to calculate wall height, witch is:
                     //  float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
                     //  float floorHeight = (g_screenHeight - screenWallHeight) / 2;
-        float rayLength = (g_screenHeight * m_halfWallHeight)*2/ ((float)g_screenHeight - (2 * y));
+        float rayLength = (g_screenHeight * m_halfWallHeight)/ (g_screenHeight - (2.f * y));
 
         //increment for interpolation
         math::Vect2 xyIncrement = ((rightmostRayDir - leftmostRayDir) * rayLength) / g_screenWidth;
@@ -665,6 +664,14 @@ void GameGraphics::handle_events()
             else
             {
                 m_tabbed = false;
+            }
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+            {
+                m_linear = false;
+            }
+            else
+            {
+                m_linear = true;
             }
 
         }

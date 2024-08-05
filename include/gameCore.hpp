@@ -68,12 +68,15 @@ public:
 	GameCore(GameCamera gc, GameMap&, EntityTransform&);
 
 	void update_entities();
-	void view_by_ray_casting();
+	void view_by_ray_casting(bool cameraPlane);
 	void start_internal_time();
 	MapData getMapData() const;
 	const RayInfoArr& getRayInfoArr() { return m_rayInfoArr; };
 	bool generate_map_step() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map_step()); }
 	bool generate_map() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map()); }
+
+	math::Vect2 m_cameraPlane;
+	math::Vect2 m_cameraDir;
 
 	//should be singelton
 	class PlayerController 
