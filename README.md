@@ -7,14 +7,14 @@ git clone https://github.com/GustavoFrittole/RayCastingProject.git
 cd RayCastingProject
 ```
 ```
-cmake -G"<Choose generator>" -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S . -B build/release
+cmake -G"<Choose generator>" -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S .
 ```
 ```
 cmake --build ./build/release
 ```
 Cmake will copy the asset folder in the user specified binary folder (./build/release). To run the code directly, move the copied asset folder in the same dir of the executable.
 ```
-./build/rel/bin/app.exe
+./build/release/bin/main.exe
 ```
 The project relies on SFML (for controls, handling and drawing on windows) and will attempt to fetch it unless the package can be retrieved. When building on linux having this dependency installed in advance might be more practical.
 ## Usage
