@@ -290,8 +290,8 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 		}
 		else
 		{
-			lengthIncrementX = std::sqrtf(1 + std::powf(currentRayDir.y / currentRayDir.x, 2));
-			lengthIncrementY = std::sqrtf(1 + std::powf(currentRayDir.x / currentRayDir.y, 2));
+			lengthIncrementX = std::sqrt(1 + std::pow(currentRayDir.y / currentRayDir.x, 2));
+			lengthIncrementY = std::sqrt(1 + std::pow(currentRayDir.x / currentRayDir.y, 2));
 		}
 
 		//same as currentRay but rounded to int 
