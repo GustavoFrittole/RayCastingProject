@@ -35,6 +35,10 @@ Note: the game starts paused. Press `ESC` to gain control
 Pre-game map generation, full screen map and mini map, graphical display of shortest path, customizable parameters (FOV 360° in image 5).
 
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
+
+## linear - euclidean realtime switch
+![switch](https://github.com/user-attachments/assets/51c9e430-45ce-43cb-9731-6220cd7977cc)
+
 ## Basic class diagram
 ![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25)
 
