@@ -32,7 +32,8 @@ and the process of creation is displayed at game start.
 Note: the game starts paused. Press `ESC` to gain control
 
 ## Functionalities
-Pre-game map generation, full screen map and mini map, graphical display of shortest path, customizable parameters (FOV 360° in image 5).
+Pre-game map generation, custom map, in-game full screen map and mini map, calculation display of shortest path, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
+Note: distance based shading of horizontal planes (sky/floor) is only availeble in linear perspective mode.
 
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
 
