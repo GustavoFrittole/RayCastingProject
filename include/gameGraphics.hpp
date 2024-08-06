@@ -80,7 +80,7 @@ private:
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
     GameCore::PlayerController& m_playerController;
-    MapData m_mapData;
+    StateData m_stateData;
     std::vector<std::pair<int, int>> m_pathToGoal;
     std::unique_ptr<PathFinder> m_pathFinder;
     const MinimapInfo m_minimapInfo;
@@ -94,11 +94,14 @@ private:
     GameAssets m_gameAssets;
     Texture m_wallTexture;
     Texture m_baundryTexture;
+    Texture m_floorTexture;
+    Texture m_skyTexture;
 
     bool m_hadFocus = false;
     bool m_paused = false;
     bool m_findPathRequested = false;
     bool m_tabbed = false;
+    bool m_linear = true;
 
     void draw_camera_view();
     void draw_minimap_triangles();
@@ -107,8 +110,8 @@ private:
     void draw_map();
     void draw_end_screen();
     void draw_background();
-    void draw_view();
     void draw_path_out();
+    void draw_view();
     void load_end_screen();
     void generate_background();
     void handle_events();
@@ -120,21 +123,24 @@ private:
         RenderingThreadPool(GameGraphics&);
         ~RenderingThreadPool();
         void render_view();
-        //bool is_buisy();
 
     private:
         int m_poolSize = 0;
         GameGraphics& m_gameGraphics;
         std::vector<std::thread> m_threads;
         std::vector<std::mutex> m_mutexVecStart;
+        std::vector<std::mutex> m_mutexVecMid;
         std::vector<std::mutex> m_mutexVecEnd;
         std::atomic_int jobs;
-        int m_lastSectionSize = 0;
+        int m_lastSectionView = 0;
+        int m_lastSectionBackgroud = 0;
         bool m_isActive = true;
 
-        float m_verticalVisibleAngle = ((screenStats::g_screenHeight * m_gameGraphics.m_mapData.fov)/screenStats::g_screenWidth);
+        float m_verticalVisibleAngle = ((screenStats::g_screenHeight * m_gameGraphics.m_stateData.fov)/screenStats::g_screenWidth);
 
-        void draw_section(int start, int end);
+        void draw_section(int start, int end, const bool& linear);
+        void draw_textured_background(float startY, float endY);
+
     };
 
     RenderingThreadPool m_renderingThreadPool;

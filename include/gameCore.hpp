@@ -24,12 +24,14 @@ enum class CellSide
 	Unknown
 };
 
-struct MapData
+struct StateData
 {
 	const float& fov;
 	const float& maxRenderDist;
 	const EntityTransform& playerTransform;
 	const GameMap& gameMap;
+	const math::Vect2& m_cameraDir;
+	const math::Vect2& m_cameraPlane;
 };
 
 struct RayInfo
@@ -68,9 +70,9 @@ public:
 	GameCore(GameCamera gc, GameMap&, EntityTransform&);
 
 	void update_entities();
-	void view_by_ray_casting();
+	void view_by_ray_casting(bool cameraPlane);
 	void start_internal_time();
-	MapData getMapData() const;
+	StateData getMapData() const;
 	const RayInfoArr& getRayInfoArr() { return m_rayInfoArr; };
 	bool generate_map_step() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map_step()); }
 	bool generate_map() { return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map()); }
@@ -91,6 +93,8 @@ public:
 
 private:
 	GameCamera m_gameCamera{};
+	math::Vect2 m_cameraPlane{1,0};
+	math::Vect2 m_cameraDir{0,1};
 	EntityTransform m_entityTransform{};
 	GameMap m_gameMap{};
 	PlayerInputCache m_pInputCache{};

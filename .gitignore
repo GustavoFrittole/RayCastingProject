@@ -13,6 +13,7 @@
 *.out
 *.app
 
+doc
 Build
 build
 .vscode

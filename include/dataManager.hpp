@@ -9,8 +9,7 @@
 namespace screenStats
 {
 	constexpr int g_screenHeight = 720;
-	//constexpr int g_screenWidth = g_screenHeight * 16 / 9;
-	constexpr int g_screenWidth = g_screenHeight * 12 / 9;
+	constexpr int g_screenWidth = g_screenHeight * 16 / 9;
 }
 //
 
@@ -46,6 +45,8 @@ struct GameAssets
 {
 	std::string wallTexFilePath;
 	std::string boundryTexFilePath;
+	std::string floorTexFilePath;
+	std::string skyTexFilePath;
 };
 
 namespace DataUtils

@@ -7,14 +7,14 @@ git clone https://github.com/GustavoFrittole/RayCastingProject.git
 cd RayCastingProject
 ```
 ```
-cmake -G"MinGW Makefiles" -DCMAKE_BUILD_TYPE=release -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S . -B build/release
+cmake -G"<Choose generator>" -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S .
 ```
 ```
 cmake --build ./build/release
 ```
 Cmake will copy the asset folder in the user specified binary folder (./build/release). To run the code directly, move the copied asset folder in the same dir of the executable.
 ```
-./build/rel/bin/app.exe
+./build/release/bin/main.exe
 ```
 The project relies on SFML (for controls, handling and drawing on windows) and will attempt to fetch it unless the package can be retrieved. When building on linux having this dependency installed in advance might be more practical.
 ## Usage
@@ -27,13 +27,19 @@ and the process of creation is displayed at game start.
 - `ESC` to pause and view map, 
 - `tab` to view full screen map without pausing,
 - `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
+- `space` to toggle camera plane on and off.
 
 Note: the game starts paused. Press `ESC` to gain control
 
 ## Functionalities
-Pre-game map generation, full screen map and mini map, graphical display of shortest path, customizable parameters (FOV 360° in image 5).
+Pre-game map generation, custom map, in-game full screen map and mini map, calculation display of shortest path, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
+Note: distance based shading of horizontal planes (sky/floor) is only availeble in linear perspective mode.
 
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
+
+## linear - euclidean realtime switch
+![switch](https://github.com/user-attachments/assets/51c9e430-45ce-43cb-9731-6220cd7977cc)
+
 ## Basic class diagram
 ![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25)
 
@@ -41,7 +47,7 @@ Pre-game map generation, full screen map and mini map, graphical display of shor
 
 ## known issues
 - mouse speed lowers as the frame rate increases (whilst arrows rotation behaves correctly);
-- rendering thread pool is deadlocked if width%12 = 0; (P.S. : was not able to reproduce bug)
+- ~~rendering thread pool is deadlocked if width%12 = 0;~~
 - ~~json parser doest return error when options are missing, making the bug difficult to read;~~
 - ~~texture are not inverted in accordance with the orientation of the faces of the cube.~~
 
