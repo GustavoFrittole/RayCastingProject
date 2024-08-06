@@ -293,9 +293,9 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 			lengthIncrementX = std::sqrt(1 + std::pow(currentRayDir.y / currentRayDir.x, 2));
 			lengthIncrementY = std::sqrt(1 + std::pow(currentRayDir.x / currentRayDir.y, 2));
 		}
-
+    
 		//same as currentRay but rounded to int 
-		int currentPosInMap[2] = { startingPos.x, startingPos.y };
+		int currentPosInMap[2] = { (int)startingPos.x, (int)startingPos.y };
 
 		//length of the ray at progressive intersections with cell on the x and y axis
 		float rayLengthAtIntersectX;
@@ -325,9 +325,8 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 		else
 		{
 			unitaryStepY = 1;
-			rayLengthAtIntersectY = (float(currentPosInMap[1]) + (1 - startingPos.y)) * lengthIncrementY;
-		}
 
+			rayLengthAtIntersectY = (float(currentPosInMap[1]) + (1 - startingPos.y)) * lengthIncrementY;
 
 		//keeps track of what was the last cell side checked
 		CellSide lastSideChecked = CellSide::Unknown;
