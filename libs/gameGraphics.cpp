@@ -312,7 +312,7 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
         //float wallAngle = (std::atan(m_gameGraphics.m_halfWallHeight / distance) );
         //float screenWallHeight = g_screenHeight  * wallAngle / (m_verticalVisibleAngle * m_gameGraphics.m_halfWallHeight);
 
-        //--this version is faster, has easy texture mapping but locks th evertical view angle at 90° (45° up 45° down)--
+        //--this version is faster, has easy texture mapping but locks th evertical view angle at 90ï¿½ (45ï¿½ up 45ï¿½ down)--
         float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
         float floorHeight = (g_screenHeight - screenWallHeight) / 2;
 
@@ -363,7 +363,7 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
             else
                 posOnWallSide = currRay.hitPos.y + m_gameGraphics.m_stateData.playerTransform.coords.y;
 
-            posOnWallSide -= std::floorf(posOnWallSide);
+                posOnWallSide -= std::floor(posOnWallSide);
 
             texVStep = currentTexture->height() / screenWallHeight;
 
