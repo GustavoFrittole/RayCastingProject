@@ -325,8 +325,8 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 		else
 		{
 			unitaryStepY = 1;
-
 			rayLengthAtIntersectY = (float(currentPosInMap[1]) + (1 - startingPos.y)) * lengthIncrementY;
+		}
 
 		//keeps track of what was the last cell side checked
 		CellSide lastSideChecked = CellSide::Unknown;
