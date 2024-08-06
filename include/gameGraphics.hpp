@@ -80,7 +80,7 @@ private:
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
     GameCore::PlayerController& m_playerController;
-    MapData m_mapData;
+    StateData m_stateData;
     std::vector<std::pair<int, int>> m_pathToGoal;
     std::unique_ptr<PathFinder> m_pathFinder;
     const MinimapInfo m_minimapInfo;
@@ -110,9 +110,8 @@ private:
     void draw_map();
     void draw_end_screen();
     void draw_background();
-    void draw_view();
     void draw_path_out();
-    void draw_textured_background();
+    void draw_view();
     void load_end_screen();
     void generate_background();
     void handle_events();
@@ -130,14 +129,18 @@ private:
         GameGraphics& m_gameGraphics;
         std::vector<std::thread> m_threads;
         std::vector<std::mutex> m_mutexVecStart;
+        std::vector<std::mutex> m_mutexVecMid;
         std::vector<std::mutex> m_mutexVecEnd;
         std::atomic_int jobs;
-        int m_lastSectionSize = 0;
+        int m_lastSectionView = 0;
+        int m_lastSectionBackgroud = 0;
         bool m_isActive = true;
 
-        float m_verticalVisibleAngle = ((screenStats::g_screenHeight * m_gameGraphics.m_mapData.fov)/screenStats::g_screenWidth);
+        float m_verticalVisibleAngle = ((screenStats::g_screenHeight * m_gameGraphics.m_stateData.fov)/screenStats::g_screenWidth);
 
-        void draw_section(int start, int end);
+        void draw_section(int start, int end, const bool& linear);
+        void draw_textured_background(float startY, float endY);
+
     };
 
     RenderingThreadPool m_renderingThreadPool;

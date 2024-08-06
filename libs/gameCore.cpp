@@ -42,9 +42,9 @@ GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTrans
 	m_cameraPlane = math::Vect2( m_cameraDir.y , -m_cameraDir.x ) * std::tan( m_gameCamera.fov/2 ) * 2;	
 }
 
-MapData GameCore::getMapData() const 
+StateData GameCore::getMapData() const 
 {
-	return MapData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap};
+	return StateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_cameraDir, m_cameraPlane};
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 

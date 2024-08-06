@@ -44,9 +44,9 @@ GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const
     m_raysInfoVec(m_gameCore.getRayInfoArr()), 
     m_playerController(m_gameCore.get_playerController()),
     m_pathToGoal(0), 
-    m_minimapInfo(gameData->screenStats.minimapScale, m_mapData.maxRenderDist),
+    m_minimapInfo(gameData->screenStats.minimapScale, m_stateData.maxRenderDist),
     m_halfWallHeight(gameData->screenStats.halfWallHeight),
-    m_mapData(m_gameCore.getMapData()),
+    m_stateData(m_gameCore.getMapData()),
     m_gameAssets(gameData->gAssets),
     m_renderingThreadPool(*this)
 {
@@ -88,7 +88,7 @@ void GameGraphics::create_assets()
     m_mainBackground.create(g_screenWidth, g_screenHeight, true);
     generate_background();
     load_end_screen();
-    m_pathFinder = std::make_unique<PathFinder>(m_mapData.gameMap.x, m_mapData.gameMap.y, *(m_mapData.gameMap.cells), m_pathToGoal);
+    m_pathFinder = std::make_unique<PathFinder>(m_stateData.gameMap.x, m_stateData.gameMap.y, *(m_stateData.gameMap.cells), m_pathToGoal);
     m_igMapAssets.create(*this);
     //wip
     m_wallTexture.create(m_gameAssets.wallTexFilePath);
@@ -105,9 +105,9 @@ void GameGraphics::performGameCycle()
     handle_events();
     m_gameCore.update_entities();
 
-    if (m_findPathRequested && m_mapData.gameMap.generated)
+    if (m_findPathRequested && m_stateData.gameMap.generated)
     {
-        m_pathFinder->find_path(m_mapData.playerTransform.coords.x, m_mapData.playerTransform.coords.y);
+        m_pathFinder->find_path(m_stateData.playerTransform.coords.x, m_stateData.playerTransform.coords.y);
         m_findPathRequested = false;
     }
 
@@ -116,7 +116,6 @@ void GameGraphics::performGameCycle()
 
     m_gameCore.view_by_ray_casting(m_linear);
     //std::cout << " casting    \t" << gt.reset_timer() << std::endl;
-    draw_textured_background();
     //draw_background();
     //std::cout << " draw back  \t" << gt.reset_timer() << std::endl;
     //std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
@@ -151,8 +150,8 @@ inline void GameGraphics::draw_view()
 
 inline bool GameGraphics::goal_reached()
 {
-    return (m_mapData.gameMap.cells->at(static_cast<int>(m_mapData.playerTransform.coords.x)
-        + static_cast<int>(m_mapData.playerTransform.coords.y) * m_mapData.gameMap.x) == 'g');
+    return (m_stateData.gameMap.cells->at(static_cast<int>(m_stateData.playerTransform.coords.x)
+        + static_cast<int>(m_stateData.playerTransform.coords.y) * m_stateData.gameMap.x) == 'g');
 }
 
 //----------------end-screen
@@ -181,6 +180,7 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) :
                                     m_poolSize(get_thread_number()), 
                                     m_threads(0), 
                                     m_mutexVecStart(m_poolSize),
+                                    m_mutexVecMid(m_poolSize),
                                     m_mutexVecEnd(m_poolSize),
                                     m_gameGraphics(gg),
                                     jobs(m_poolSize)
@@ -190,32 +190,55 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) :
         m_mutexVecStart.at(i).lock();
     }
 
-    int sectionsSize = m_gameGraphics.m_raysInfoVec.arrSize / (m_poolSize);
-    int currentSection;
-    int id = 0;
-    for (currentSection = 0; currentSection + sectionsSize <= m_gameGraphics.m_raysInfoVec.arrSize; currentSection += sectionsSize, ++id)
+    for (int i = 0; i < m_poolSize; ++i)
     {
-        m_threads.emplace_back([this, currentSection, sectionsSize, id] () mutable
+        m_mutexVecMid.at(i).lock();
+    }
+
+    int sectionsSizeView = m_gameGraphics.m_raysInfoVec.arrSize / (m_poolSize);
+    int currentSectionView = 0;
+
+    int sectionsSizeBackgroud = (g_screenHeight/2) / (m_poolSize);
+    int currentSectionBackgroud = 0;
+
+    for (int id = 0; id < m_poolSize; ++id)
+    {
+        m_threads.emplace_back([this, currentSectionView, sectionsSizeView, sectionsSizeBackgroud, currentSectionBackgroud, id] () mutable
             {
                 while (true)
                 {
                     jobs--;
+
                     {
                         std::unique_lock<std::mutex> lock(m_mutexVecStart.at(id));
                         if (!m_isActive) {
                             return;
                         }
                     }
-                    draw_section(currentSection, (currentSection + sectionsSize));
+                    if(m_gameGraphics.m_linear)
+                        draw_textured_background(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud));
                     jobs++;
+
+                    {
+                        std::unique_lock<std::mutex> lock(m_mutexVecMid.at(id));
+                    }
+                    draw_section(currentSectionView, (currentSectionView + sectionsSizeView), m_gameGraphics.m_linear);
+                    jobs++;
+
                     {
                         std::unique_lock<std::mutex> lock(m_mutexVecEnd.at(id));
                     }
                     
                 }
             });
+
+        currentSectionView += sectionsSizeView;
+        currentSectionBackgroud += sectionsSizeBackgroud;
+
     }
-    m_lastSectionSize = m_gameGraphics.m_raysInfoVec.arrSize - currentSection;
+    m_lastSectionView =  currentSectionView;
+    m_lastSectionBackgroud = currentSectionBackgroud;
+
 }
 
 GameGraphics::RenderingThreadPool::~RenderingThreadPool()
@@ -232,6 +255,7 @@ GameGraphics::RenderingThreadPool::~RenderingThreadPool()
 
 void GameGraphics::RenderingThreadPool::render_view()
 {
+    //wait for threads to be ready
     while (jobs != 0)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(0));
@@ -239,12 +263,31 @@ void GameGraphics::RenderingThreadPool::render_view()
 
     for (auto& m : m_mutexVecEnd)
         m.lock();
+
+    //start backgroud render
     for (auto& m : m_mutexVecStart)
         m.unlock();
 
-    if (m_lastSectionSize != 0)
+    if ( m_lastSectionBackgroud != 0 && m_gameGraphics.m_linear )
     {
-        draw_section(m_gameGraphics.m_raysInfoVec.arrSize - m_lastSectionSize, m_gameGraphics.m_raysInfoVec.arrSize);
+        draw_textured_background(m_lastSectionBackgroud, g_screenHeight/2);
+    }
+
+    while (jobs != m_poolSize)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(0));
+    }
+    for (auto& m : m_mutexVecStart)
+        m.lock();
+    jobs = 0;
+
+    //start view render
+    for (auto& m : m_mutexVecMid)
+        m.unlock();
+
+    if (m_lastSectionView != 0)
+    {
+        draw_section( m_lastSectionView, m_gameGraphics.m_raysInfoVec.arrSize, m_gameGraphics.m_linear );
     }
 
     while (jobs != m_poolSize)
@@ -252,13 +295,13 @@ void GameGraphics::RenderingThreadPool::render_view()
         std::this_thread::sleep_for(std::chrono::milliseconds(0));
     }
 
-    for (auto& m : m_mutexVecStart)
+    for (auto& m : m_mutexVecMid)
         m.lock();
     for (auto& m : m_mutexVecEnd)
         m.unlock();
 }
 
-void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
+void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const bool& linear)
 {
     for (int i = start; i < end; ++i)
     {
@@ -274,12 +317,12 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
         float floorHeight = (g_screenHeight - screenWallHeight) / 2;
 
         //can multiply with the alpha of walls, bleanding them with the dark backgroud 
-        sf::Uint8 boxShade = (1 - (distance / (m_gameGraphics.m_mapData.maxRenderDist))) * 0xFF;
+        sf::Uint8 boxShade = (1 - (distance / (m_gameGraphics.m_stateData.maxRenderDist))) * 0xFF;
 
         bool dontDraw = false;
         bool flatShading = true;
         Texture* currentTexture;
-        sf::Color flatColor;
+        sf::Color flatColor(sf::Color::Transparent);
         switch (currRay.entityHit)
         {
         case EntityType::Wall:
@@ -295,83 +338,164 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end)
             //flatColor = { 0xff, (currRay.lastSideChecked == CellSide::Hori) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , boxShade };
             break;
         default:
-            dontDraw = true;
+            //dontDraw = true;
             break;
         }
 
         //if there's something to be drawn
-        if (!dontDraw)
+        sf::Color currentColor;
+
+        //--variables for texture navigation--
+        //relative position in wall based on what face is being textured
+        float posOnWallSide = 0;
+
+        //i alias u
+        int textureU = 0;
+        //y alias v
+        float textureV = 0;
+        float texVStep = 0;
+
+        //dont set up texture variables if not needed 
+        if (!flatShading)
         {
-            sf::Color currentColor;
+            if (currRay.lastSideChecked == CellSide::Hori)
+                posOnWallSide = currRay.hitPos.x + m_gameGraphics.m_stateData.playerTransform.coords.x;
+            else
+                posOnWallSide = currRay.hitPos.y + m_gameGraphics.m_stateData.playerTransform.coords.y;
 
-            //--variables for texture navigation--
-            //relative position in wall based on what face is being textured
-            float posOnWallSide = 0;
+            posOnWallSide -= std::floorf(posOnWallSide);
 
-            //x alias u
-            int textureU = 0;
-            //y alias v
-            float textureV = 0;
-            float texVStep = 0;
+            texVStep = currentTexture->height() / screenWallHeight;
 
-            //dont set up texture variables if not needed 
-            if (!flatShading)
+            textureU = (int)(posOnWallSide * currentTexture->width());
+
+            //if the wall is seen from the south or west side, its texture's u needs to be inverted 
+            if (currRay.lastSideChecked == CellSide::Hori && currRay.hitPos.y < 0 ||
+                currRay.lastSideChecked == CellSide::Vert && currRay.hitPos.x > 0)
+                textureU = currentTexture->width() - textureU - 1;
+
+            //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
+            textureV = (screenWallHeight > g_screenHeight) ? texVStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
+        }
+
+        int x = i * 4;
+        //vertical scan line
+        for (int y = 0; y < g_screenHeight * 4; y += 4)
+        {
+            //in the wall range
+            if (y > floorHeight * 4 && y <= (g_screenHeight - floorHeight) * 4)
             {
-                if (currRay.lastSideChecked == CellSide::Hori)
-                    posOnWallSide = currRay.hitPos.x + m_gameGraphics.m_mapData.playerTransform.coords.x;
-                else
-                    posOnWallSide = currRay.hitPos.y + m_gameGraphics.m_mapData.playerTransform.coords.y;
-
-                posOnWallSide -= std::floorf(posOnWallSide);
-
-                texVStep = currentTexture->height() / screenWallHeight;
-
-                textureU = (int)(posOnWallSide * currentTexture->width());
-
-                //if the wall is seen from the south or west side, its texture's u needs to be inverted 
-                if (currRay.lastSideChecked == CellSide::Hori && currRay.hitPos.y < 0 ||
-                    currRay.lastSideChecked == CellSide::Vert && currRay.hitPos.x > 0)
-                    textureU = currentTexture->width() - textureU - 1;
-
-                //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
-                textureV = (screenWallHeight > g_screenHeight) ? texVStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
-            }
-
-            int x = i * 4;
-            //vertical scan line
-            for (int y = 0; y < g_screenHeight * 4; y += 4)
-            {
-                //in the wall range
-                if (y > floorHeight * 4 && y <= (g_screenHeight - floorHeight) * 4)
+                if (flatShading)
                 {
-                    if (flatShading)
-                    {
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = flatColor.r;
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = flatColor.g;
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = flatColor.b;
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = flatColor.a;
-                    }
-                    else
-                    {
-                        //if the end of the texture is reached, start over
-                        if (textureV >= currentTexture->height())
-                            textureV = 0;
-
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = currentTexture->m_texturePixels
-                            [(textureU + int(textureV) * currentTexture->width()) * 4 + 0];
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = currentTexture->m_texturePixels
-                            [(textureU + int(textureV) * currentTexture->width()) * 4 + 1];
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = currentTexture->m_texturePixels
-                            [(textureU + int(textureV) * currentTexture->width()) * 4 + 2];
-                        m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = boxShade;
-
-                        textureV += texVStep;
-                    }
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = flatColor.r;
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = flatColor.g;
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = flatColor.b;
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = flatColor.a;
                 }
+                else
+                {
+                    //if the end of the texture is reached, start over
+                    if (textureV >= currentTexture->height())
+                        textureV = 0;
+
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x] = currentTexture->m_texturePixels
+                        [(textureU + int(textureV) * currentTexture->width()) * 4 + 0];
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 1] = currentTexture->m_texturePixels
+                        [(textureU + int(textureV) * currentTexture->width()) * 4 + 1];
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 2] = currentTexture->m_texturePixels
+                        [(textureU + int(textureV) * currentTexture->width()) * 4 + 2];
+                    m_gameGraphics.m_mainView.m_pixels[y * g_screenWidth + x + 3] = boxShade;
+
+                    textureV += texVStep;
+                }
+            }
+            else if (!linear && y <= floorHeight * 4)
+            {
+                
+                //std::cout << leftmostRayDir.Length() << " " << rightmostRayDir.Length() << math:: leftmostRayDir.Length() << " " << rightmostRayDir.Length() << std::endl;
+                float rayLength = (g_screenHeight * m_gameGraphics.m_halfWallHeight) / (g_screenHeight - (0.5f * y));
+                math::Vect2 xyPos = m_gameGraphics.m_stateData.playerTransform.coords +  ((currRay.hitPos)/currRay.length) * rayLength;
+                int uvPos[2]{};
+
+                Texture& sky = m_gameGraphics.m_skyTexture;
+                Texture& floor = m_gameGraphics.m_floorTexture;
+                GameAsset& view = m_gameGraphics.m_mainView;
+
+                uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * sky.width()));
+                uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * sky.height()));
+
+                //ceiling
+                view.m_pixels[(y * g_screenWidth + x) + 0] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 0];
+                view.m_pixels[(y * g_screenWidth + x) + 1] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 1];
+                view.m_pixels[(y * g_screenWidth + x) + 2] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 2];
+                view.m_pixels[(y * g_screenWidth + x) + 3] = 0xFF;
+
+                //floor
+                uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * floor.width()));
+                uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * floor.height()));
+
+                view.m_pixels[(g_screenHeight*4 - y - 4) * g_screenWidth + x + 0] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 0];
+                view.m_pixels[(g_screenHeight*4 - y - 4) * g_screenWidth + x + 1] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 1];
+                view.m_pixels[(g_screenHeight*4 - y - 4) * g_screenWidth + x + 2] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 2];
+                view.m_pixels[(g_screenHeight*4 - y - 4) * g_screenWidth + x + 3] = 0xFF;
             }
         }
     }
 }
+
+//----------------background--
+
+void GameGraphics::RenderingThreadPool::draw_textured_background(float startY, float endY)
+{
+    //the algorithm operates by linear inerpolating between the left and rightmost rays cast by the camera to obtain world coordinates 
+    //that are then translated into uv space. The lenght of the rays is calculated each scanline from the corresponding screen height.
+    math::Vect2 leftmostRayDir = m_gameGraphics.m_stateData.m_cameraDir - m_gameGraphics.m_stateData.m_cameraPlane / 2;
+    math::Vect2 rightmostRayDir = m_gameGraphics.m_stateData.m_cameraDir + m_gameGraphics.m_stateData.m_cameraPlane / 2;
+
+    for (int y = startY; y < endY; ++y)
+    {
+        //inverse of the formula used in draw_view() to calculate wall height, witch is:
+                    //  float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
+                    //  float floorHeight = (g_screenHeight - screenWallHeight) / 2;
+        float rayLength = (g_screenHeight * m_gameGraphics.m_halfWallHeight) / (g_screenHeight - (2.f * y));
+
+        //increment for interpolation
+        math::Vect2 xyIncrement = ((rightmostRayDir - leftmostRayDir) * rayLength) / g_screenWidth;
+        //start from the left, interpolete towards the right 
+        math::Vect2 worldPosLeft = m_gameGraphics.m_stateData.playerTransform.coords + (leftmostRayDir * rayLength);
+        math::Vect2 xyPos = worldPosLeft;
+        int uvPos[2]{};
+
+        Texture& sky = m_gameGraphics.m_skyTexture;
+        Texture& floor = m_gameGraphics.m_floorTexture;
+        GameAsset& view = m_gameGraphics.m_mainView;
+
+        sf::Uint8 shading = 0xFF * ( 1 - (rayLength / m_gameGraphics.m_stateData.maxRenderDist));
+
+        for (int x = 0; x < g_screenWidth; ++x)
+        {
+            uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * sky.width()));
+            uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * sky.height()));
+
+            //ceiling
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 0];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 1];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 2];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = shading;
+
+            //floor
+            uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * floor.width()));
+            uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * floor.height()));
+
+            view.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 0] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 0];
+            view.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 1] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 1];
+            view.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 2] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 2];
+            view.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 3] = shading;
+            xyPos += xyIncrement;
+        }
+    }
+}
+
 
 //-------pre-rendered-background
 
@@ -412,55 +536,6 @@ inline void GameGraphics::draw_background()
     m_window.draw(m_mainBackground.m_sprite);
 }
 
-//----------------back-ground--
-
-void GameGraphics::draw_textured_background()
-{
-    //the algorithm operates by linear inerpolating between the left and rightmost rays cast by the camera to obtain world coordinates 
-    //that are then translated into uv space. The lenght of the rays is calculated each scanline from the corresponding screen height.
-    math::Vect2 leftmostRayDir = m_gameCore.m_cameraDir - m_gameCore.m_cameraPlane / 2;
-    math::Vect2 rightmostRayDir = m_gameCore.m_cameraDir + m_gameCore.m_cameraPlane / 2;
-
-    //std::cout << leftmostRayDir.Length() << " " << rightmostRayDir.Length() << math:: leftmostRayDir.Length() << " " << rightmostRayDir.Length() << std::endl;
-
-    for (int y = 0; y < g_screenHeight/2; ++y)
-    {
-        //inverse of the formula used in draw_view() to calculate wall height, witch is:
-                    //  float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
-                    //  float floorHeight = (g_screenHeight - screenWallHeight) / 2;
-        float rayLength = (g_screenHeight * m_halfWallHeight)/ (g_screenHeight - (2.f * y));
-
-        //increment for interpolation
-        math::Vect2 xyIncrement = ((rightmostRayDir - leftmostRayDir) * rayLength) / g_screenWidth;
-        //start from the left, interpolete towards the right 
-        math::Vect2 worldPosLeft = m_mapData.playerTransform.coords + (leftmostRayDir * rayLength);
-        math::Vect2 xyPos = worldPosLeft;
-        int uvPos[2]{};
-
-        for (int x = 0; x < g_screenWidth; ++x)
-        {
-            uvPos[0] = (int)((xyPos.x - int(xyPos.x)) * m_skyTexture.width()) & (m_skyTexture.width() - 1);
-            uvPos[1] = (int)((xyPos.y - int(xyPos.y)) * m_skyTexture.height()) & (m_skyTexture.width() - 1);
-
-            //ceiling
-            m_mainView.m_pixels[(y * g_screenWidth + x) * 4 + 0] = m_skyTexture.m_texturePixels[(uvPos[1] * m_skyTexture.width() + uvPos[0]) * 4 + 0];
-            m_mainView.m_pixels[(y * g_screenWidth + x) * 4 + 1] = m_skyTexture.m_texturePixels[(uvPos[1] * m_skyTexture.width() + uvPos[0]) * 4 + 1];
-            m_mainView.m_pixels[(y * g_screenWidth + x) * 4 + 2] = m_skyTexture.m_texturePixels[(uvPos[1] * m_skyTexture.width() + uvPos[0]) * 4 + 2];
-            m_mainView.m_pixels[(y * g_screenWidth + x) * 4 + 3] = 0xFF;
-
-            //floor
-            uvPos[0] = (int)((xyPos.x - int(xyPos.x)) * m_floorTexture.width()) & (m_floorTexture.width() - 1);
-            uvPos[1] = (int)((xyPos.y - int(xyPos.y)) * m_floorTexture.height()) & (m_floorTexture.width() - 1);
-
-            m_mainView.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 0] = m_floorTexture.m_texturePixels[(uvPos[1] * m_floorTexture.width() + uvPos[0]) * 4 + 0];
-            m_mainView.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 1] = m_floorTexture.m_texturePixels[(uvPos[1] * m_floorTexture.width() + uvPos[0]) * 4 + 1];
-            m_mainView.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 2] = m_floorTexture.m_texturePixels[(uvPos[1] * m_floorTexture.width() + uvPos[0]) * 4 + 2];
-            m_mainView.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 3] = 0xFF;
-            xyPos += xyIncrement;
-        }
-    }
-    
-}
 
 //----------------map-and-mini-map
 
@@ -483,18 +558,18 @@ void GameGraphics::draw_minimap_triangles()
     for (int i = 0; i < m_raysInfoVec.arrSize; ++i)
     {
         triangles[i + 1] = { { m_minimapInfo.minimapCenterY + m_raysInfoVec.const_at(i).hitPos.x * m_minimapInfo.minimapScale, m_minimapInfo.minimapCenterX + m_raysInfoVec.const_at(i).hitPos.y * m_minimapInfo.minimapScale},
-        sf::Color(0xFF, 0, 0, (1 - m_raysInfoVec.const_at(i).length / m_mapData.maxRenderDist) * 0xFF) };
+        sf::Color(0xFF, 0, 0, (1 - m_raysInfoVec.const_at(i).length / m_stateData.maxRenderDist) * 0xFF) };
     }
     m_window.draw(triangles);
 }
 
 void GameGraphics::draw_map()
 {
-    for (int i = 0; i < m_mapData.gameMap.y; ++i)
+    for (int i = 0; i < m_stateData.gameMap.y; ++i)
     {
-        for (int c = 0; c < m_mapData.gameMap.x; ++c)
+        for (int c = 0; c < m_stateData.gameMap.x; ++c)
         {
-            char currentCell = m_mapData.gameMap.cells->at(i * m_mapData.gameMap.x + c);
+            char currentCell = m_stateData.gameMap.cells->at(i * m_stateData.gameMap.x + c);
 
             if (currentCell != ' ')
             {
@@ -513,8 +588,8 @@ void GameGraphics::draw_map()
 
     sf::CircleShape playerC(m_igMapAssets.tileDim / 2.f);
     playerC.setFillColor(sf::Color::Red);
-    playerC.setPosition({ (float)(int(m_mapData.playerTransform.coords.x) * m_igMapAssets.tileDim + m_igMapAssets.xoffset),
-                          (float)(int(m_mapData.playerTransform.coords.y) * m_igMapAssets.tileDim + m_igMapAssets.yoffset) });
+    playerC.setPosition({ (float)(int(m_stateData.playerTransform.coords.x) * m_igMapAssets.tileDim + m_igMapAssets.xoffset),
+                          (float)(int(m_stateData.playerTransform.coords.y) * m_igMapAssets.tileDim + m_igMapAssets.yoffset) });
 
     m_window.draw(playerC);
 }
@@ -549,19 +624,19 @@ void GameGraphics::draw_minimap_background()
     int xoffset = m_minimapInfo.minimapCenterY;
     int yoffset = m_minimapInfo.minimapCenterX;
     //limit minimap to a square with sides length equal to double of the render distance 
-    int startX = m_mapData.playerTransform.coords.x - m_mapData.maxRenderDist;
+    int startX = m_stateData.playerTransform.coords.x - m_stateData.maxRenderDist;
     //avoid going out of bounds
     if (startX < 0)
         startX = 0;
-    int endX = m_mapData.playerTransform.coords.x + m_mapData.maxRenderDist;
-    if (endX > m_mapData.gameMap.x)
-        endX = m_mapData.gameMap.x;
-    int startY = m_mapData.playerTransform.coords.y - m_mapData.maxRenderDist;
+    int endX = m_stateData.playerTransform.coords.x + m_stateData.maxRenderDist;
+    if (endX > m_stateData.gameMap.x)
+        endX = m_stateData.gameMap.x;
+    int startY = m_stateData.playerTransform.coords.y - m_stateData.maxRenderDist;
     if (startY < 0)
         startY = 0;
-    int endY = m_mapData.playerTransform.coords.y + m_mapData.maxRenderDist;
-    if (endY > m_mapData.gameMap.y)
-        endY = m_mapData.gameMap.y;
+    int endY = m_stateData.playerTransform.coords.y + m_stateData.maxRenderDist;
+    if (endY > m_stateData.gameMap.y)
+        endY = m_stateData.gameMap.y;
 
     sf::RectangleShape wallRect({ (float)tileDim, (float)tileDim });
 
@@ -569,7 +644,7 @@ void GameGraphics::draw_minimap_background()
     {
         for (int x = startX; x < endX; ++x)
         {
-            char currentCell = m_mapData.gameMap.cells->at(y * m_mapData.gameMap.x + x);
+            char currentCell = m_stateData.gameMap.cells->at(y * m_stateData.gameMap.x + x);
 
             if (currentCell != ' ')
             {
@@ -578,8 +653,8 @@ void GameGraphics::draw_minimap_background()
                 else if (currentCell == 'g')
                     wallRect.setFillColor(sf::Color::Yellow);
 
-                wallRect.setPosition({ tileDim * ((float)x - m_mapData.playerTransform.coords.x) + xoffset,
-                                        tileDim * ((float)y - m_mapData.playerTransform.coords.y) + yoffset });
+                wallRect.setPosition({ tileDim * ((float)x - m_stateData.playerTransform.coords.x) + xoffset,
+                                        tileDim * ((float)y - m_stateData.playerTransform.coords.y) + yoffset });
                 m_window.draw(wallRect);
             }
         }
@@ -602,13 +677,22 @@ void GameGraphics::handle_events()
         case sf::Event::KeyPressed:
             if (event.key.scancode == sf::Keyboard::Scan::Escape)
             {
-                if (m_paused == true)
+                if (m_paused)
                 {
                     m_paused = false;
                     justUnpaused = true;
                 }
                 else
                     m_paused = true;
+            }
+            if (event.key.scancode == sf::Keyboard::Scan::Space)
+            {
+                if (m_linear)
+                {
+                    m_linear = false;
+                }
+                else
+                    m_linear = true;
             }
             if (event.key.scancode == sf::Keyboard::Scan::E)
             {
@@ -665,15 +749,6 @@ void GameGraphics::handle_events()
             {
                 m_tabbed = false;
             }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-            {
-                m_linear = false;
-            }
-            else
-            {
-                m_linear = true;
-            }
-
         }
         else
         {
@@ -692,12 +767,12 @@ void GameGraphics::handle_events()
 
 void GameGraphics::InGameMapAssets::create(const GameGraphics& gg)
 {
-    int xoverw = g_screenWidth / gg.m_mapData.gameMap.x;
-    int yoverh = g_screenHeight / gg.m_mapData.gameMap.y;
+    int xoverw = g_screenWidth / gg.m_stateData.gameMap.x;
+    int yoverh = g_screenHeight / gg.m_stateData.gameMap.y;
     tileDim = std::min(xoverw, yoverh);
     //float tileThick = tileDim/10.f;
-    xoffset = (g_screenWidth - gg.m_mapData.gameMap.x * tileDim) / 2;
-    yoffset = (g_screenHeight - gg.m_mapData.gameMap.y * tileDim) / 2;
+    xoffset = (g_screenWidth - gg.m_stateData.gameMap.x * tileDim) / 2;
+    yoffset = (g_screenHeight - gg.m_stateData.gameMap.y * tileDim) / 2;
     wallRect.setSize({ (float)tileDim, (float)tileDim });
 }
 
