@@ -29,8 +29,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install-Udev
+      run: sudo apt-get update -y && sudo apt-get install -y udev
+
     - name: Install-SFML
-      run: sudo apt-get install libsfml-dev
+      run: sudo apt-get install -y libsfml-dev
 
     - name: Configure-CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
