@@ -22,9 +22,9 @@
 	    "halfWallHeight" : 1
     },
     "assets" : {
-        "wallTexPath" : "assets\\wall.png",
-        "boundryTexPath" : "assets\\boundry.png",
-        "floorTexPath" : "assets\\floor.jpg",
-        "skyTexPath" : "assets\\sky.jpg"
+        "wallTexPath" : "assets\\wall2.png",
+        "boundryTexPath" : "assets\\boundry2.png",
+        "floorTexPath" : "assets\\floor2.png",
+        "skyTexPath" : "assets\\sky2.png"
     }
 }

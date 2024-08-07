@@ -576,7 +576,7 @@ void GameGraphics::draw_map()
                 if (currentCell == 'b')
                     m_igMapAssets.wallRect.setFillColor(sf::Color::White);
                 if (currentCell == 'w')
-                    m_igMapAssets.wallRect.setFillColor(sf::Color::Green);
+                    m_igMapAssets.wallRect.setFillColor(sf::Color(0x99, 0x99,0x99));
                 if (currentCell == 'g')
                     m_igMapAssets.wallRect.setFillColor(sf::Color::Red);
 
