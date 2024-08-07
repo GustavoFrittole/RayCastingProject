@@ -36,7 +36,7 @@ jobs:
       run: sudo apt-get install -y libudev-dev
 
     - name: Install-VOBRIS
-      run: sudo apt-get install -y vorbis-tools
+      run: sudo apt-get install -y libvorbis-dev
 
     - name: Install-SFML
       run: sudo apt-get install -y libsfml-dev
