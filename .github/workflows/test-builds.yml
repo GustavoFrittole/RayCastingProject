@@ -32,6 +32,9 @@ jobs:
     - name: Install-OpenAL
       run: sudo apt-get update -y && sudo apt-get install -y libopenal-dev
 
+    - name: Install-OpenAL
+      run: sudo apt-get install -y flac
+      
     - name: Install-Udev
       run: sudo apt-get install -y libudev-dev
 
