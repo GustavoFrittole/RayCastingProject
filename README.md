@@ -1,7 +1,11 @@
 
 # Ray casting based maze explorer
-Personal project exploring the concept of ray casting
+Personal project exploring the concept of ray casting.
 ## How to build
+The project relies on SFML (for controls, handling and drawing on window). If it  can't be found locally by cmake, it will be downloaded form github and compiled.
+When building on linux having this dependency installed in advance might be more practical.
+### Windows
+
 ```
 git clone https://github.com/GustavoFrittole/RayCastingProject.git
 cd RayCastingProject
@@ -12,13 +16,27 @@ cmake -G"<Choose generator>" -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false
 ```
 cmake --build ./build/release
 ```
-Cmake will copy the asset folder in the user specified binary folder (./build/release). To run the code directly, move the copied asset folder in the same dir of the executable.
 ```
 ./build/release/bin/main.exe
 ```
-The project relies on SFML (for controls, handling and drawing on windows) and will attempt to fetch it unless the package can be retrieved. When building on linux having this dependency installed in advance might be more practical.
+### Linux 
+Same as above but it is advised to install SFML in advance. For Debian is:
+```
+sudo apt-get install libsfml-dev
+```
+
+## Features
+Pre-game map generation, custom map, in-game full screen map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
+Note: distance based shading of horizontal planes (sky/floor) is only available in linear perspective mode.
+
+![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
+
+## Linear - Euclidean real time switch
+![switch](https://github.com/user-attachments/assets/235d9133-62e0-4de6-b666-10f7ce739400)
+
+*All not specified relations are 1:1*
 ## Usage
-Various variables will be imported from the json file `config.json` that can be found in the asset folder. Amongst other options, the user can choose to load their own map by turning "gameMap" -> "generated" to false and specifying a file path. If the map is generated, there's no need to provide a map file.
+Various variables are imported from the json file `config.json` that can be found in the asset folder. Amongst other options, the user can choose to load their own map by turning "gameMap" -> "generated" to false and specifying a file path, can modify the map (that must retain rectangular shape and dimensions according to what stated in the config file) and change textures. If the map is generated, there's no need to provide a map file.
 The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm,
 and the process of creation is displayed at game start.
 ## Controls
@@ -31,20 +49,9 @@ and the process of creation is displayed at game start.
 
 Note: the game starts paused. Press `ESC` to gain control
 
-## Functionalities
-Pre-game map generation, custom map, in-game full screen map and mini map, calculation display of shortest path, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
-Note: distance based shading of horizontal planes (sky/floor) is only availeble in linear perspective mode.
-
-![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
-
-## linear - euclidean realtime switch
-![switch](https://github.com/user-attachments/assets/235d9133-62e0-4de6-b666-10f7ce739400)
 
 ## Basic class diagram
 ![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25)
-
-
-*All not specified relations are 1:1*
 
 ## known issues
 - mouse speed lowers as the frame rate increases (whilst arrows rotation behaves correctly);

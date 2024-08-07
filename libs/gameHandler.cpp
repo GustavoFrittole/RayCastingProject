@@ -32,7 +32,7 @@ bool GameHandler::load_game_data(const std::string& filePath)
 		m_errors.append(e.what());
 		return false;
 	}
-	m_gameGraphics = std::make_unique<GameGraphics>(m_gameData, "pippo");
+	m_gameGraphics = std::make_unique<GameGraphics>(m_gameData, WINDOW_NAME);
 
 	return true;
 }

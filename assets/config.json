@@ -2,8 +2,8 @@
     "playerTransform": {
         "forewardAngleDeg": 0,
         "pos": {
-            "x": 10,
-            "y": 10
+            "x": 9,
+            "y": 9
         }
     },
     "gameCamera": {
@@ -12,19 +12,19 @@
         "rayPrecision": 0.02
     },
     "gameMap": {
-        "mapW": 20,
-        "mapH": 30,
-        "generated" : false,
-        "mapCellsFile": "assets\\map.txt"
+        "mapW": 21,
+        "mapH": 31,
+        "generated" : true,
+        "mapCellsFile": "assets/map.txt"
     },
     "screenStats" : {
         "minimapScale" : 6,
 	    "halfWallHeight" : 1
     },
     "assets" : {
-        "wallTexPath" : "assets\\wall2.png",
-        "boundryTexPath" : "assets\\boundry2.png",
-        "floorTexPath" : "assets\\floor2.png",
-        "skyTexPath" : "assets\\sky2.png"
+        "wallTexPath" : "assets/wall2.png",
+        "boundryTexPath" : "assets/boundry2.png",
+        "floorTexPath" : "assets/floor2.png",
+        "skyTexPath" : "assets/sky2.png"
     }
 }
