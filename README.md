@@ -38,10 +38,11 @@ Note: distance based shading of horizontal planes (sky/floor) is only availeble 
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
 
 ## linear - euclidean realtime switch
-![switch](https://github.com/user-attachments/assets/51c9e430-45ce-43cb-9731-6220cd7977cc)
+![switch](https://github.com/user-attachments/assets/235d9133-62e0-4de6-b666-10f7ce739400)
 
 ## Basic class diagram
 ![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25)
+
 
 *All not specified relations are 1:1*
 
