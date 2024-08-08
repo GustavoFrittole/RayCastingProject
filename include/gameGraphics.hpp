@@ -66,7 +66,7 @@ public:
     void performGameCycle();
     bool goal_reached();
 private:
-    struct InGameMapAssets
+    struct MapSquareAsset
     {
         void create(const GameGraphics&);
         int tileDim = 0;
@@ -80,7 +80,7 @@ private:
     sf::RenderWindow m_window;
     const RayInfoArr& m_raysInfoVec;
     GameCore::PlayerController& m_playerController;
-    StateData m_stateData;
+    GameStateData m_stateData;
     std::vector<std::pair<int, int>> m_pathToGoal;
     std::unique_ptr<PathFinder> m_pathFinder;
     const MinimapInfo m_minimapInfo;
@@ -90,11 +90,12 @@ private:
     GameAsset m_mainBackground;
     sf::Text m_endGameText;
     sf::Font m_endGameFont;
-    InGameMapAssets m_igMapAssets;
+    MapSquareAsset m_igMapAssets;
     GameAssets m_gameAssets;
     Texture m_wallTexture;
     Texture m_baundryTexture;
     Texture m_floorTexture;
+    Texture m_ceilingTexture;
     Texture m_skyTexture;
 
     bool m_hadFocus = false;
@@ -123,6 +124,7 @@ private:
         RenderingThreadPool(GameGraphics&);
         ~RenderingThreadPool();
         void render_view();
+        void refresh_variables();
 
     private:
         int m_poolSize = 0;
@@ -137,10 +139,12 @@ private:
         bool m_isActive = true;
 
         float m_verticalVisibleAngle = ((screenStats::g_screenHeight * m_gameGraphics.m_stateData.fov)/screenStats::g_screenWidth);
+        float m_skyPixPerCircle = 0;
+        float m_skyUIncrement = 0;
+        float m_skyVIncrement = 0;
 
-        void draw_section(int start, int end, const bool& linear);
-        void draw_textured_background(float startY, float endY);
-
+        void draw_veiw_section(int start, int end, const bool& linear);
+        void draw_background_section(float startY, float endY);
     };
 
     RenderingThreadPool m_renderingThreadPool;

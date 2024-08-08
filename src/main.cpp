@@ -16,7 +16,7 @@ int main()
 /*
 TODO:
 -Implement camera plane (camera vector)
--Floor and sky textures
+-Floor and ceiling textures
 -Comment code
 */
 

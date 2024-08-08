@@ -14,7 +14,7 @@
     "gameMap": {
         "mapW": 21,
         "mapH": 31,
-        "generated" : true,
+        "generated" : false,
         "mapCellsFile": "assets/map.txt"
     },
     "screenStats" : {
@@ -25,6 +25,7 @@
         "wallTexPath" : "assets/wall2.png",
         "boundryTexPath" : "assets/boundry2.png",
         "floorTexPath" : "assets/floor2.png",
+        "ceilingTexPath" : "assets/ceiling2.png",
         "skyTexPath" : "assets/sky2.png"
     }
 }

@@ -90,11 +90,14 @@ void GameGraphics::create_assets()
     load_end_screen();
     m_pathFinder = std::make_unique<PathFinder>(m_stateData.gameMap.x, m_stateData.gameMap.y, *(m_stateData.gameMap.cells), m_pathToGoal);
     m_igMapAssets.create(*this);
-    //wip
+    
     m_wallTexture.create(m_gameAssets.wallTexFilePath);
     m_baundryTexture.create(m_gameAssets.boundryTexFilePath);
     m_floorTexture.create(m_gameAssets.floorTexFilePath);
+    m_ceilingTexture.create(m_gameAssets.ceilingTexFilePath);
     m_skyTexture.create(m_gameAssets.skyTexFilePath);
+
+    m_renderingThreadPool.refresh_variables();
 }
 
 //TODO add flags
@@ -177,13 +180,13 @@ void GameGraphics::draw_end_screen()
 //------------------THREAD-POOL---
 
 GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) : 
-                                    m_poolSize(get_thread_number()), 
-                                    m_threads(0), 
-                                    m_mutexVecStart(m_poolSize),
-                                    m_mutexVecMid(m_poolSize),
-                                    m_mutexVecEnd(m_poolSize),
-                                    m_gameGraphics(gg),
-                                    jobs(m_poolSize)
+    m_poolSize(get_thread_number()), 
+    m_threads(0), 
+    m_mutexVecStart(m_poolSize),
+    m_mutexVecMid(m_poolSize),
+    m_mutexVecEnd(m_poolSize),
+    m_gameGraphics(gg),
+    jobs(m_poolSize)
 {
     for (int i = 0; i < m_poolSize; ++i)
     {
@@ -216,13 +219,13 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) :
                         }
                     }
                     if(m_gameGraphics.m_linear)
-                        draw_textured_background(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud));
+                        draw_background_section(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud));
                     jobs++;
 
                     {
                         std::unique_lock<std::mutex> lock(m_mutexVecMid.at(id));
                     }
-                    draw_section(currentSectionView, (currentSectionView + sectionsSizeView), m_gameGraphics.m_linear);
+                    draw_veiw_section(currentSectionView, (currentSectionView + sectionsSizeView), m_gameGraphics.m_linear);
                     jobs++;
 
                     {
@@ -253,6 +256,13 @@ GameGraphics::RenderingThreadPool::~RenderingThreadPool()
     }
 }
 
+void GameGraphics::RenderingThreadPool::refresh_variables() 
+{
+    m_skyPixPerCircle = (m_gameGraphics.m_skyTexture.width() / (float)(2 * PI));
+    m_skyUIncrement = m_skyPixPerCircle * m_gameGraphics.m_stateData.fov / screenStats::g_screenWidth;
+    m_skyVIncrement = m_gameGraphics.m_skyTexture.height() / ((float)screenStats::g_screenHeight);
+}
+
 void GameGraphics::RenderingThreadPool::render_view()
 {
     //wait for threads to be ready
@@ -270,7 +280,7 @@ void GameGraphics::RenderingThreadPool::render_view()
 
     if ( m_lastSectionBackgroud != 0 && m_gameGraphics.m_linear )
     {
-        draw_textured_background(m_lastSectionBackgroud, g_screenHeight/2);
+        draw_background_section(m_lastSectionBackgroud, g_screenHeight/2);
     }
 
     while (jobs != m_poolSize)
@@ -287,7 +297,7 @@ void GameGraphics::RenderingThreadPool::render_view()
 
     if (m_lastSectionView != 0)
     {
-        draw_section( m_lastSectionView, m_gameGraphics.m_raysInfoVec.arrSize, m_gameGraphics.m_linear );
+        draw_veiw_section( m_lastSectionView, m_gameGraphics.m_raysInfoVec.arrSize, m_gameGraphics.m_linear );
     }
 
     while (jobs != m_poolSize)
@@ -301,7 +311,7 @@ void GameGraphics::RenderingThreadPool::render_view()
         m.unlock();
 }
 
-void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const bool& linear)
+void GameGraphics::RenderingThreadPool::draw_veiw_section(int start, int end, const bool& linear)
 {
     for (int i = start; i < end; ++i)
     {
@@ -317,7 +327,7 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
         float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
         float floorHeight = (g_screenHeight - screenWallHeight) / 2;
 
-        //can multiply with the alpha of walls, bleanding them with the dark backgroud 
+        //alpha of walls, bleanding them with the dark backgroud 
         sf::Uint8 boxShade = (1 - (distance / (m_gameGraphics.m_stateData.maxRenderDist))) * 0xFF;
 
         bool dontDraw = false;
@@ -350,9 +360,7 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
         //relative position in wall based on what face is being textured
         float posOnWallSide = 0;
 
-        //i alias u
         int textureU = 0;
-        //y alias v
         float textureV = 0;
         float texVStep = 0;
 
@@ -375,7 +383,9 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
                 textureU = currentTexture->width() - textureU - 1;
 
             //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
-            textureV = (screenWallHeight > g_screenHeight) ? texVStep * ((screenWallHeight - g_screenHeight) / 2) : 0;
+            textureV = (screenWallHeight > g_screenHeight) 
+                ? texVStep * ((screenWallHeight - g_screenHeight) / 2) 
+                : 0;
         }
 
         int x = i * 4;
@@ -412,22 +422,21 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
             else if (!linear && y <= floorHeight * 4)
             {
                 
-                //std::cout << leftmostRayDir.Length() << " " << rightmostRayDir.Length() << math:: leftmostRayDir.Length() << " " << rightmostRayDir.Length() << std::endl;
                 float rayLength = (g_screenHeight * m_gameGraphics.m_halfWallHeight) / (g_screenHeight - (0.5f * y));
                 math::Vect2 xyPos = m_gameGraphics.m_stateData.playerTransform.coords +  ((currRay.hitPos)/currRay.length) * rayLength;
                 int uvPos[2]{};
 
-                Texture& sky = m_gameGraphics.m_skyTexture;
+                Texture& ceiling = m_gameGraphics.m_ceilingTexture;
                 Texture& floor = m_gameGraphics.m_floorTexture;
                 GameAsset& view = m_gameGraphics.m_mainView;
 
-                uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * sky.width()));
-                uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * sky.height()));
+                uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * ceiling.width()));
+                uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * ceiling.height()));
 
                 //ceiling
-                view.m_pixels[(y * g_screenWidth + x) + 0] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 0];
-                view.m_pixels[(y * g_screenWidth + x) + 1] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 1];
-                view.m_pixels[(y * g_screenWidth + x) + 2] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 2];
+                view.m_pixels[(y * g_screenWidth + x) + 0] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 0];
+                view.m_pixels[(y * g_screenWidth + x) + 1] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 1];
+                view.m_pixels[(y * g_screenWidth + x) + 2] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 2];
                 view.m_pixels[(y * g_screenWidth + x) + 3] = 0xFF;
 
                 //floor
@@ -445,12 +454,17 @@ void GameGraphics::RenderingThreadPool::draw_section(int start, int end, const b
 
 //----------------background--
 
-void GameGraphics::RenderingThreadPool::draw_textured_background(float startY, float endY)
+void GameGraphics::RenderingThreadPool::draw_background_section(float startY, float endY)
 {
     //the algorithm operates by linear inerpolating between the left and rightmost rays cast by the camera to obtain world coordinates 
     //that are then translated into uv space. The lenght of the rays is calculated each scanline from the corresponding screen height.
+    //ceiling vars
     math::Vect2 leftmostRayDir = m_gameGraphics.m_stateData.m_cameraDir - m_gameGraphics.m_stateData.m_cameraPlane / 2;
     math::Vect2 rightmostRayDir = m_gameGraphics.m_stateData.m_cameraDir + m_gameGraphics.m_stateData.m_cameraPlane / 2;
+
+    //sky vars
+    float skyUStart = -m_skyPixPerCircle * (m_gameGraphics.m_stateData.playerTransform.forewardAngle - m_gameGraphics.m_stateData.fov / 2);
+    float skyVPos = m_skyVIncrement * startY;
 
     for (int y = startY; y < endY; ++y)
     {
@@ -467,21 +481,40 @@ void GameGraphics::RenderingThreadPool::draw_textured_background(float startY, f
         int uvPos[2]{};
 
         Texture& sky = m_gameGraphics.m_skyTexture;
+        Texture& ceiling = m_gameGraphics.m_ceilingTexture;
         Texture& floor = m_gameGraphics.m_floorTexture;
         GameAsset& view = m_gameGraphics.m_mainView;
 
         sf::Uint8 shading = 0xFF * ( 1 - (rayLength / m_gameGraphics.m_stateData.maxRenderDist));
 
+        float skyUPos = skyUStart;
+
         for (int x = 0; x < g_screenWidth; ++x)
         {
-            uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * sky.width()));
-            uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * sky.height()));
-
             //ceiling
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 0];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 1];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = sky.m_texturePixels[(uvPos[1] * sky.width() + uvPos[0]) * 4 + 2];
+            /*
+            uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * ceiling.width()));
+            uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * ceiling.height()));
+
+
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 0];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 1];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 2];
             view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = shading;
+            */
+
+            //sky
+
+            if (skyUPos >= sky.width())
+                skyUPos -= sky.width();
+            else if (skyUPos < 0)
+                skyUPos += sky.width();
+
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 0];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 1];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 2];
+            view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = 0xFF;
+
 
             //floor
             uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * floor.width()));
@@ -492,7 +525,9 @@ void GameGraphics::RenderingThreadPool::draw_textured_background(float startY, f
             view.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 2] = floor.m_texturePixels[(uvPos[1] * floor.width() + uvPos[0]) * 4 + 2];
             view.m_pixels[(g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4 + 3] = shading;
             xyPos += xyIncrement;
+            skyUPos += m_skyUIncrement;
         }
+        skyVPos += m_skyVIncrement;
     }
 }
 
@@ -765,7 +800,7 @@ void GameGraphics::handle_events()
 
 //---------------IG-assets---
 
-void GameGraphics::InGameMapAssets::create(const GameGraphics& gg)
+void GameGraphics::MapSquareAsset::create(const GameGraphics& gg)
 {
     int xoverw = g_screenWidth / gg.m_stateData.gameMap.x;
     int yoverh = g_screenHeight / gg.m_stateData.gameMap.y;

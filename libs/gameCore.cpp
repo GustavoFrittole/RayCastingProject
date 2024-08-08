@@ -42,9 +42,9 @@ GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTrans
 	m_cameraPlane = math::Vect2( m_cameraDir.y , -m_cameraDir.x ) * std::tan( m_gameCamera.fov/2 ) * 2;	
 }
 
-StateData GameCore::getMapData() const 
+GameStateData GameCore::getMapData() const 
 {
-	return StateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_cameraDir, m_cameraPlane};
+	return GameStateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_cameraDir, m_cameraPlane};
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
@@ -134,7 +134,11 @@ void GameCore::update_entities()
 	m_entityTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
 	m_cameraDir = { std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
 	m_cameraPlane = math::Vect2(m_cameraDir.y, -m_cameraDir.x) * std::tan(m_gameCamera.fov / 2) * 2;
-	//std::cout << math::rad_to_deg(math::vec_to_rad(m_cameraDir)) << " " << math::rad_to_deg(math::vec_to_rad(m_cameraPlane)) << " " << math::rad_to_deg( m_entityTransform.forewardAngle) << " " << math::rad_to_deg(math::vec_to_rad(m_cameraDir)) - math::rad_to_deg(math::vec_to_rad(m_cameraPlane)) << std::endl;
+
+	if (m_entityTransform.forewardAngle >= 2 * PI)
+		m_entityTransform.forewardAngle -= 2 * PI;
+	else if(m_entityTransform.forewardAngle < 0)
+		m_entityTransform.forewardAngle += 2 * PI;
 
 	//reset cached values
 	m_pInputCache.foreward = 0;
