@@ -4,7 +4,8 @@
 #include<thread>
 #include<stdexcept>
 #include<cmath>
-#include <iostream>
+
+//----------------------RayInfo----------------------
 
 RayInfo& RayInfoArr::at(int index)
 {
@@ -13,7 +14,8 @@ RayInfo& RayInfoArr::at(int index)
 	else
 		return m_rayArr[index];
 }
-const RayInfo& RayInfoArr::const_at(int index) const 
+
+const RayInfo& RayInfoArr::const_at(int index) const
 {
 	if (index < 0 || index >= arrSize)
 		throw std::invalid_argument("Index is out of range.");
@@ -21,11 +23,14 @@ const RayInfo& RayInfoArr::const_at(int index) const
 		return m_rayArr[index];
 }
 
-GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTransform) : m_gameCamera(gc),
-										m_entityTransform(entityTransform),
-										m_playerController(*this),
-										m_processorCount(get_thread_number()),
-										m_rayInfoArr(gc.pixelWidth)
+//----------------------GameCore----------------------
+
+GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTransform) : 
+	m_gameCamera(gc),
+	m_entityTransform(entityTransform),
+	m_playerController(*this),
+	m_processorCount(get_thread_number()),
+	m_rayInfoArr(gc.pixelWidth)
 {
 	m_gameMap.x = gameMap.x;
 	m_gameMap.y = gameMap.y;
@@ -41,10 +46,9 @@ GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTrans
 	m_cameraDir = { std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
 	m_cameraPlane = math::Vect2( m_cameraDir.y , -m_cameraDir.x ) * std::tan( m_gameCamera.fov/2 ) * 2;	
 }
-
-StateData GameCore::getMapData() const 
+GameStateData GameCore::getMapData() const 
 {
-	return StateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_cameraDir, m_cameraPlane};
+	return GameStateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_cameraDir, m_cameraPlane};
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
@@ -134,7 +138,11 @@ void GameCore::update_entities()
 	m_entityTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
 	m_cameraDir = { std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
 	m_cameraPlane = math::Vect2(m_cameraDir.y, -m_cameraDir.x) * std::tan(m_gameCamera.fov / 2) * 2;
-	//std::cout << math::rad_to_deg(math::vec_to_rad(m_cameraDir)) << " " << math::rad_to_deg(math::vec_to_rad(m_cameraPlane)) << " " << math::rad_to_deg( m_entityTransform.forewardAngle) << " " << math::rad_to_deg(math::vec_to_rad(m_cameraDir)) - math::rad_to_deg(math::vec_to_rad(m_cameraPlane)) << std::endl;
+
+	if (m_entityTransform.forewardAngle >= 2 * PI)
+		m_entityTransform.forewardAngle -= 2 * PI;
+	else if(m_entityTransform.forewardAngle < 0)
+		m_entityTransform.forewardAngle += 2 * PI;
 
 	//reset cached values
 	m_pInputCache.foreward = 0;
@@ -154,103 +162,6 @@ void GameCore::PlayerController::move_strafe(float amount) const
 {
 	gameCore.m_pInputCache.lateral += amount;
 }
-
-//void GameCore::view_by_ray_casting()
-//{
-//	math::Mat2x2 halfFOVRotationMat = math::rotation_mat2x2(m_gameCamera.fov / 2);
-//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
-//	math::Vect2 currentRayDir = playerForwDir * halfFOVRotationMat;
-//	math::Vect2 startPos = m_entityTransform.coords;
-//	math::Mat2x2 rayRotationIncrementMat = math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
-//
-//	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
-//	{
-//		//DDA
-//
-//		math::Vect2 startingPos = m_entityTransform.coords;
-//		EntityType hitMarker = EntityType::Nothing;
-//
-//		//increment in ray length that projects in an unitaty movement (unitaryStep) in X and Y direction
-//		float lengthIncrementX = std::sqrtf(1 + std::powf(currentRayDir.y / currentRayDir.x, 2));
-//		float lengthIncrementY = std::sqrtf(1 + std::powf(currentRayDir.x / currentRayDir.y, 2));
-//
-//		//same as currentRay but rounded to int 
-//		int currentPosInMap[2] = { startingPos.x, startingPos.y };
-//
-//		//length of the ray at progressive intersections with cell on the x and y axis
-//		float rayLengthAtIntersectX;
-//		float rayLengthAtIntersectY;
-//
-//		int unitaryStepX;
-//		int unitaryStepY;
-//
-//		float rayLength = 0;
-//		//initialize steps so they match the ray direction
-//		//also take care of the first shorter not unitary step
-//		if (currentRayDir.x < 0)
-//		{
-//			unitaryStepX = -1;
-//			rayLengthAtIntersectX = (startingPos.x - currentPosInMap[0]) * lengthIncrementX;
-//		}
-//		else
-//		{
-//			unitaryStepX = 1;
-//			rayLengthAtIntersectX = (float(currentPosInMap[0] + 1) - startingPos.x) * lengthIncrementX;
-//		}
-//		if (currentRayDir.y < 0)
-//		{
-//			unitaryStepY = -1;
-//			rayLengthAtIntersectY = (startingPos.y - currentPosInMap[1]) * lengthIncrementY;
-//		}
-//		else
-//		{
-//			unitaryStepY = 1;
-//			rayLengthAtIntersectY = (float(currentPosInMap[1] +1 ) - startingPos.y ) * lengthIncrementY;
-//		}
-//
-//
-//		//keeps track of what was the last cell side checkd (-1 x, +1 y)
-//		CellSide lastSideChecked = CellSide::Unknown;
-//
-//		//The ray is incremented in order to reach the next cell intersection
-//		//switching axis when one side becomes shorter then the other
-//		while (hitMarker == EntityType::Nothing)
-//		{
-//			if (rayLengthAtIntersectX < rayLengthAtIntersectY)
-//			{
-//				if (rayLengthAtIntersectX > m_gameCamera.maxRenderDist)
-//					break;
-//				currentPosInMap[0] += unitaryStepX;
-//				lastSideChecked = CellSide::Vert;
-//				rayLengthAtIntersectX += lengthIncrementX;
-//			}
-//			else
-//			{
-//				if (rayLengthAtIntersectY > m_gameCamera.maxRenderDist)
-//					break;
-//				currentPosInMap[1] += unitaryStepY;
-//				lastSideChecked = CellSide::Hori;
-//				rayLengthAtIntersectY += lengthIncrementY;
-//			}
-//			chech_position_in_map(currentPosInMap[0], currentPosInMap[1], hitMarker);
-//			
-//		}
-//
-//		if (lastSideChecked == CellSide::Vert)
-//			rayLength = rayLengthAtIntersectX - lengthIncrementX;
-//		else 
-//			rayLength = rayLengthAtIntersectY - lengthIncrementY;
-//
-//		//rayLength = rayLength * ( currentRayDir * playerForwDir );
-//
-//		//std::cout << playerForwDir * currentRayDir << " " << playerForwDir.Length() << " " << currentRayDir.Length() << std::endl;
-//
-//		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked};
-//
-//		//rotate ray for next iteration
-//		currentRayDir *= math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
-//	}
-//}
 
 void GameCore::view_by_ray_casting(bool cameraPlane)
 {
@@ -360,8 +271,6 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 			rayLength = rayLengthAtIntersectX - lengthIncrementX;
 		else 
 			rayLength = rayLengthAtIntersectY - lengthIncrementY;
-
-		//std::cout << playerForwDir * currentRayDir << " " << playerForwDir.Length() << " " << currentRayDir.Length() << std::endl;
 
 		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked};
 

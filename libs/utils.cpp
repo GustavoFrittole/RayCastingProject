@@ -2,8 +2,6 @@
 #include<cmath>
 #include<thread>
 
-#define PI 3.14159265359f
-
 int debug::GameTimer::get_frame_rate()
 {
 	int fr = ((double)m_frameCounter / (double)(std::chrono::high_resolution_clock::now() - tStart).count()) * 1000000000;

@@ -49,9 +49,6 @@ jobs:
 
     - name: Install-SFML
       run: sudo apt-get install -y libsfml-dev
-      
-    - name: Install-missing
-      run: sudo apt-get install -f
 
     - name: Configure-CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}

@@ -1,7 +1,6 @@
 #include"gameHandler.hpp"
 #include"gameGraphics.hpp"
-#include <iostream>
-
+#include<iostream>
 
 constexpr auto WINDOW_NAME = "ray cast maze";
 
