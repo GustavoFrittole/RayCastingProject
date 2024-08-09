@@ -23,16 +23,24 @@ inline GameAsset::GameAsset(int width, int height, bool createPixelArray = false
     create(width, height, createPixelArray);
 }
 
+//---------------------------TEXTURE------
+
 void Texture::create(const std::string& filePath)
 {
     m_texture.loadFromFile(filePath);
+    if (m_texture.getSize() == sf::Vector2u(0, 0))
+    {
+        std::string err("Could not load file from path: ");
+        err.append(filePath);
+        throw std::invalid_argument(err);
+    }
     m_texturePixels = m_texture.getPixelsPtr();
 }
 const
 sf::Uint8& Texture::get_pixel_at(int index) const
 {
     if (index < 0 || index >= width() * height() * 4)
-        throw std::invalid_argument("Index is out of range.");
+        throw std::runtime_error("Index is out of range.");
     else
         return m_texturePixels[index];
 }
