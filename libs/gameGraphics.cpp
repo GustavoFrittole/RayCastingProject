@@ -4,6 +4,8 @@
 #include<stdexcept>
 #include <iostream>
 
+#define DRAW_LINEAR_SKY
+
 using namespace screenStats;
 
 //---------------------------GAME-ASSET---
@@ -54,7 +56,7 @@ GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const
     m_window.setFramerateLimit(0);
 }
 
-//----compund-funtions
+//----compound-funtions
 
 void GameGraphics::start()
 {
@@ -100,7 +102,6 @@ void GameGraphics::create_assets()
     m_renderingThreadPool.refresh_variables();
 }
 
-//TODO add flags
 void GameGraphics::performGameCycle() 
 {
     m_window.clear(sf::Color::Black);
@@ -114,16 +115,9 @@ void GameGraphics::performGameCycle()
         m_findPathRequested = false;
     }
 
-    //debug::GameTimer gt;
-    //gt.reset_timer();
-
     m_gameCore.view_by_ray_casting(m_linear);
-    //std::cout << " casting    \t" << gt.reset_timer() << std::endl;
-    //draw_background();
-    //std::cout << " draw back  \t" << gt.reset_timer() << std::endl;
-    //std::cout << " draw view  \t" << gt.reset_timer() << std::endl;
     draw_view();
-    //gt.reset_timer();
+
     if (m_paused || m_tabbed)
     {
         draw_map();
@@ -138,7 +132,6 @@ void GameGraphics::performGameCycle()
             draw_end_screen();
         }
     }
-    //std::cout << " draw minimap\t" << gt.reset_timer() << std::endl;
     m_window.display();
 }
 
@@ -153,8 +146,10 @@ inline void GameGraphics::draw_view()
 
 inline bool GameGraphics::goal_reached()
 {
-    return (m_stateData.gameMap.cells->at(static_cast<int>(m_stateData.playerTransform.coords.x)
-        + static_cast<int>(m_stateData.playerTransform.coords.y) * m_stateData.gameMap.x) == 'g');
+    return (m_stateData.gameMap.cells->at(
+        static_cast<int>(m_stateData.playerTransform.coords.x) + 
+        static_cast<int>(m_stateData.playerTransform.coords.y) * m_stateData.gameMap.x) 
+        == 'g');
 }
 
 //----------------end-screen
@@ -169,7 +164,7 @@ void GameGraphics::load_end_screen()
     m_endGameText.setCharacterSize(50);
     m_endGameText.setFillColor(sf::Color::Magenta);
     m_endGameText.setPosition((g_screenWidth - m_endGameText.getLocalBounds().width)/2,
-                                (g_screenHeight- m_endGameText.getLocalBounds().height)/2);
+                              (g_screenHeight- m_endGameText.getLocalBounds().height)/2);
     
 }
 void GameGraphics::draw_end_screen()
@@ -492,7 +487,8 @@ void GameGraphics::RenderingThreadPool::draw_background_section(float startY, fl
         for (int x = 0; x < g_screenWidth; ++x)
         {
             //ceiling
-            /*
+#ifndef DRAW_LINEAR_SKY 
+
             uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * ceiling.width()));
             uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * ceiling.height()));
 
@@ -501,9 +497,10 @@ void GameGraphics::RenderingThreadPool::draw_background_section(float startY, fl
             view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 1];
             view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 2];
             view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = shading;
-            */
+#endif
 
             //sky
+#ifdef DRAW_LINEAR_SKY 
 
             if (skyUPos >= sky.width())
                 skyUPos -= sky.width();
@@ -515,7 +512,7 @@ void GameGraphics::RenderingThreadPool::draw_background_section(float startY, fl
             view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 2];
             view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = 0xFF;
 
-
+#endif
             //floor
             uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * floor.width()));
             uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * floor.height()));

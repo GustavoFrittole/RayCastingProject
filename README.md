@@ -26,7 +26,7 @@ sudo apt-get install libsfml-dev
 Regarding SFML dependencies check this project's worklflow file [build-ubuntu](https://github.com/GustavoFrittole/RayCastingProject/blob/652de14edd2ba82c59bac9e2bb2f2771dd5f1e0c/.github/workflows/test-builds.yml) or the [sfml guide](https://www.sfml-dev.org/tutorials/2.6/start-cmake.php).
 
 ## Features
-Pre-game map generation, custom map, in-game full screen map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
+Fake 3d environment generated via ray casting, maze generation at start up or custom map, custom textures, in-game full screen map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
 Note: distance based shading of horizontal planes (sky/floor) is only available in linear perspective mode.
 
 ### 0.1.1 : Linear - Euclidean real time switch
@@ -41,7 +41,7 @@ The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org
 and the process of creation is displayed at game start.
 ## Controls
 - WASD to move,
-- mouse right and left or arrows `<` `>` to turn left and right,
+- mouse left and right or `<` `>` to turn left and right,
 - `ESC` to pause and view map, 
 - `tab` to view full screen map without pausing,
 - `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
@@ -60,5 +60,11 @@ Note: the game starts paused. Press `ESC` to gain control
 - ~~json parser doest return error when options are missing, making the bug difficult to read;~~
 - ~~texture are not inverted in accordance with the orientation of the faces of the cube.~~
 
+## Resources
+ - Textures:
+    - skybox: edited Adobe Stock Standard License photo thumbnail;
+    - everything else: edited DALL·E 3 generated images;
+ - Linear perspective:
+    - [Lodev article](https://lodev.org/cgtutor/raycasting.html).
 
 
