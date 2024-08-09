@@ -4,14 +4,11 @@
 #include"utils.hpp"
 #include<memory>
 
-
-//WIP
 namespace screenStats
 {
 	constexpr int g_screenHeight = 720;
 	constexpr int g_screenWidth = g_screenHeight * 16 / 9;
 }
-//
 
 struct EntityTransform
 {

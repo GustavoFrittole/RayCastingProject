@@ -2,7 +2,6 @@
 #include<gameGraphics.hpp>
 #include<math.h>
 #include<stdexcept>
-#include <iostream>
 
 #define DRAW_LINEAR_SKY
 

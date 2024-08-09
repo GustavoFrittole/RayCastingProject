@@ -7,7 +7,7 @@
         }
     },
     "gameCamera": {
-        "FOV": 120,
+        "FOV": 90,
         "maxRenderDist": 20.0,
         "rayPrecision": 0.02
     },
