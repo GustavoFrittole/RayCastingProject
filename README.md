@@ -1,3 +1,4 @@
+[![Build-tests](https://github.com/GustavoFrittole/RayCastingProject/actions/workflows/test-builds.yml/badge.svg)](https://github.com/GustavoFrittole/RayCastingProject/actions/workflows/test-builds.yml)
 
 # Ray casting based maze explorer
 Personal project exploring the concept of ray casting.

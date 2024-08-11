@@ -102,7 +102,16 @@ float math::deg_to_rad(float deg) {
 
 float math::vec_to_rad(math::Vect2 v)
 {
-	return std::atan(v.y / v.x);
+	float angle = std::atan(v.y / v.x);
+	if (v.x < 0)
+	{
+		if (v.y > 0)
+			angle = PI / 2 + (PI / 2 + angle);
+		else
+			angle = - PI / 2 + (- PI / 2 + angle);
+	}
+
+	return angle;
 }
 
 int get_thread_number()

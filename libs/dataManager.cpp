@@ -36,14 +36,26 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->gMap.y = data.at("gameMap").at("mapH").get<int>();
 		gameData->gMap.generated = data.at("gameMap").at("generated").get<bool>();
 
+		gameData->controlsMulti.mouseSens = data.at("controls").at("mouseSens").get<float>();
+		gameData->controlsMulti.movementSpeed = data.at("controls").at("movementSpeed").get<float>();
+
 		gameData->screenStats.minimapScale = data.at("screenStats").at("minimapScale").get<float>();
 		gameData->screenStats.halfWallHeight = data.at("screenStats").at("halfWallHeight").get<float>();
 
-		gameData->gAssets.wallTexFilePath = data.at("assets").at("wallTexPath").get<std::string>();
-		gameData->gAssets.boundryTexFilePath = data.at("assets").at("boundryTexPath").get<std::string>();
-		gameData->gAssets.floorTexFilePath = data.at("assets").at("floorTexPath").get<std::string>();
-		gameData->gAssets.ceilingTexFilePath = data.at("assets").at("ceilingTexPath").get<std::string>();
-		gameData->gAssets.skyTexFilePath = data.at("assets").at("skyTexPath").get<std::string>();
+		gameData->gAssets.wallTexFilePath = data.at("textures").at("wallTexPath").get<std::string>();
+		gameData->gAssets.boundryTexFilePath = data.at("textures").at("boundryTexPath").get<std::string>();
+		gameData->gAssets.floorTexFilePath = data.at("textures").at("floorTexPath").get<std::string>();
+		gameData->gAssets.ceilingTexFilePath = data.at("textures").at("ceilingTexPath").get<std::string>();
+		gameData->gAssets.skyTexFilePath = data.at("textures").at("skyTexPath").get<std::string>();
+
+		int spriteNumber = data.at("sprite number").get<int>();
+		for (int i = 0; i < spriteNumber; ++i)
+		{
+			std::string spriteName("sprite");
+			spriteName.append(std::to_string(i));
+			gameData->gSprites.push_back({ data.at(spriteName).at("texture").get<std::string>(), EntityTransform{ math::Vect2(data.at(spriteName).at("position").at("x").get<float>() ,data.at(spriteName).at("position").at("y").get<float>())} });
+		}
+
 
 		mapFilePath = data.at("gameMap").at("mapCellsFile").get<std::string>();
 		std::cout << data.dump(4);

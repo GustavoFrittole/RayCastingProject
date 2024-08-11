@@ -4,6 +4,7 @@
 #include<thread>
 #include<stdexcept>
 #include<cmath>
+#include <iostream>
 
 //----------------------RayInfo----------------------
 
@@ -27,7 +28,7 @@ const RayInfo& RayInfoArr::const_at(int index) const
 
 GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTransform) : 
 	m_gameCamera(gc),
-	m_entityTransform(entityTransform),
+	m_playerTransform(entityTransform),
 	m_playerController(*this),
 	m_processorCount(get_thread_number()),
 	m_rayInfoArr(gc.pixelWidth)
@@ -36,19 +37,21 @@ GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTrans
 	m_gameMap.y = gameMap.y;
 	m_gameMap.generated = gameMap.generated;
 	m_gameMap.cells.swap(gameMap.cells);
+
 	if (m_gameMap.generated)
 	{
 		if (m_gameMap.cells.get() == nullptr)
 			m_gameMap.cells = std::make_unique<std::string>();
-		m_mapGenerator = std::make_unique<MapGenerator>((int)m_entityTransform.coords.x, (int)m_entityTransform.coords.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
+		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coords.x, (int)m_playerTransform.coords.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
 	}
-
-	m_cameraDir = { std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
-	m_cameraPlane = math::Vect2( m_cameraDir.y , -m_cameraDir.x ) * std::tan( m_gameCamera.fov/2 ) * 2;	
+	//camera plane vars
+	m_cameraDir = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
+	m_cameraPlane = math::Vect2( m_cameraDir.y , -m_cameraDir.x ) * std::tan( m_gameCamera.fov/2 ) * 2;
 }
-GameStateData GameCore::getMapData() const 
+
+GameStateData GameCore::get_map_data() const 
 {
-	return GameStateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_entityTransform, m_gameMap, m_cameraDir, m_cameraPlane};
+	return GameStateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_playerTransform, m_gameMap, m_cameraDir, m_cameraPlane};
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
@@ -91,6 +94,11 @@ void GameCore::chech_position_in_map(int rayPosInMapX, int rayPosInMapY, EntityT
 	}
 }
 
+void GameCore::add_billboard_sprite(int id, const EntityTransform& entityTransform)
+{
+	m_billboards.emplace_back(id, entityTransform);
+}
+
 void GameCore::update_entities()
 {
 	//calculate delta time and update internal clock
@@ -102,9 +110,9 @@ void GameCore::update_entities()
 	//decompose movment in x and y(world) axis and check collions separatly
 
 	//check_collision X axis
-	math::Vect2 moveAttempt = m_entityTransform.coords +
-		(math::Vect2(std::cos(m_entityTransform.forewardAngle) * m_pInputCache.foreward 
-					-std::sin(m_entityTransform.forewardAngle) * m_pInputCache.lateral, 0)
+	math::Vect2 moveAttempt = m_playerTransform.coords +
+		(math::Vect2(std::cos(m_playerTransform.forewardAngle) * m_pInputCache.foreward 
+					-std::sin(m_playerTransform.forewardAngle) * m_pInputCache.lateral, 0)
 					* (correctionFactor));
 
 	EntityType hitMarker = EntityType::NoHit;
@@ -113,14 +121,14 @@ void GameCore::update_entities()
 	//update entities
 	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
 	{
-		m_entityTransform.coords = moveAttempt;
+		m_playerTransform.coords = moveAttempt;
 	}
 
 
 	//check_collision Y axis
-	moveAttempt = m_entityTransform.coords +
-		(math::Vect2(0, std::sin(m_entityTransform.forewardAngle) * m_pInputCache.foreward +
-					std::cos(m_entityTransform.forewardAngle) * m_pInputCache.lateral)
+	moveAttempt = m_playerTransform.coords +
+		(math::Vect2(0, std::sin(m_playerTransform.forewardAngle) * m_pInputCache.foreward +
+					std::cos(m_playerTransform.forewardAngle) * m_pInputCache.lateral)
 					* (correctionFactor));
 
 
@@ -131,18 +139,18 @@ void GameCore::update_entities()
 	//update entities
 	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
 	{
-		m_entityTransform.coords = moveAttempt;
+		m_playerTransform.coords = moveAttempt;
 	}
 
 	//rotate
-	m_entityTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
-	m_cameraDir = { std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+	m_playerTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
+	m_cameraDir = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
 	m_cameraPlane = math::Vect2(m_cameraDir.y, -m_cameraDir.x) * std::tan(m_gameCamera.fov / 2) * 2;
 
-	if (m_entityTransform.forewardAngle >= 2 * PI)
-		m_entityTransform.forewardAngle -= 2 * PI;
-	else if(m_entityTransform.forewardAngle < 0)
-		m_entityTransform.forewardAngle += 2 * PI;
+	if (m_playerTransform.forewardAngle >= PI)
+		m_playerTransform.forewardAngle -= 2*PI;
+	else if(m_playerTransform.forewardAngle <= -PI)
+		m_playerTransform.forewardAngle += 2*PI;
 
 	//reset cached values
 	m_pInputCache.foreward = 0;
@@ -163,14 +171,20 @@ void GameCore::PlayerController::move_strafe(float amount) const
 	gameCore.m_pInputCache.lateral += amount;
 }
 
-void GameCore::view_by_ray_casting(bool cameraPlane)
+void GameCore::view_by_ray_casting(bool useCameraPlane)
 {
-	math::Vect2 startPos = m_entityTransform.coords;
+	view_walls(useCameraPlane);
+	view_billboards(useCameraPlane);
+}
+
+void GameCore::view_walls(bool useCameraPlane)
+{
+	math::Vect2 startPos = m_playerTransform.coords;
 	math::Vect2 currentRayDir;
 	math::Vect2 rayRotationIncrement;
 	math::Mat2x2 rayRotationIncrementMat;
 
-	if (cameraPlane)
+	if (useCameraPlane)
 	{
 		currentRayDir = m_cameraDir - m_cameraPlane / 2;
 		rayRotationIncrement = m_cameraPlane / (m_gameCamera.pixelWidth);
@@ -178,7 +192,7 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 	else
 	{
 		math::Mat2x2 halfFOVRotationMat = math::rotation_mat2x2(m_gameCamera.fov / 2);
-		math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+		math::Vect2 playerForwDir{ std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
 		currentRayDir = playerForwDir * halfFOVRotationMat;
 		rayRotationIncrementMat = math::rotation_mat2x2(-m_gameCamera.fov / m_gameCamera.pixelWidth);
 	}
@@ -187,13 +201,13 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 	{
 		//DDA
 
-		math::Vect2 startingPos = m_entityTransform.coords;
+		math::Vect2 startingPos = m_playerTransform.coords;
 		EntityType hitMarker = EntityType::Nothing;
 
 		float lengthIncrementX;
 		float lengthIncrementY;
 
-		if (cameraPlane)
+		if (useCameraPlane)
 		{
 			//increment in ray length that projects in an unitaty movement (unitaryStep) in X and Y direction
 			lengthIncrementX = (1 / std::abs(currentRayDir.x));
@@ -274,7 +288,7 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 
 		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked};
 
-		if (cameraPlane)
+		if (useCameraPlane)
 		{
 			//rotate ray for next iteration
 			currentRayDir += rayRotationIncrement;
@@ -286,14 +300,37 @@ void GameCore::view_by_ray_casting(bool cameraPlane)
 	}
 }
 
+void GameCore::view_billboards(bool useCameraPlane)
+{
+	for (Billboard& b : m_billboards)
+	{
+		if(b.active)
+		{
+			math::Vect2 rayToCamera = b.entityTransform.coords - m_playerTransform.coords;
+			b.distance = rayToCamera.Length();
+			b.visible = (b.distance < m_gameCamera.maxRenderDist);
+
+			//relative to camera foreward view
+			b.relativeAngle = m_playerTransform.forewardAngle - math::vec_to_rad(rayToCamera);
+			if (b.relativeAngle >= PI)
+				b.relativeAngle -= 2 * PI;
+			else if (b.relativeAngle <= -PI)
+				b.relativeAngle += 2 * PI;
+			
+			if (useCameraPlane)
+				b.distance *= std::cos(b.relativeAngle);
+		}
+	}
+}
+
 //Simple but inefficient form of ray casting 
 //  
 //void GameCore::view_by_ray_casting()
 //{
 //	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
-//	math::Vect2 playerForwDir{ std::cos(m_entityTransform.forewardAngle), std::sin(m_entityTransform.forewardAngle) };
+//	math::Vect2 playerForwDir{ std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
 //	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
-//	math::Vect2 startPos = m_entityTransform.coords;
+//	math::Vect2 startPos = m_playerTransform.coords;
 //
 //	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
 //	{

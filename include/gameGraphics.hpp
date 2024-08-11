@@ -45,11 +45,11 @@ public:
     Texture(const std::string& filePath) { create(filePath); }
     void create(const std::string&);
     const sf::Uint8& get_pixel_at(int) const;
-    int width() const { return m_texture.getSize().x; }
-    int height() const { return m_texture.getSize().y; }
+    int width() const { return m_image.getSize().x; }
+    int height() const { return m_image.getSize().y; }
     const sf::Uint8* m_texturePixels = nullptr;
 private:
-    sf::Image m_texture;
+    sf::Image m_image;
     int m_width = 0;
     int m_height = 0;
 };
@@ -85,18 +85,21 @@ private:
     std::unique_ptr<PathFinder> m_pathFinder;
     const MinimapInfo m_minimapInfo;
     float m_halfWallHeight = 0.5f;
+    Controls m_controlsMulti;
 
     GameAsset m_mainView;
     GameAsset m_mainBackground;
     sf::Text m_endGameText;
     sf::Font m_endGameFont;
-    MapSquareAsset m_igMapAssets;
+    MapSquareAsset m_mapSquareAsset;
     GameAssets m_gameAssets;
     Texture m_wallTexture;
     Texture m_baundryTexture;
     Texture m_floorTexture;
     Texture m_ceilingTexture;
     Texture m_skyTexture;
+    std::vector<Sprite> m_spritesToLoad;
+    std::vector<std::unique_ptr<Texture>> m_spriteTexturesDict;
 
     bool m_hadFocus = false;
     bool m_paused = false;
@@ -113,10 +116,13 @@ private:
     void draw_background();
     void draw_path_out();
     void draw_view();
+    void draw_sprites();
+    void draw_sprite_on_view(float, float, const Texture&);
     void load_end_screen();
     void generate_background();
     void handle_events();
     inline void create_assets();
+    inline void load_sprites();
 
     class RenderingThreadPool
     {

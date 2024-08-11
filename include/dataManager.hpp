@@ -3,6 +3,7 @@
 
 #include"utils.hpp"
 #include<memory>
+#include<vector>
 
 namespace screenStats
 {
@@ -13,7 +14,7 @@ namespace screenStats
 struct EntityTransform
 {
 	math::Vect2 coords{};
-	float forewardAngle = 0;
+	float forewardAngle = 0.f;
 };
 
 struct GameCamera
@@ -23,6 +24,12 @@ struct GameCamera
 	float fov = 90.f;
 	float maxRenderDist = 10.f;
 	float rayPrecision = 0.1f;
+};
+
+struct Controls
+{
+	float mouseSens = 1.f;
+	float movementSpeed = 1.f;
 };
 
 struct ScreenStats
@@ -47,6 +54,12 @@ struct GameAssets
 	std::string skyTexFilePath;
 };
 
+struct Sprite
+{
+	std::string texture;
+	EntityTransform transform;
+};
+
 namespace DataUtils
 {
 	struct GameData
@@ -54,8 +67,10 @@ namespace DataUtils
 		EntityTransform playerTrasform;
 		GameCamera gCamera;
 		GameMap gMap;
+		Controls controlsMulti;
 		ScreenStats screenStats;
 		GameAssets gAssets;
+		std::vector<Sprite> gSprites;
 	};
 
 	std::unique_ptr<GameData> load_game_data(const std::string&);
