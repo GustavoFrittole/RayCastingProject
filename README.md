@@ -27,7 +27,7 @@ Regarding SFML dependencies check this project's worklflow file [build-ubuntu](h
 
 
 ## Features
-Pseudo 3d environment generated via ray casting in wich the user can explore a maze (generation displayed at launch) or a custom map. Custom textures, in-game map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective), billboard sprites.
+Pseudo 3d environment generated via ray casting in wich the user can explore a maze (generation displayed at launch) or a custom map. Custom textures, in-game map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective), sprite rendering in both perspective modes: an arbitrary number of sprites can be loaded from the config file.
 Note: distance based shading of horizontal planes (ceiling/floor) is only available in linear perspective mode.
 
 ### 0.1.0
