@@ -45,11 +45,11 @@ public:
     Texture(const std::string& filePath) { create(filePath); }
     void create(const std::string&);
     const sf::Uint8& get_pixel_at(int) const;
-    int width() const { return m_texture.getSize().x; }
-    int height() const { return m_texture.getSize().y; }
+    int width() const { return m_image.getSize().x; }
+    int height() const { return m_image.getSize().y; }
     const sf::Uint8* m_texturePixels = nullptr;
 private:
-    sf::Image m_texture;
+    sf::Image m_image;
     int m_width = 0;
     int m_height = 0;
 };
@@ -85,24 +85,28 @@ private:
     std::unique_ptr<PathFinder> m_pathFinder;
     const MinimapInfo m_minimapInfo;
     float m_halfWallHeight = 0.5f;
+    Controls m_controlsMulti;
 
     GameAsset m_mainView;
     GameAsset m_mainBackground;
     sf::Text m_endGameText;
     sf::Font m_endGameFont;
-    MapSquareAsset m_igMapAssets;
+    MapSquareAsset m_mapSquareAsset;
     GameAssets m_gameAssets;
     Texture m_wallTexture;
     Texture m_baundryTexture;
     Texture m_floorTexture;
     Texture m_ceilingTexture;
     Texture m_skyTexture;
+    std::vector<Sprite> m_spritesToLoad;
+    std::vector<std::unique_ptr<Texture>> m_spriteTexturesDict;
 
     bool m_hadFocus = false;
     bool m_paused = false;
     bool m_findPathRequested = false;
     bool m_tabbed = false;
     bool m_linear = true;
+    bool m_drawSky = false;
 
     void draw_camera_view();
     void draw_minimap_triangles();
@@ -113,10 +117,13 @@ private:
     void draw_background();
     void draw_path_out();
     void draw_view();
+    void draw_sprites();
+    void draw_sprite_on_view(float, float, const Texture&);
     void load_end_screen();
     void generate_background();
     void handle_events();
     inline void create_assets();
+    inline void load_sprites();
 
     class RenderingThreadPool
     {
@@ -144,7 +151,7 @@ private:
         float m_skyVIncrement = 0;
 
         void draw_veiw_section(int start, int end, const bool& linear);
-        void draw_background_section(float startY, float endY);
+        void draw_background_section(float startY, float endY, bool drawSky);
     };
 
     RenderingThreadPool m_renderingThreadPool;

@@ -2,8 +2,8 @@
     "playerTransform": {
         "forewardAngleDeg": 0,
         "pos": {
-            "x": 9,
-            "y": 9
+            "x": 5,
+            "y": 5
         }
     },
     "gameCamera": {
@@ -21,11 +21,30 @@
         "minimapScale" : 6,
 	    "halfWallHeight" : 1
     },
-    "assets" : {
+    "controls" : {
+        "mouseSens" : 1,
+	    "movementSpeed" : 1
+    },
+    "textures" : {
         "wallTexPath" : "assets/wall2.png",
         "boundryTexPath" : "assets/boundry2.png",
         "floorTexPath" : "assets/floor2.png",
         "ceilingTexPath" : "assets/ceiling2.png",
-        "skyTexPath" : "assets/sky2.png"
+        "skyTexPath" : "assets/sky1.png"
+    },
+    "sprite number" : 2,
+    "sprite0" : {
+        "texture" : "assets/sprite1.png",
+        "position" : {
+            "x" : 6,
+            "y" : 6
+        }
+    },
+    "sprite1" : {
+        "texture" : "assets/sprite2.png",
+        "position" : {
+            "x" : 5.5,
+            "y" : 6
+        }
     }
 }

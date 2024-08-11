@@ -8,6 +8,7 @@ int main()
     std::unique_ptr<rcm::IGameHandler> gameHandler(rcm::create_gameHandler("assets/config.json"));
     if (gameHandler->is_good())
     {
+        
         try
         {
             gameHandler->run_game();
