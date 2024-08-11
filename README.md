@@ -2,16 +2,15 @@
 
 # Ray casting based maze explorer
 Personal project exploring the concept of ray casting.
-## Building
-The project relies on SFML (for user input and window handling). If it  can't be found locally by cmake, it will be downloaded form github and compiled.
-When building on linux having this dependency installed in advance might be more practical.
+## Build instructions
+The project relies on SFML (for user input and window handling). If it can't be found locally by cmake, it will be downloaded form github and compiled.
 ### Windows
 ```
 git clone https://github.com/GustavoFrittole/RayCastingProject.git
 cd RayCastingProject
 ```
 ```
-cmake -G"<Choose generator>" -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S .
+cmake -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S . -B ./build
 ```
 ```
 cmake --build ./build
@@ -20,7 +19,7 @@ cmake --build ./build
 ./build/bin/main.exe
 ```
 ### Linux 
-Same as above but it is advised to install SFML in advance. For Debian is:
+Same as above, but when building on linux having the SFML dependency installed in advance might be more practical. For Debian is:
 ```
 sudo apt-get install libsfml-dev
 ```
@@ -30,8 +29,10 @@ Regarding SFML dependencies check this project's worklflow file [build-ubuntu](h
 Pseudo 3d environment generated via ray casting in wich the user can explore a maze (generation displayed at launch) or a custom map. Custom textures, in-game map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective), billboard sprites.
 Note: distance based shading of horizontal planes (ceiling/floor) is only available in linear perspective mode.
 
-### 0.1.1 : Linear - Euclidean real time switch
-![switch](https://github.com/user-attachments/assets/235d9133-62e0-4de6-b666-10f7ce739400)
+### 0.1.1
+linear - curvilinear perspective switch         |  Sky
+:-------------------------:|:-------------------------:
+![switch](https://github.com/user-attachments/assets/159c4ac2-e2bf-49a2-89ed-49960b84b41b)  |  ![sky](https://github.com/user-attachments/assets/aebb4eef-8195-496f-8c16-8616085422c4)
 
 ### 0.1.0
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
