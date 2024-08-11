@@ -27,8 +27,8 @@ sudo apt-get install libsfml-dev
 Regarding SFML dependencies check this project's worklflow file [build-ubuntu](https://github.com/GustavoFrittole/RayCastingProject/blob/652de14edd2ba82c59bac9e2bb2f2771dd5f1e0c/.github/workflows/test-builds.yml) or the [sfml guide](https://www.sfml-dev.org/tutorials/2.6/start-cmake.php).
 
 ## Features
-Fake 3d environment generated via ray casting, maze generation at start up or custom map, custom textures, in-game full screen map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective).
-Note: distance based shading of horizontal planes (sky/floor) is only available in linear perspective mode.
+Pseudo 3d environment generated via ray casting in wich the user can explore a maze (generation displayed at launch) or a custom map. Custom textures, in-game map and mini map, calculation and display of shortest path to goal in generated mazes, customizable parameters (in `config.json`), real time switch from euclidean distance measuring to projection to camera plain (linear perspective), billboard sprites.
+Note: distance based shading of horizontal planes (ceiling/floor) is only available in linear perspective mode.
 
 ### 0.1.1 : Linear - Euclidean real time switch
 ![switch](https://github.com/user-attachments/assets/235d9133-62e0-4de6-b666-10f7ce739400)
@@ -45,8 +45,9 @@ and the process of creation is displayed at game start.
 - mouse left and right or `<` `>` to turn left and right,
 - `ESC` to pause and view map, 
 - `tab` to view full screen map without pausing,
-- `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps).
-- `space` to toggle camera plane on and off.
+- `e` to calculate shortest path (will be displayed in full screen map, as of now not implemented for custom maps),
+- `space` to toggle camera plane on and off,
+- `R` to toggle sky on and off (only linear perspective).
 
 Note: the game starts paused. Press `ESC` to gain control
 
@@ -67,5 +68,3 @@ Note: the game starts paused. Press `ESC` to gain control
     - other textures: edited DALL·E 3 generated images;
  - Linear perspective:
     - [Lodev article](https://lodev.org/cgtutor/raycasting.html).
-
-
