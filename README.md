@@ -64,7 +64,7 @@ Note: the game starts paused. Press `ESC` to gain control
 ## Resources
  - Textures:
     - skybox: edited Adobe Stock Standard License photo thumbnail;
-    - everything else: edited DALL·E 3 generated images;
+    - other textures: edited DALL·E 3 generated images;
  - Linear perspective:
     - [Lodev article](https://lodev.org/cgtutor/raycasting.html).
 

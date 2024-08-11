@@ -237,7 +237,7 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) :
                         }
                     }
                     if(m_gameGraphics.m_linear)
-                        draw_background_section(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud));
+                        draw_background_section(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud), m_gameGraphics.m_drawSky);
                     jobs++;
 
                     {
@@ -298,7 +298,7 @@ void GameGraphics::RenderingThreadPool::render_view()
 
     if ( m_lastSectionBackgroud != 0 && m_gameGraphics.m_linear )
     {
-        draw_background_section(m_lastSectionBackgroud, g_screenHeight/2);
+        draw_background_section(m_lastSectionBackgroud, g_screenHeight/2, m_gameGraphics.m_drawSky);
     }
 
     while (jobs != m_poolSize)
@@ -470,7 +470,7 @@ void GameGraphics::RenderingThreadPool::draw_veiw_section(int start, int end, co
 
 //----------------background--
 
-void GameGraphics::RenderingThreadPool::draw_background_section(float startY, float endY)
+void GameGraphics::RenderingThreadPool::draw_background_section(float startY, float endY, bool drawSky)
 {
     //the algorithm operates by linear inerpolating between the left and rightmost rays cast by the camera to obtain world coordinates 
     //that are then translated into uv space. The lenght of the rays is calculated each scanline from the corresponding screen height.
@@ -509,33 +509,34 @@ void GameGraphics::RenderingThreadPool::draw_background_section(float startY, fl
 
         for (int x = 0; x < g_screenWidth; ++x)
         {
-            //ceiling
-#ifndef DRAW_LINEAR_SKY 
+            
+            if(drawSky)
+                //sky
+            {
 
-            uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * ceiling.width()));
-            uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * ceiling.height()));
+                if (skyUPos >= sky.width())
+                    skyUPos -= sky.width();
+                else if (skyUPos < 0)
+                    skyUPos += sky.width();
+
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 0];
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 1];
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 2];
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = 0xFF;
+            }
+            else
+                //ceiling
+            {
+                uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * ceiling.width()));
+                uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * ceiling.height()));
 
 
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 0];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 1];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 2];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = shading;
-#endif
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 0];
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 1];
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = ceiling.m_texturePixels[(uvPos[1] * ceiling.width() + uvPos[0]) * 4 + 2];
+                view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = shading;
+            }
 
-            //sky
-#ifdef DRAW_LINEAR_SKY 
-
-            if (skyUPos >= sky.width())
-                skyUPos -= sky.width();
-            else if (skyUPos < 0)
-                skyUPos += sky.width();
-
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 0] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 0];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 1] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 1];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 2] = sky.m_texturePixels[((int)skyVPos * sky.width() + (int)skyUPos) * 4 + 2];
-            view.m_pixels[(y * g_screenWidth + x) * 4 + 3] = 0xFF;
-
-#endif
             //floor
             uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * floor.width()));
             uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * floor.height()));
@@ -570,7 +571,6 @@ void GameGraphics::draw_sprites()
     {
         if (b.active && b.visible)
         {
-            
             billbByDistMaxQ.push(&b);
         }
     }
@@ -590,7 +590,7 @@ void GameGraphics::draw_sprites()
             throw std::runtime_error(err);
         }
         
-        draw_sprite_on_view(billb->distance, billb->relativeAngle, *(spriteTex));
+        draw_sprite_on_view(billb->distance, billb->positionOnScreen, *(spriteTex));
         billbByDistMaxQ.pop();
     }
 
@@ -598,11 +598,12 @@ void GameGraphics::draw_sprites()
     m_window.draw(m_mainView.m_sprite);
 }
 
-void GameGraphics::draw_sprite_on_view(float distance, float relativeAngle, const Texture& spriteTex)
+void GameGraphics::draw_sprite_on_view(float distance, float centerPositionOnScreen, const Texture& spriteTex)
 {
-    //only once
+
     if (distance < 0.02)
         return;
+    //only once
     float screenSpriteHeight = (g_screenHeight / distance) * m_halfWallHeight;
     float floorHeight = (g_screenHeight - screenSpriteHeight) / 2;
     //
@@ -618,9 +619,7 @@ void GameGraphics::draw_sprite_on_view(float distance, float relativeAngle, cons
         ? texVStep * ((screenSpriteHeight - g_screenHeight) / 2)
         : 0;
 
-    int spriteCenterOnScreen = ((m_stateData.fov/2 + (relativeAngle)) / m_stateData.fov) * g_screenWidth;
-
-    int screenU = (spriteCenterOnScreen - screenSpriteWidth / 2);
+    int screenU = (centerPositionOnScreen - screenSpriteWidth / 2);
 
     float textureU = 0;
 
@@ -630,7 +629,7 @@ void GameGraphics::draw_sprite_on_view(float distance, float relativeAngle, cons
         screenU = 0;
     }
 
-    int screenUEnd = spriteCenterOnScreen + screenSpriteHeight / 2;
+    int screenUEnd = centerPositionOnScreen + screenSpriteHeight / 2;
     int screenVEnd = floorHeight + screenSpriteHeight;
     
     for (; screenU < screenUEnd && screenU < g_screenWidth; ++screenU )
@@ -661,7 +660,7 @@ void GameGraphics::draw_sprite_on_view(float distance, float relativeAngle, cons
                 }
                 else
                 {
-
+                    //TODO semi transparency
                 }
 
                 textureV += texVStep;
@@ -867,6 +866,15 @@ void GameGraphics::handle_events()
                 }
                 else
                     m_linear = true;
+            }
+            if (event.key.scancode == sf::Keyboard::Scan::R)
+            {
+                if (m_drawSky)
+                {
+                    m_drawSky = false;
+                }
+                else
+                    m_drawSky = true;
             }
             if (event.key.scancode == sf::Keyboard::Scan::E)
             {

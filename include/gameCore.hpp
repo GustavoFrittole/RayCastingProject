@@ -72,7 +72,7 @@ struct Billboard
 	int id = -1;
 	EntityTransform entityTransform;
 	float distance = 0.f;
-	float relativeAngle = 0.f;
+	float positionOnScreen = 0.f;
 	bool active = true;
 	bool visible = false;
 };

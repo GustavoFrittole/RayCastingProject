@@ -43,7 +43,7 @@
     "sprite1" : {
         "texture" : "assets/sprite2.png",
         "position" : {
-            "x" : 5,
+            "x" : 5.5,
             "y" : 6
         }
     }

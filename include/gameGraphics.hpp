@@ -106,6 +106,7 @@ private:
     bool m_findPathRequested = false;
     bool m_tabbed = false;
     bool m_linear = true;
+    bool m_drawSky = false;
 
     void draw_camera_view();
     void draw_minimap_triangles();
@@ -150,7 +151,7 @@ private:
         float m_skyVIncrement = 0;
 
         void draw_veiw_section(int start, int end, const bool& linear);
-        void draw_background_section(float startY, float endY);
+        void draw_background_section(float startY, float endY, bool drawSky);
     };
 
     RenderingThreadPool m_renderingThreadPool;

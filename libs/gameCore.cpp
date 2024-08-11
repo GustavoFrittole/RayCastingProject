@@ -230,6 +230,7 @@ void GameCore::view_walls(bool useCameraPlane)
 		int unitaryStepY;
 
 		float rayLength = 0;
+
 		//initialize steps so they match the ray direction
 		//also take care of the first shorter not unitary step
 		if (currentRayDir.x < 0)
@@ -286,7 +287,7 @@ void GameCore::view_walls(bool useCameraPlane)
 		else 
 			rayLength = rayLengthAtIntersectY - lengthIncrementY;
 
-		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked};
+		m_rayInfoArr.at(i) = { hitMarker, currentRayDir * rayLength, rayLength, lastSideChecked };
 
 		if (useCameraPlane)
 		{
@@ -307,18 +308,38 @@ void GameCore::view_billboards(bool useCameraPlane)
 		if(b.active)
 		{
 			math::Vect2 rayToCamera = b.entityTransform.coords - m_playerTransform.coords;
-			b.distance = rayToCamera.Length();
-			b.visible = (b.distance < m_gameCamera.maxRenderDist);
+			float euclideanRayLength = rayToCamera.Length();
 
 			//relative to camera foreward view
-			b.relativeAngle = m_playerTransform.forewardAngle - math::vec_to_rad(rayToCamera);
-			if (b.relativeAngle >= PI)
-				b.relativeAngle -= 2 * PI;
-			else if (b.relativeAngle <= -PI)
-				b.relativeAngle += 2 * PI;
-			
-			if (useCameraPlane)
-				b.distance *= std::cos(b.relativeAngle);
+			float relativeAngle = m_playerTransform.forewardAngle - math::vec_to_rad(rayToCamera);
+			if (relativeAngle >= PI)
+				relativeAngle -= 2 * PI;
+			else if (relativeAngle <= -PI)
+				relativeAngle += 2 * PI;
+
+			if (!useCameraPlane)
+			{
+				b.distance = euclideanRayLength;
+
+				//mapping to screen pos
+				b.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
+
+				b.visible = (b.distance < m_gameCamera.maxRenderDist);
+			}
+			else
+			{
+				b.distance = euclideanRayLength * std::cos(relativeAngle);
+
+				//mapping to screen pos
+				float projectionOnPlane = euclideanRayLength * std::sin(relativeAngle);
+				float planeLength = std::tan(m_gameCamera.fov / 2) * 2;
+				//since rays are obrained by adding the plane position to a vertical vector: (planePos, 1) * rayLength
+				//the position on plane can be derived from the vector's x component normalized
+				float positionOnPlane = projectionOnPlane / b.distance;
+				b.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
+
+				b.visible = (b.distance < m_gameCamera.maxRenderDist);
+			}
 		}
 	}
 }
