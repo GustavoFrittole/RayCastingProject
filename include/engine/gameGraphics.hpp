@@ -156,4 +156,7 @@ private:
 
     RenderingThreadPool m_renderingThreadPool;
 };
+
+inline void copy_pixels( sf::Uint8 *, const sf::Uint8 *, int, int, sf::Uint8 );
+
 #endif

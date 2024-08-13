@@ -5,15 +5,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 set(CMAKE_BUILD_TYPE "Release")
 
-#copy assets folder in root
+# copy assets folder in root (useful when working with some IDEs)
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
 set(DEST_DIR "${CMAKE_BINARY_DIR}")
 file(COPY ${SOURCE_DIR} DESTINATION ${DEST_DIR})
 
 include(FetchContent)
-## search for sfml
+
+# search for sfml
 find_package(SFML 2.6 COMPONENTS system window graphics QUIET)
 
+# fetch if not found
 if (NOT SFML_FOUND)
     FetchContent_Declare(
         SFML
@@ -22,7 +24,7 @@ if (NOT SFML_FOUND)
     FetchContent_MakeAvailable(SFML)
 endif()
 
-## json parser
+# fetch json parser
 FetchContent_Declare(
     json 
     URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
@@ -30,9 +32,17 @@ FetchContent_MakeAvailable(json)
 
 add_executable(main src/main.cpp)
 
-include_directories(include)
-
 add_subdirectory(libs)
+
+target_include_directories(utils PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
+target_include_directories(mapGenerator PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
+target_include_directories(pathFinder PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
+target_include_directories(gameCore PUBLIC ${CMAKE_SOURCE_DIR}/include/engine)
+target_include_directories(gameGraphics PUBLIC ${CMAKE_SOURCE_DIR}/include/engine)
+target_include_directories(dataManager PUBLIC ${CMAKE_SOURCE_DIR}/include/engine)
+target_include_directories(dataManager PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
+target_include_directories(gameHandler PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(gameCore PRIVATE utils mapGenerator dataManager)
 target_link_libraries(gameGraphics PUBLIC gameCore sfml-graphics utils mapGenerator pathFinder)
