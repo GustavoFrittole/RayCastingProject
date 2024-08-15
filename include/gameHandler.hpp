@@ -8,13 +8,11 @@ namespace rcm
 	class IGameHandler
 	{
 	public:
-		bool is_good() const { return m_isGood; }
+		IGameHandler() = default;
+		virtual void load_game_data(const std::string&) = 0;
 		virtual void run_game() = 0;
-		std::string get_errors() const { return m_isGood ? "All good" : m_errors; }
 	protected:
-		virtual bool load_game_data(const std::string&) = 0;
-		bool m_isGood = true;
-		std::string m_errors;
+		std::string m_configFilePath;
 	};
 
 	IGameHandler* create_gameHandler(const std::string&);

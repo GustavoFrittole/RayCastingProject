@@ -1,13 +1,14 @@
 #ifndef GAMEGRAPHICS_HPP
 #define GAMEGRAPHICS_HPP
  
-#include"gameCore.hpp"
+
 #include<SFML/Graphics.hpp>
 #include<thread>
 #include<condition_variable> 
 #include<mutex> 
 #include<atomic>
 #include"pathFinder.hpp"
+#include"gameCore.hpp"
 
 #define GENERATION_TIME_STEP_MS 5
 
@@ -23,14 +24,14 @@ struct MinimapInfo
     int minimapScale;
 };
 
-struct GameAsset
+struct GameView
 {
-    GameAsset() = default;
-    GameAsset(int, int, bool);
+    GameView() = default;
+    GameView(int, int, bool);
     void create(int, int, bool);
-    GameAsset& operator=(const GameAsset&) = delete;
-    GameAsset(const GameAsset&) = delete;
-    ~GameAsset() { if (m_hasPixelArray) delete[] m_pixels; }
+    GameView& operator=(const GameView&) = delete;
+    GameView(const GameView&) = delete;
+    ~GameView() { if (m_hasPixelArray) delete[] m_pixels; }
     sf::Texture m_texture;
     sf::Sprite m_sprite;
     sf::Uint8* m_pixels = nullptr;
@@ -57,18 +58,28 @@ private:
 class GameGraphics
 {
 public:
-    GameGraphics(std::unique_ptr<DataUtils::GameData>&, const std::string&);
+    GameGraphics(sf::RenderWindow&, const GraphicsVars&, int);
     GameGraphics() = delete;
     GameGraphics& operator=(const GameGraphics&) = delete;
-    void handle_events(sf::Window&, const GameCore::PlayerController&);
+
+    void create_assets(const GameAssets&, const GameMap&);
     bool is_running() const { return m_window.isOpen(); }
-    void start();
-    void performGameCycle();
-    bool goal_reached();
+    bool goal_reached(const EntityTransform& pos, const GameMap& map);
+
+    void draw_map_gen();
+    void draw_minimap_triangles();
+    void draw_minimap_rays();
+    void draw_minimap_background();
+    void draw_map();
+    void draw_end_screen();
+    void draw_path_out();
+    void draw_view();
+    void draw_sprites();
+    void calculate_shortest_path(const EntityTransform&);
 private:
     struct MapSquareAsset
     {
-        void create(const GameGraphics&);
+        void create(int, int);
         int tileDim = 0;
         //float tileThick;
         int xoffset = 0;
@@ -76,23 +87,16 @@ private:
         sf::RectangleShape wallRect;
     };
 
-    GameCore m_gameCore;
-    sf::RenderWindow m_window;
-    const RayInfoArr& m_raysInfoVec;
-    GameCore::PlayerController& m_playerController;
-    GameStateData m_stateData;
+    sf::RenderWindow& m_window;
+
     std::vector<std::pair<int, int>> m_pathToGoal;
     std::unique_ptr<PathFinder> m_pathFinder;
     const MinimapInfo m_minimapInfo;
-    float m_halfWallHeight = 0.5f;
-    Controls m_controlsMulti;
 
-    GameAsset m_mainView;
-    GameAsset m_mainBackground;
+    GameView m_mainView;
     sf::Text m_endGameText;
     sf::Font m_endGameFont;
     MapSquareAsset m_mapSquareAsset;
-    GameAssets m_gameAssets;
     Texture m_wallTexture;
     Texture m_baundryTexture;
     Texture m_floorTexture;
@@ -101,29 +105,11 @@ private:
     std::vector<Sprite> m_spritesToLoad;
     std::vector<std::unique_ptr<Texture>> m_spriteTexturesDict;
 
-    bool m_hadFocus = false;
-    bool m_paused = false;
-    bool m_findPathRequested = false;
-    bool m_tabbed = false;
-    bool m_linear = true;
-    bool m_drawSky = false;
-
     void draw_camera_view();
-    void draw_minimap_triangles();
-    void draw_minimap_rays();
-    void draw_minimap_background();
-    void draw_map();
-    void draw_end_screen();
-    void draw_background();
-    void draw_path_out();
-    void draw_view();
-    void draw_sprites();
     void draw_sprite_on_view(float, float, const Texture&);
-    void load_end_screen();
-    void generate_background();
-    void handle_events();
-    inline void create_assets();
+    inline void load_end_screen();
     inline void load_sprites();
+    inline void load_textures(const GameAssets&);
 
     class RenderingThreadPool
     {

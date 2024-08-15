@@ -2,8 +2,8 @@
 #include<gameGraphics.hpp>
 #include<math.h>
 #include<stdexcept>
-#include <queue>
-#include <iostream>
+#include<queue>
+#include<iostream>
 
 #define DRAW_LINEAR_SKY
 
@@ -11,7 +11,7 @@ using namespace screenStats;
 
 //---------------------------GAME-ASSET---
 
-void GameAsset::create(int width, int height, bool createPixelArray = false)
+void GameView::create(int width, int height, bool createPixelArray = false)
 {
     m_hasPixelArray = createPixelArray;
     if (createPixelArray)
@@ -20,7 +20,7 @@ void GameAsset::create(int width, int height, bool createPixelArray = false)
     m_sprite.setTexture(m_texture);
 }
 
-inline GameAsset::GameAsset(int width, int height, bool createPixelArray = false)
+inline GameView::GameView(int width, int height, bool createPixelArray = false)
 {
     create(width, height, createPixelArray);
 }
@@ -48,71 +48,40 @@ const sf::Uint8& Texture::get_pixel_at(int index) const
 
 //---------------------------GAME-GRAPHICS---
 
-GameGraphics::GameGraphics(std::unique_ptr<DataUtils::GameData>& gameData, const std::string& gameName) :
-    m_gameCore(gameData->gCamera, gameData->gMap, gameData->playerTrasform), 
-    m_window{ sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), gameName },
-    m_raysInfoVec(m_gameCore.get_ray_info_arr()), 
-    m_playerController(m_gameCore.get_playerController()),
+GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphicsVars, int frameRate = 0) :
+    m_window(window),
     m_pathToGoal(0), 
-    m_minimapInfo(gameData->screenStats.minimapScale, m_stateData.maxRenderDist),
-    m_halfWallHeight(gameData->screenStats.halfWallHeight),
-    m_controlsMulti(gameData->controlsMulti),
-    m_stateData(m_gameCore.get_map_data()),
-    m_gameAssets(gameData->gAssets),
+    m_minimapInfo(graphicsVars.minimapScale, graphicsVars.minimapDepth),
     m_renderingThreadPool(*this)
 {
     m_window.clear(sf::Color::Black);
-    m_window.setFramerateLimit(0);
-
-    m_spritesToLoad.swap(gameData->gSprites);
+    m_window.setFramerateLimit(frameRate);
 }
 
-//----compound-funtions
+//-------------------------compound-funtions--
 
-void GameGraphics::start()
-{
-    create_assets();
-    //step by step map generation (if generation is requested)
-    while (m_gameCore.generate_map_step())
-    {
-        std::thread sleep([] { std::this_thread::sleep_for(std::chrono::milliseconds(GENERATION_TIME_STEP_MS)); });
-
-        sf::Event event;
-        while (m_window.pollEvent(event))
-        {
-            if(event.type == sf::Event::Closed)
-                m_window.close();
-        }
-        m_window.clear(sf::Color::Black);
-        draw_map();
-        m_window.display();
-
-        //wait if the generation time isn't over
-        sleep.join();
-    }
-    m_gameCore.start_internal_time();
-    m_paused = true;
-}
-
-void GameGraphics::create_assets()
+void GameGraphics::create_assets(const GameAssets& gameAssets, const GameMap& gameMap)
 {
     m_mainView.create(g_screenWidth, g_screenHeight, true);
-    m_mainBackground.create(g_screenWidth, g_screenHeight, true);
-    generate_background();
-    load_end_screen();
-    m_pathFinder = std::make_unique<PathFinder>(m_stateData.gameMap.x, m_stateData.gameMap.y, *(m_stateData.gameMap.cells), m_pathToGoal);
-    m_mapSquareAsset.create(*this);
-    
-    m_wallTexture.create(m_gameAssets.wallTexFilePath);
-    m_baundryTexture.create(m_gameAssets.boundryTexFilePath);
-    m_floorTexture.create(m_gameAssets.floorTexFilePath);
-    m_ceilingTexture.create(m_gameAssets.ceilingTexFilePath);
-    m_skyTexture.create(m_gameAssets.skyTexFilePath);
+    m_pathFinder = std::make_unique<PathFinder>(gameMap.x, gameMap.y, gameMap.cells, m_pathToGoal);
+    m_mapSquareAsset.create(gameMap.x, gameMap.y);
 
+    load_end_screen();
+    load_textures(gameAssets);
     load_sprites();
     m_renderingThreadPool.refresh_variables();
 }
 
+void GameGraphics::load_textures(const GameAssets& gameAssets)
+{
+    m_wallTexture.create(gameAssets.wallTexFilePath);
+    m_baundryTexture.create(gameAssets.boundryTexFilePath);
+    m_floorTexture.create(gameAssets.floorTexFilePath);
+    m_ceilingTexture.create(gameAssets.ceilingTexFilePath);
+    m_skyTexture.create(gameAssets.skyTexFilePath);
+}
+
+/// transfer-------
 void GameGraphics::load_sprites()
 {
     int id = 0;
@@ -123,42 +92,7 @@ void GameGraphics::load_sprites()
         ++id;
     }
 }
-
-void GameGraphics::performGameCycle() 
-{
-    m_window.clear(sf::Color::Black);
-
-    handle_events();
-    m_gameCore.update_entities();
-
-    if (m_findPathRequested && m_stateData.gameMap.generated)
-    {
-        m_pathFinder->find_path(m_stateData.playerTransform.coords.x, m_stateData.playerTransform.coords.y);
-        m_findPathRequested = false;
-    }
-
-    m_gameCore.view_by_ray_casting(m_linear);
-    
-    draw_view();
-    draw_sprites();
-
-    if (m_paused || m_tabbed)
-    {
-        draw_map();
-        draw_path_out();
-    }
-    else
-    {
-        draw_minimap_background();
-        draw_minimap_triangles();
-
-        if (goal_reached())
-        {
-            draw_end_screen();
-        }
-    }
-    m_window.display();
-}
+//-----------------
 
 inline void GameGraphics::draw_view()
 {
@@ -167,13 +101,24 @@ inline void GameGraphics::draw_view()
     m_window.draw(m_mainView.m_sprite);
 }
 
+void GameGraphics::draw_map_gen()
+{
+    m_window.clear(sf::Color::Black);
+    draw_map();
+    m_window.display();
+}
+
+void GameGraphics::calculate_shortest_path(const EntityTransform& startPos)
+{
+    m_pathFinder->find_path(startPos.coords.x, startPos.coords.y);
+}
+
 //------
 
-inline bool GameGraphics::goal_reached()
+inline bool GameGraphics::goal_reached(const EntityTransform& pos, const GameMap& map)
 {
-    return (
-                m_stateData.gameMap.cells->at(  static_cast<int>(m_stateData.playerTransform.coords.x) + 
-                                        static_cast<int>(m_stateData.playerTransform.coords.y) * m_stateData.gameMap.x) 
+    return (    map.cells->at(  static_cast<int>(pos.coords.y) * map.x +
+                                static_cast<int>(pos.coords.x) )
                 == 'g'
             );
 }
@@ -228,7 +173,7 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) :
     {
         m_mutexVecMid.at(i).lock();
     }
-
+    // PROBLEM
     int sectionsSizeView = m_gameGraphics.m_raysInfoVec.arrSize / (m_poolSize);
     int currentSectionView = 0;
 
@@ -252,15 +197,15 @@ GameGraphics::RenderingThreadPool::RenderingThreadPool(GameGraphics& gg) :
                         }
                     }
 
-                    if(m_gameGraphics.m_linear)
-                        draw_background_section(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud), m_gameGraphics.m_drawSky);
+                    if(m_gameGraphics.isLinearPersp)
+                        draw_background_section(currentSectionBackgroud, (currentSectionBackgroud + sectionsSizeBackgroud), m_gameGraphics.drawSky);
                     
                     jobs++;
 
                     {
                         std::unique_lock<std::mutex> lock(m_mutexVecMid.at(id));
                     }
-                    draw_veiw_section(currentSectionView, (currentSectionView + sectionsSizeView), m_gameGraphics.m_linear);
+                    draw_veiw_section(currentSectionView, (currentSectionView + sectionsSizeView), m_gameGraphics.isLinearPersp);
                     jobs++;
 
                     {
@@ -310,9 +255,9 @@ void GameGraphics::RenderingThreadPool::render_view()
     for (auto& m : m_mutexVecStart)
         m.unlock();
 
-    if ( m_lastSectionBackgroud != 0 && m_gameGraphics.m_linear )
+    if ( m_lastSectionBackgroud != 0 && m_gameGraphics.isLinearPersp )
     {
-        draw_background_section(m_lastSectionBackgroud, g_screenHeight/2, m_gameGraphics.m_drawSky);
+        draw_background_section(m_lastSectionBackgroud, g_screenHeight/2, m_gameGraphics.drawSky);
     }
 
     while (jobs != m_poolSize)
@@ -329,7 +274,7 @@ void GameGraphics::RenderingThreadPool::render_view()
 
     if (m_lastSectionView != 0)
     {
-        draw_veiw_section( m_lastSectionView, m_gameGraphics.m_raysInfoVec.arrSize, m_gameGraphics.m_linear );
+        draw_veiw_section( m_lastSectionView, m_gameGraphics.m_raysInfoVec.arrSize, m_gameGraphics.isLinearPersp );
     }
 
     while (jobs != m_poolSize)
@@ -422,7 +367,7 @@ void GameGraphics::RenderingThreadPool::draw_veiw_section(int start, int end, co
         //vertical scan line
         for (int y = 0; y < g_screenHeight * 4; y += 4)
         {
-            GameAsset& view = m_gameGraphics.m_mainView;
+            GameView& view = m_gameGraphics.m_mainView;
             //in the wall range
             if (y > floorHeight * 4 && y <= (g_screenHeight - floorHeight) * 4)
             {
@@ -456,7 +401,7 @@ void GameGraphics::RenderingThreadPool::draw_veiw_section(int start, int end, co
 
                 Texture& ceiling = m_gameGraphics.m_ceilingTexture;
                 Texture& floor = m_gameGraphics.m_floorTexture;
-                GameAsset& view = m_gameGraphics.m_mainView;
+                GameView& view = m_gameGraphics.m_mainView;
 
                 //ceiling
                 uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * ceiling.width()));
@@ -513,7 +458,7 @@ void GameGraphics::RenderingThreadPool::draw_background_section(float startY, fl
         Texture& sky = m_gameGraphics.m_skyTexture;
         Texture& ceiling = m_gameGraphics.m_ceilingTexture;
         Texture& floor = m_gameGraphics.m_floorTexture;
-        GameAsset& view = m_gameGraphics.m_mainView;
+        GameView& view = m_gameGraphics.m_mainView;
 
         sf::Uint8 shading = 0xFF * ( 1 - (rayLength / m_gameGraphics.m_stateData.maxRenderDist));
 
@@ -681,44 +626,6 @@ void GameGraphics::draw_sprite_on_view(float distance, float centerPositionOnScr
     }
 }
 
-//-------pre-rendered-background----------- (not used)
-
-void GameGraphics::generate_background()
-{
-    for (int i = 0; i < g_screenWidth; ++i)
-    {
-        sf::Color pixelColor;
-        for (int y = 0; y < g_screenHeight * 4; y += 4)
-        {
-            int x = i * 4;
-            
-            sf::Uint8 floorShade;
-            if (y < g_screenHeight * 2)
-            {
-                floorShade = 0xff * (1 -((std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 2)));
-                pixelColor = { 0x88, 0x88, 0xff, floorShade };
-            }
-            else
-            {
-                floorShade = 0xff * (1 - ((std::abs(g_screenHeight * 2 - y)) / (float)(g_screenHeight * 2)));
-                pixelColor = { 0x88, 0x88, 0xff, floorShade };
-            }
-            m_mainBackground.m_pixels[y * g_screenWidth + x] = pixelColor.r;
-            m_mainBackground.m_pixels[y * g_screenWidth + x + 1] = pixelColor.g;
-            m_mainBackground.m_pixels[y * g_screenWidth + x + 2] = pixelColor.b;
-            m_mainBackground.m_pixels[y * g_screenWidth + x + 3] = pixelColor.a;
-        }
-    }
-    m_mainBackground.m_texture.update(m_mainBackground.m_pixels);
-}
-
-inline void GameGraphics::draw_background()
-{
-    m_mainBackground.m_texture.update(m_mainBackground.m_pixels);
-    m_window.draw(m_mainBackground.m_sprite);
-}
-
-
 //----------------map-and-mini-map
 
 void GameGraphics::draw_minimap_rays()
@@ -751,13 +658,13 @@ void GameGraphics::draw_minimap_triangles()
     m_window.draw(triangles);
 }
 
-void GameGraphics::draw_map()
+void GameGraphics::draw_map(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells)
 {
-    for (int i = 0; i < m_stateData.gameMap.y; ++i)
+    for (int y = 0; y < mapHeight; ++y)
     {
-        for (int c = 0; c < m_stateData.gameMap.x; ++c)
+        for (int x = 0; x < mapWidth; ++x)
         {
-            char currentCell = m_stateData.gameMap.cells->at(i * m_stateData.gameMap.x + c);
+            char currentCell = cells.at(y * mapWidth + x);
 
             if (currentCell != ' ')
             {
@@ -768,8 +675,8 @@ void GameGraphics::draw_map()
                 if (currentCell == 'g')
                     m_mapSquareAsset.wallRect.setFillColor(sf::Color::Red);
 
-                m_mapSquareAsset.wallRect.setPosition({ (float)c * m_mapSquareAsset.tileDim + m_mapSquareAsset.xoffset, 
-                                                        (float)i * m_mapSquareAsset.tileDim + m_mapSquareAsset.yoffset });
+                m_mapSquareAsset.wallRect.setPosition({ (float)x * m_mapSquareAsset.tileDim + m_mapSquareAsset.xoffset, 
+                                                        (float)y * m_mapSquareAsset.tileDim + m_mapSquareAsset.yoffset });
                 m_window.draw(m_mapSquareAsset.wallRect);
             }
         }
@@ -777,8 +684,8 @@ void GameGraphics::draw_map()
 
     sf::CircleShape playerC(m_mapSquareAsset.tileDim / 2.f);
     playerC.setFillColor(sf::Color::Red);
-    playerC.setPosition({ (float)(int(m_stateData.playerTransform.coords.x) * m_mapSquareAsset.tileDim + m_mapSquareAsset.xoffset),
-                          (float)(int(m_stateData.playerTransform.coords.y) * m_mapSquareAsset.tileDim + m_mapSquareAsset.yoffset) });
+    playerC.setPosition({ (float)(posX * m_mapSquareAsset.tileDim + m_mapSquareAsset.xoffset),
+                          (float)(posY * m_mapSquareAsset.tileDim + m_mapSquareAsset.yoffset) });
 
     m_window.draw(playerC);
 }
@@ -859,127 +766,14 @@ void GameGraphics::draw_minimap_background()
     }
 }
 
-//----------------INPUTS---
-
-void GameGraphics::handle_events()
-{
-    bool justUnpaused = false;
-    sf::Event event;
-    while (m_window.pollEvent(event))
-    {
-        switch (event.type)
-        {
-        case sf::Event::Closed:
-            m_window.close();
-            break;
-        case sf::Event::KeyPressed:
-            if (event.key.scancode == sf::Keyboard::Scan::Escape)
-            {
-                if (m_paused)
-                {
-                    m_paused = false;
-                    justUnpaused = true;
-                }
-                else
-                    m_paused = true;
-            }
-            if (event.key.scancode == sf::Keyboard::Scan::Space)
-            {
-                if (m_linear)
-                {
-                    m_linear = false;
-                }
-                else
-                    m_linear = true;
-            }
-            if (event.key.scancode == sf::Keyboard::Scan::R)
-            {
-                if (m_drawSky)
-                {
-                    m_drawSky = false;
-                }
-                else
-                    m_drawSky = true;
-            }
-            if (event.key.scancode == sf::Keyboard::Scan::E)
-            {
-                m_findPathRequested = true;
-            }
-        }
-    }
-    if (m_window.hasFocus())
-    {
-        if (!m_paused)
-        {
-            if (!m_hadFocus || justUnpaused)
-            {
-                m_hadFocus = true;
-                justUnpaused = false;
-                m_window.setMouseCursorVisible(false);
-                m_window.setMouseCursorGrabbed(true);
-                sf::Mouse::setPosition(sf::Vector2i(g_screenWidth / 2, 0), m_window);
-            }
-            else
-            {
-                m_playerController.rotate((g_screenWidth / 2 - sf::Mouse::getPosition(m_window).x) * 0.1f);
-                sf::Mouse::setPosition(sf::Vector2i(g_screenWidth / 2, 0), m_window);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-            {
-                m_playerController.move_foreward(+m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-            {
-                m_playerController.move_strafe(-m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-            {
-                m_playerController.move_strafe(+m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-            {
-                m_playerController.move_foreward(-m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            {
-                m_playerController.rotate(+m_controlsMulti.mouseSens);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            {
-                m_playerController.rotate(-m_controlsMulti.mouseSens);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
-            {
-                m_tabbed = true;
-            }
-            else
-            {
-                m_tabbed = false;
-            }
-        }
-        else
-        {
-            m_window.setMouseCursorVisible(true);
-            m_window.setMouseCursorGrabbed(false);
-        }
-    }
-    else
-    {
-        if (m_hadFocus)
-            m_hadFocus = false;
-    }
-}
-
 //---------------IG-assets---
 
-void GameGraphics::MapSquareAsset::create(const GameGraphics& gg)
+void GameGraphics::MapSquareAsset::create(int mapWidth, int mapHeight)
 {
-    int xoverw = g_screenWidth / gg.m_stateData.gameMap.x;
-    int yoverh = g_screenHeight / gg.m_stateData.gameMap.y;
+    int xoverw = g_screenWidth / mapWidth;
+    int yoverh = g_screenHeight / mapHeight;
     tileDim = std::min(xoverw, yoverh);
-    //float tileThick = tileDim/10.f;
-    xoffset = (g_screenWidth - gg.m_stateData.gameMap.x * tileDim) / 2;
-    yoffset = (g_screenHeight - gg.m_stateData.gameMap.y * tileDim) / 2;
+    xoffset = (g_screenWidth - mapWidth * tileDim) / 2;
+    yoffset = (g_screenHeight - mapHeight * tileDim) / 2;
     wallRect.setSize({ (float)tileDim, (float)tileDim });
 }
-
