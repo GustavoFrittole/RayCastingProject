@@ -7,6 +7,7 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <atomic>
 
 class IRenderingSection
 {
@@ -75,6 +76,7 @@ public:
 		if (is_busy())
 			return false;
 		m_jobs.store(jobs);
+		return true;
 	}
 
 	~RendThreadPool()

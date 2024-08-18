@@ -154,7 +154,7 @@ private:
     void crete_view_sections();
 
     inline void render_view();
-    inline void GameGraphics::rend_view_secs();
+    inline void rend_view_secs();
     //inline void GameGraphics::queue_background_rend();
     //inline void GameGraphics::queue_sprite_rend();
 };
