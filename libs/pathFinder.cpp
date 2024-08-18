@@ -1,5 +1,5 @@
-#include"pathFinder.hpp"
-#include<stack>
+#include "pathFinder.hpp"
+#include <stack>
 
 PathFinder::PathFinder(int width, int height, const std::string& tiles, std::vector<std::pair<int, int>>& vec) :
 	m_width(width), m_height(height), m_tiles(tiles), m_solVec(vec) {}

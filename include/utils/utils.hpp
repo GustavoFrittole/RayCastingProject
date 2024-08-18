@@ -1,7 +1,8 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
-#include<string>
-#include<chrono>
+
+#include <string>
+#include <chrono>
 
 #define PI 3.14159265359f
 //DEBUG

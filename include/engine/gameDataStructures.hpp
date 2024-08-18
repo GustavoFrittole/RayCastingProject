@@ -1,11 +1,12 @@
 #ifndef GAMEDATASTRUCTURES_HPP
 #define GAMEDATASTRUCTURES_HPP
 
-#include"utils.hpp"
+#include "utils.hpp"
+#include <memory>
 
 #define WINDOW_HEIGHT 720
 
-namespace screenStats
+namespace graphicsVars
 {
 	constexpr int g_screenHeight = WINDOW_HEIGHT;
 	constexpr int g_screenWidth = g_screenHeight * 16 / 9;
@@ -42,7 +43,7 @@ struct GraphicsVars
 {
 	int minimapScale = 6;
 	float halfWallHeight = 0.5f;
-	float minimapDepth = 10.f;
+	float maxSightDepth = 10.f;
 };
 
 struct GameMap
@@ -94,7 +95,7 @@ private:
 
 struct Sprite
 {
-	std::string texture;
+	std::string texturePath;
 	EntityTransform transform;
 };
 

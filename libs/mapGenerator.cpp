@@ -1,5 +1,5 @@
-#include"mapGenerator.hpp"
-#include<stack>
+#include "mapGenerator.hpp"
+#include <stack>
 
 
 MapGenerator::MapGenerator(int startX, int startY, int width, int height, std::string& tiles) :

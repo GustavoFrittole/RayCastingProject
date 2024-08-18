@@ -1,20 +1,24 @@
-#include"gameHandler.hpp"
-#include<iostream>
-#include"dataManager.hpp"
-#include"gameGraphics.hpp"
-#include"gameInputs.hpp"
+#include "gameHandler.hpp"
+#include "dataManager.hpp"
+#include "gameGraphics.hpp"
+#include "gameInputs.hpp"
+#include <iostream>
 
 constexpr auto WINDOW_NAME = "ray cast maze";
+
+#define GENERATION_TIME_STEP_MS 5
 
 class GameHandler : public rcm::IGameHandler
 {
 public:
 	void load_game_data(const std::string&) override;
-	void create_assets();
+	void create_assets() override;
 	void run_game() override;
 private:
 	void start();
 	void performGameCycle();
+	void load_sprites();
+	//inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
 
 	std::unique_ptr<GameCore> m_gameCore;
 	std::unique_ptr<sf::RenderWindow> m_window;
@@ -25,11 +29,10 @@ private:
 	GameStateVars m_gameState{};
 };
 
-rcm::IGameHandler* rcm::create_gameHandler(const std::string& configPath)
+rcm::IGameHandler* rcm::create_gameHandler()
 {
-	return new GameHandler(configPath);
+	return new GameHandler();
 }
-
 
 void GameHandler::load_game_data(const std::string& filePath)
 {
@@ -45,14 +48,15 @@ void GameHandler::load_game_data(const std::string& filePath)
 	}
 
 	m_gameCore = std::make_unique<GameCore>(m_gameData->gameCamera, m_gameData->gameMap, m_gameData->playerTrasform);
-	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(screenStats::g_screenWidth, screenStats::g_screenHeight), WINDOW_NAME);
-	m_gameGraphics = std::make_unique<GameGraphics>(m_window);
-	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, m_window, m_gameState, m_gameCore->get_playerController());
+	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(graphicsVars::g_screenWidth, graphicsVars::g_screenHeight), WINDOW_NAME);
+	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->graphicsVars, m_gameCore->get_ray_info_arr(), m_gameState, m_gameData->playerTrasform);
+	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, *(m_window), m_gameState, m_gameCore->get_playerController());
 }
 
 void GameHandler::create_assets() 
 {
 	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap);
+	load_sprites();
 }
 
 void GameHandler::run_game()
@@ -96,7 +100,7 @@ void GameHandler::start()
 
 		m_inputManager->handle_events_close();
 
-		m_gameGraphics->draw_map_gen();
+		m_gameGraphics->draw_map_gen(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameData->playerTrasform.coords.x, m_gameData->playerTrasform.coords.y, *(m_gameData->gameMap.cells));
 
 		//wait if the generation time isn't over
 		sleep.join();
@@ -104,6 +108,14 @@ void GameHandler::start()
 	m_gameCore->start_internal_time();
 	m_gameState.isPaused = true;
 }
+
+//inline bool goal_reached(const EntityTransform& pos, const GameMap& map)
+//{
+//	return (map.cells->at(static_cast<int>(pos.coords.y) * map.x +
+//		static_cast<int>(pos.coords.x))
+//		== 'g'
+//		);
+//}
 
 void GameHandler::performGameCycle()
 {
@@ -122,22 +134,33 @@ void GameHandler::performGameCycle()
 	m_gameCore->view_by_ray_casting(m_gameState.isLinearPersp);
 
 	m_gameGraphics->draw_view();
-	m_gameGraphics->draw_sprites();
+	//m_gameGraphics->draw_sprites();
 
 	if (m_gameState.isPaused || m_gameState.isTabbed)
 	{
-		m_gameGraphics->draw_map();
+		m_gameGraphics->draw_map(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameData->playerTrasform.coords.x, m_gameData->playerTrasform.coords.y, *(m_gameData->gameMap.cells));
 		m_gameGraphics->draw_path_out();
 	}
 	else
 	{
-		m_gameGraphics->draw_minimap_background();
-		m_gameGraphics->draw_minimap_triangles();
+		m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameData->playerTrasform, m_gameData->graphicsVars);
+		m_gameGraphics->draw_minimap_triangles(m_gameData->gameCamera.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->graphicsVars);
 
-		if (m_gameGraphics->goal_reached(m_gameData->playerTrasform, m_gameData->gameMap))
-		{
-			m_gameGraphics->draw_end_screen();
-		}
+		//if (goal_reached(m_gameData->playerTrasform, m_gameData->gameMap))
+		//{
+		//	m_gameGraphics->draw_end_screen();
+		//}
 	}
 	m_window->display();
+}
+
+void GameHandler::load_sprites()
+{
+	int id = 0;
+	for (const Sprite& s : m_gameData->gameSprites)
+	{
+		m_gameGraphics->load_sprite(s.texturePath);
+		m_gameCore->add_billboard_sprite(id, s.transform);
+		++id;
+	}
 }

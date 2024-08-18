@@ -39,12 +39,10 @@ target_include_directories(
     utils 
     PUBLIC ${CMAKE_SOURCE_DIR}/include/utils
 )
-
 target_include_directories(
     gameDataStructures
-    INTERFACE   ${CMAKE_SOURCE_DIR}/include/engine
+    INTERFACE   ${CMAKE_SOURCE_DIR}/include/engine  
                 ${CMAKE_SOURCE_DIR}/include/utils
-            
 )
 target_include_directories(
     mapGenerator 
@@ -59,6 +57,10 @@ target_include_directories(
     PUBLIC ${CMAKE_SOURCE_DIR}/include/engine
 )
 target_include_directories(
+    rendThreadPool
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
     gameCore 
     PUBLIC  ${CMAKE_SOURCE_DIR}/include/engine 
             ${CMAKE_SOURCE_DIR}/include/utils
@@ -69,17 +71,24 @@ target_include_directories(
 )
 target_include_directories(
     dataManager 
-    PUBLIC ${CMAKE_SOURCE_DIR}/include/engine ${CMAKE_SOURCE_DIR}/include/utils
+    PUBLIC  ${CMAKE_SOURCE_DIR}/include/engine 
+            ${CMAKE_SOURCE_DIR}/include/utils
 )
 target_include_directories(
     gameHandler 
     PRIVATE ${CMAKE_SOURCE_DIR}/include
+            ${CMAKE_SOURCE_DIR}/include/engine
 )
 target_include_directories(
     main 
     PRIVATE ${CMAKE_SOURCE_DIR}/include
 )
 #---------------------------------------------------
+
+target_link_libraries(
+    gameDataStructures 
+    INTERFACE utils 
+)
 target_link_libraries(
     gameCore 
     PRIVATE utils 
@@ -90,21 +99,25 @@ target_link_libraries(
     PUBLIC  sfml-graphics 
             utils 
             pathFinder
+            rendThreadPool
 )
 target_link_libraries(
     dataManager  
     PRIVATE nlohmann_json::nlohmann_json
+    PUBLIC  gameDataStructures
 )
 target_link_libraries(
     gameHandler 
     PRIVATE gameGraphics 
             gameCore 
-            gameInputs 
+            gameInputs
+            dataManager
             sfml-graphics
 )
 target_link_libraries(
     gameInputs 
-    PUBLIC sfml-graphics
+    PUBLIC  sfml-graphics
+            gameDataStructures
 )
 target_link_libraries(
     main 

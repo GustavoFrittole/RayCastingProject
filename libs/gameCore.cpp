@@ -1,9 +1,9 @@
 
-#include"gameCore.hpp"
-#include<fstream>
-#include<thread>
-#include<stdexcept>
-#include<cmath>
+#include "gameCore.hpp"
+#include <fstream>
+#include <thread>
+#include <stdexcept>
+#include <cmath>
 
 #define TIME_CORRECTION 0.000000001f
 

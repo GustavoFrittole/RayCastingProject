@@ -5,24 +5,22 @@
 
 int main()
 {
-    std::unique_ptr<rcm::IGameHandler> gameHandler(rcm::create_gameHandler("assets/config.json"));
-    if (gameHandler->is_good())
+    std::unique_ptr<rcm::IGameHandler> gameHandler(rcm::create_gameHandler());
+
+    try
     {
-        
-        try
-        {
-            gameHandler->run_game();
-        }
-        catch (std::exception& e)
-        {
-            std::cout << "An error has occured: \n" << e.what() << std::endl;
-        }
+        std::cout << "Reading User defined variables..." << std::endl;
+        gameHandler->load_game_data("assets/config.json");
+        std::cout << "Creating assets..." << std::endl;
+        gameHandler->create_assets();
+        std::cout << "Starting..." << std::endl;
+        gameHandler->run_game();
     }
-    else
+    catch (std::exception& e)
     {
-        std::cerr << gameHandler->get_errors();
+        std::cout << "An error has occured: \n" << e.what() << std::endl;
     }
-        
+
     return 0;
 }    
 

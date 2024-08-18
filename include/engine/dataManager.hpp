@@ -1,9 +1,9 @@
 #ifndef DATAMANAGER_HPP
 #define DATAMANAGER_HPP
 
-#include"gameDataStructures.hpp"
-#include<memory>
-#include<vector>
+#include "gameDataStructures.hpp"
+#include <memory>
+#include <vector>
 
 namespace DataUtils
 {
@@ -13,7 +13,7 @@ namespace DataUtils
 		GameCamera gameCamera;
 		GameMap gameMap;
 		ControlsVars controlsMulti;
-		GraphicsVars screenStats;
+		GraphicsVars graphicsVars;
 		GameAssets gameAssets;
 		std::vector<Sprite> gameSprites;
 	};

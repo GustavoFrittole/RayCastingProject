@@ -1,8 +1,8 @@
 #ifndef GAMECORE_HPP
 #define GAMECORE_HPP
 
-#include"mapGenerator.hpp"
-#include"gameDataStructures.hpp"
+#include "mapGenerator.hpp"
+#include "gameDataStructures.hpp"
 
 #define DEFAULT_MAP_PATH "map.txt"
 
