@@ -25,12 +25,12 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->playerTrasform.coords.x = data.at("playerTransform").at("pos").at("x").get<int>();
 		gameData->playerTrasform.coords.y = data.at("playerTransform").at("pos").at("y").get<int>();
 		//wip
-		gameData->gameCamera.pixelWidth = graphicsVars::g_screenWidth;
-		gameData->gameCamera.pixelHeight = graphicsVars::g_screenHeight;
+		gameData->gameCameraVars.pixelWidth = windowVars::g_screenWidth;
+		gameData->gameCameraVars.pixelHeight = windowVars::g_screenHeight;
 
-		gameData->gameCamera.fov = math::deg_to_rad( data.at("gameCamera").at("FOV").get<float>() );
-		gameData->gameCamera.maxRenderDist = data.at("gameCamera").at("maxRenderDist").get<float>();
-		gameData->gameCamera.rayPrecision = data.at("gameCamera").at("rayPrecision").get<float>();
+		gameData->gameCameraVars.fov = math::deg_to_rad( data.at("gameCamera").at("FOV").get<float>() );
+		gameData->gameCameraVars.maxRenderDist = data.at("gameCamera").at("maxRenderDist").get<float>();
+		gameData->gameCameraVars.rayPrecision = data.at("gameCamera").at("rayPrecision").get<float>();
 
 		gameData->gameMap.x = data.at("gameMap").at("mapW").get<int>();
 		gameData->gameMap.y = data.at("gameMap").at("mapH").get<int>();
@@ -39,9 +39,9 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->controlsMulti.mouseSens = data.at("controls").at("mouseSens").get<float>();
 		gameData->controlsMulti.movementSpeed = data.at("controls").at("movementSpeed").get<float>();
 
-		gameData->graphicsVars.minimapScale = data.at("screenStats").at("minimapScale").get<float>();
-		gameData->graphicsVars.halfWallHeight = data.at("screenStats").at("halfWallHeight").get<float>();
-		gameData->graphicsVars.maxSightDepth = gameData->gameCamera.maxRenderDist;
+		gameData->windowVars.minimapScale = data.at("screenStats").at("minimapScale").get<float>();
+		gameData->windowVars.halfWallHeight = data.at("screenStats").at("halfWallHeight").get<float>();
+		gameData->windowVars.maxSightDepth = gameData->gameCameraVars.maxRenderDist;
 
 		gameData->gameAssets.wallTexFilePath = data.at("textures").at("wallTexPath").get<std::string>();
 		gameData->gameAssets.boundryTexFilePath = data.at("textures").at("boundryTexPath").get<std::string>();

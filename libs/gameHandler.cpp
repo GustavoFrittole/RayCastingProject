@@ -20,12 +20,12 @@ private:
 	void load_sprites();
 	//inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
 
+	std::unique_ptr<DataUtils::GameData> m_gameData;
 	std::unique_ptr<GameCore> m_gameCore;
 	std::unique_ptr<sf::RenderWindow> m_window;
 	std::unique_ptr<GameGraphics> m_gameGraphics;
 	std::unique_ptr<InputManager> m_inputManager;
-	std::unique_ptr<DataUtils::GameData> m_gameData;
-
+	std::unique_ptr<GameCameraView> m_gameCameraView;
 	GameStateVars m_gameState{};
 };
 
@@ -47,15 +47,16 @@ void GameHandler::load_game_data(const std::string& filePath)
 		throw std::runtime_error(err);
 	}
 
-	m_gameCore = std::make_unique<GameCore>(m_gameData->gameCamera, m_gameData->gameMap, m_gameData->playerTrasform);
-	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(graphicsVars::g_screenWidth, graphicsVars::g_screenHeight), WINDOW_NAME);
-	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->graphicsVars, m_gameCore->get_ray_info_arr(), m_gameState, m_gameData->playerTrasform);
+	m_gameCore = std::make_unique<GameCore>(m_gameData->gameCameraVars, m_gameData->gameMap, m_gameData->playerTrasform);
+	m_gameCameraView = std::make_unique<GameCameraView>( GameCameraView{m_gameData->playerTrasform, m_gameData->gameCameraVars, m_gameCore->get_camera_vecs()} );
+	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowVars::g_screenWidth, windowVars::g_screenHeight), WINDOW_NAME);
+	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->windowVars);
 	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, *(m_window), m_gameState, m_gameCore->get_playerController());
 }
 
 void GameHandler::create_assets() 
 {
-	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap);
+	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap, m_gameData->windowVars, m_gameCore->get_ray_info_arr(), m_gameState, *(m_gameCameraView.get()));
 	load_sprites();
 }
 
@@ -133,8 +134,8 @@ void GameHandler::performGameCycle()
 
 	m_gameCore->view_by_ray_casting(m_gameState.isLinearPersp);
 
-	m_gameGraphics->draw_view();
-	//m_gameGraphics->draw_sprites();
+	m_gameGraphics->draw_view(m_gameState.isLinearPersp, m_gameCore->get_billboards_info_arr());
+	//m_gameGraphics->render_sprites();
 
 	if (m_gameState.isPaused || m_gameState.isTabbed)
 	{
@@ -143,8 +144,8 @@ void GameHandler::performGameCycle()
 	}
 	else
 	{
-		m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameData->playerTrasform, m_gameData->graphicsVars);
-		m_gameGraphics->draw_minimap_triangles(m_gameData->gameCamera.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->graphicsVars);
+		m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameData->playerTrasform, m_gameData->windowVars);
+		m_gameGraphics->draw_minimap_triangles(m_gameData->gameCameraVars.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->windowVars);
 
 		//if (goal_reached(m_gameData->playerTrasform, m_gameData->gameMap))
 		//{

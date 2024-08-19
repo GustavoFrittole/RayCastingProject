@@ -12,6 +12,7 @@
 class IRenderingSection
 {
 public:
+	IRenderingSection() = default;
 	IRenderingSection(int start, int end) :
 		m_start(start),
 		m_end(end) {}
@@ -27,7 +28,7 @@ class IRenderingSectionFactory
 		int get_size() { return (m_workersNumber); }
     protected:
         int m_taskNumber = 0, m_workersNumber = 0, m_sectionSize = 0, m_remainder = 0;
-		int get_section_size(int index) const;
+		int get_section(int index) const;
 };
 
 class RendThreadPool

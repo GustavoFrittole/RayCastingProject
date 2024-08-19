@@ -31,13 +31,13 @@ class GameCore
 {
 public:
 	GameCore() = delete;
-	GameCore(GameCamera& gc, GameMap&, EntityTransform&);
+	GameCore(GameCameraVars& gc, GameMap&, EntityTransform&);
 
 	void update_entities();
 	void view_by_ray_casting(bool cameraPlane);
 	void start_internal_time();
 
-	const LinearCameraVars& get_linear_camera_info() const { return isLinearPerspCameraVars; }
+	const GameCameraVecs& get_camera_vecs() const { return m_cameraVecs; }
 	const RayInfoArr& get_ray_info_arr()  const { return m_rayInfoArr; }
 
 	const std::vector<Billboard>& get_billboards_info_arr() const { return m_billboards; } 
@@ -60,10 +60,10 @@ public:
 	game::IGameController& get_playerController();
 
 private:
-	GameCamera& m_gameCamera;
+	GameCameraVars& m_gameCamera;
 	GameMap& m_gameMap;
 	EntityTransform& m_playerTransform;
-	LinearCameraVars isLinearPerspCameraVars{ {1,0}, {0,1} };
+	GameCameraVecs m_cameraVecs{ {1,0}, {0,1} };
 
 	PlayerInputCache m_pInputCache{};
 	std::unique_ptr<GameController> m_playerController;

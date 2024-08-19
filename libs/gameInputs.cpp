@@ -1,6 +1,6 @@
 #include "gameInputs.hpp"
 
-using namespace graphicsVars;
+using namespace windowVars;
 
 
 InputManager::InputManager(ControlsVars& controlsMulti, sf::RenderWindow& window, GameStateVars& gameState, game::IGameController& playerController) :

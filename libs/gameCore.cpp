@@ -1,4 +1,3 @@
-
 #include "gameCore.hpp"
 #include <fstream>
 #include <thread>
@@ -27,12 +26,12 @@ const RayInfo& RayInfoArr::const_at(int index) const
 
 //----------------------GameCore----------------------
 
-GameCore::GameCore(GameCamera& gameCamera, GameMap& gameMap, EntityTransform& entityTransform) : 
-	m_gameCamera(gameCamera),
+GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTransform& entityTransform) : 
+	m_gameCamera(gameCameraVars),
 	m_gameMap(gameMap),
 	m_playerTransform(entityTransform),
 	m_processorCount(get_thread_number()),
-	m_rayInfoArr(gameCamera.pixelWidth)
+	m_rayInfoArr(gameCameraVars.pixelWidth)
 {
 
 	if (m_gameMap.generated)
@@ -43,8 +42,8 @@ GameCore::GameCore(GameCamera& gameCamera, GameMap& gameMap, EntityTransform& en
 		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coords.x, (int)m_playerTransform.coords.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
 	}
 	//camera plane vars
-	isLinearPerspCameraVars.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
-	isLinearPerspCameraVars.plane = math::Vect2( isLinearPerspCameraVars.forewardDirection.y , -isLinearPerspCameraVars.forewardDirection.x ) * std::tan( m_gameCamera.fov/2 ) * 2;
+	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
+	m_cameraVecs.plane = math::Vect2( m_cameraVecs.forewardDirection.y , -m_cameraVecs.forewardDirection.x ) * std::tan( m_gameCamera.fov/2 ) * 2;
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
@@ -148,8 +147,8 @@ void GameCore::update_entities()
 
 	//rotate
 	m_playerTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
-	isLinearPerspCameraVars.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
-	isLinearPerspCameraVars.plane = math::Vect2(isLinearPerspCameraVars.forewardDirection.y, -isLinearPerspCameraVars.forewardDirection.x) * std::tan(m_gameCamera.fov / 2) * 2;
+	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
+	m_cameraVecs.plane = math::Vect2(m_cameraVecs.forewardDirection.y, -m_cameraVecs.forewardDirection.x) * std::tan(m_gameCamera.fov / 2) * 2;
 
 	if (m_playerTransform.forewardAngle >= PI)
 		m_playerTransform.forewardAngle -= 2*PI;
@@ -190,8 +189,8 @@ void GameCore::view_walls(bool useCameraPlane)
 
 	if (useCameraPlane)
 	{
-		currentRayDir = isLinearPerspCameraVars.forewardDirection - isLinearPerspCameraVars.plane / 2;
-		rayRotationIncrement = isLinearPerspCameraVars.plane / (m_gameCamera.pixelWidth);
+		currentRayDir = m_cameraVecs.forewardDirection - m_cameraVecs.plane / 2;
+		rayRotationIncrement = m_cameraVecs.plane / (m_gameCamera.pixelWidth);
 	}
 	else
 	{

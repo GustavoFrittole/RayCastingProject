@@ -6,7 +6,7 @@
 
 #define WINDOW_HEIGHT 720
 
-namespace graphicsVars
+namespace windowVars
 {
 	constexpr int g_screenHeight = WINDOW_HEIGHT;
 	constexpr int g_screenWidth = g_screenHeight * 16 / 9;
@@ -18,7 +18,7 @@ struct EntityTransform
 	float forewardAngle = 0.f;
 };
 
-struct GameCamera
+struct GameCameraVars
 {
 	int pixelWidth = 0;
 	int pixelHeight = 0;
@@ -27,10 +27,17 @@ struct GameCamera
 	float rayPrecision = 0.1f;
 };
 
-struct LinearCameraVars
+struct GameCameraVecs
 {
 	math::Vect2 forewardDirection;
 	math::Vect2 plane;
+};
+
+struct GameCameraView
+{
+	const EntityTransform& transform{};
+	const GameCameraVars& vars{};
+	const GameCameraVecs& vecs{};
 };
 
 struct ControlsVars

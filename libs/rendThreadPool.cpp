@@ -7,7 +7,7 @@ IRenderingSectionFactory::IRenderingSectionFactory(int taskNumber, int workers) 
     m_remainder(m_taskNumber % m_workersNumber)
 {}
 
-int IRenderingSectionFactory::get_section_size(int index) const
+int IRenderingSectionFactory::get_section(int index) const
 {
     if (index >= 0 && index < m_workersNumber)
         if (index == m_workersNumber - 1)

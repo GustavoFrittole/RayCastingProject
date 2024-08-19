@@ -14,13 +14,13 @@ int main()
         std::cout << "Creating assets..." << std::endl;
         gameHandler->create_assets();
         std::cout << "Starting..." << std::endl;
-        gameHandler->run_game();
+        
     }
     catch (std::exception& e)
     {
         std::cout << "An error has occured: \n" << e.what() << std::endl;
     }
-
+    gameHandler->run_game();
     return 0;
 }    
 

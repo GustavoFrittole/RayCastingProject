@@ -10,10 +10,10 @@ namespace DataUtils
 	struct GameData
 	{
 		EntityTransform playerTrasform;
-		GameCamera gameCamera;
+		GameCameraVars gameCameraVars;
 		GameMap gameMap;
 		ControlsVars controlsMulti;
-		GraphicsVars graphicsVars;
+		GraphicsVars windowVars;
 		GameAssets gameAssets;
 		std::vector<Sprite> gameSprites;
 	};
