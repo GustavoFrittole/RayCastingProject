@@ -1,7 +1,7 @@
 #include "gameHandler.hpp"
 #include "dataManager.hpp"
 #include "gameGraphics.hpp"
-#include "GameCore.hpp"
+#include "gameCore.hpp"
 #include "gameInputs.hpp"
 #include <iostream>
 
