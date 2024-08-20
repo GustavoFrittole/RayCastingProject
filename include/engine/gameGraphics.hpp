@@ -3,14 +3,9 @@
 
 #include <SFML/Graphics.hpp>
 #include <thread>
-#include <condition_variable>
-#include <mutex>
-#include <atomic>
 #include "pathFinder.hpp"
-#include "gameCore.hpp"
 #include "rendThreadPool.hpp"
-
-
+#include "gameDataStructures.hpp"
 
 struct MinimapInfo
 {

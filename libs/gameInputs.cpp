@@ -2,7 +2,6 @@
 
 using namespace windowVars;
 
-
 InputManager::InputManager(ControlsVars& controlsMulti, sf::RenderWindow& window, GameStateVars& gameState, game::IGameController& playerController) :
     m_controlsMulti(controlsMulti),
     m_window(window),

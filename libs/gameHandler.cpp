@@ -1,6 +1,7 @@
 #include "gameHandler.hpp"
 #include "dataManager.hpp"
 #include "gameGraphics.hpp"
+#include "GameCore.hpp"
 #include "gameInputs.hpp"
 #include <iostream>
 
@@ -135,7 +136,6 @@ void GameHandler::performGameCycle()
 	m_gameCore->view_by_ray_casting(m_gameState.isLinearPersp);
 
 	m_gameGraphics->draw_view(m_gameState.isLinearPersp, m_gameCore->get_billboards_info_arr());
-	//m_gameGraphics->render_sprites();
 
 	if (m_gameState.isPaused || m_gameState.isTabbed)
 	{

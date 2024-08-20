@@ -106,6 +106,20 @@ struct Sprite
 	EntityTransform transform;
 };
 
+struct Billboard
+{
+	Billboard(int id, const EntityTransform& et) :
+		id(id),
+		entityTransform(et)
+	{}
+	int id = -1;
+	EntityTransform entityTransform;
+	float distance = 0.f;
+	float positionOnScreen = 0.f;
+	bool active = true;
+	bool visible = false;
+};
+
 struct GameStateVars
 {
 	bool hadFocus = false;
