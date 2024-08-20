@@ -1,6 +1,6 @@
 #include "utils.hpp"
-#include<cmath>
-#include<thread>
+#include <cmath>
+#include <thread>
 
 int debug::GameTimer::get_frame_rate()
 {

@@ -33,21 +33,95 @@ FetchContent_MakeAvailable(json)
 add_executable(main src/main.cpp)
 
 add_subdirectory(libs)
+add_subdirectory(include/engine)
 
-target_include_directories(utils PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
-target_include_directories(mapGenerator PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
-target_include_directories(pathFinder PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
-target_include_directories(gameCore PUBLIC ${CMAKE_SOURCE_DIR}/include/engine)
-target_include_directories(gameGraphics PUBLIC ${CMAKE_SOURCE_DIR}/include/engine)
-target_include_directories(dataManager PUBLIC ${CMAKE_SOURCE_DIR}/include/engine)
-target_include_directories(dataManager PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
-target_include_directories(gameHandler PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(main PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(
+    utils 
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
+    gameDataStructures
+    INTERFACE   ${CMAKE_SOURCE_DIR}/include/engine  
+                ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
+    mapGenerator 
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/utils)
 
-target_link_libraries(gameCore PRIVATE utils mapGenerator dataManager)
-target_link_libraries(gameGraphics PUBLIC gameCore sfml-graphics utils mapGenerator pathFinder)
-target_link_libraries(dataManager PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(gameHandler PRIVATE gameGraphics)
-target_link_libraries(main PRIVATE gameHandler)
+target_include_directories(
+    pathFinder 
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
+    gameInputs 
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/engine
+)
+target_include_directories(
+    rendThreadPool
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
+    gameCore 
+    PUBLIC  ${CMAKE_SOURCE_DIR}/include/engine 
+            ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
+    gameGraphics 
+    PUBLIC ${CMAKE_SOURCE_DIR}/include/engine
+)
+target_include_directories(
+    dataManager 
+    PUBLIC  ${CMAKE_SOURCE_DIR}/include/engine 
+            ${CMAKE_SOURCE_DIR}/include/utils
+)
+target_include_directories(
+    gameHandler 
+    PRIVATE ${CMAKE_SOURCE_DIR}/include
+            ${CMAKE_SOURCE_DIR}/include/engine
+)
+target_include_directories(
+    main 
+    PRIVATE ${CMAKE_SOURCE_DIR}/include
+)
+#---------------------------------------------------
+
+target_link_libraries(
+    gameDataStructures 
+    INTERFACE utils 
+)
+target_link_libraries(
+    gameCore 
+    PRIVATE utils 
+            mapGenerator
+)
+target_link_libraries(
+    gameGraphics 
+    PUBLIC  sfml-graphics 
+            utils 
+            pathFinder
+            rendThreadPool
+)
+target_link_libraries(
+    dataManager  
+    PRIVATE nlohmann_json::nlohmann_json
+    PUBLIC  gameDataStructures
+)
+target_link_libraries(
+    gameHandler 
+    PRIVATE gameGraphics 
+            gameCore 
+            gameInputs
+            dataManager
+            sfml-graphics
+)
+target_link_libraries(
+    gameInputs 
+    PUBLIC  sfml-graphics
+            gameDataStructures
+)
+target_link_libraries(
+    main 
+    PRIVATE gameHandler
+)
 
 target_compile_features(main PRIVATE cxx_std_17)

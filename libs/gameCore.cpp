@@ -1,10 +1,10 @@
+#include "gameCore.hpp"
+#include <fstream>
+#include <thread>
+#include <stdexcept>
+#include <cmath>
 
-#include"gameCore.hpp"
-#include<fstream>
-#include<thread>
-#include<stdexcept>
-#include<cmath>
-#include <iostream>
+#define TIME_CORRECTION 0.000000001f
 
 //----------------------RayInfo----------------------
 
@@ -26,38 +26,31 @@ const RayInfo& RayInfoArr::const_at(int index) const
 
 //----------------------GameCore----------------------
 
-GameCore::GameCore(GameCamera gc, GameMap& gameMap, EntityTransform& entityTransform) : 
-	m_gameCamera(gc),
+GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTransform& entityTransform) : 
+	m_gameCamera(gameCameraVars),
+	m_gameMap(gameMap),
 	m_playerTransform(entityTransform),
-	m_playerController(*this),
 	m_processorCount(get_thread_number()),
-	m_rayInfoArr(gc.pixelWidth)
+	m_rayInfoArr(gameCameraVars.pixelWidth)
 {
-	m_gameMap.x = gameMap.x;
-	m_gameMap.y = gameMap.y;
-	m_gameMap.generated = gameMap.generated;
-	m_gameMap.cells.swap(gameMap.cells);
 
 	if (m_gameMap.generated)
 	{
 		if (m_gameMap.cells.get() == nullptr)
 			m_gameMap.cells = std::make_unique<std::string>();
+
 		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coords.x, (int)m_playerTransform.coords.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
 	}
 	//camera plane vars
-	m_cameraDir = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
-	m_cameraPlane = math::Vect2( m_cameraDir.y , -m_cameraDir.x ) * std::tan( m_gameCamera.fov/2 ) * 2;
-}
-
-GameStateData GameCore::get_map_data() const 
-{
-	return GameStateData{ m_gameCamera.fov, m_gameCamera.maxRenderDist, m_playerTransform, m_gameMap, m_cameraDir, m_cameraPlane};
+	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
+	m_cameraVecs.plane = math::Vect2( m_cameraVecs.forewardDirection.y , -m_cameraVecs.forewardDirection.x ) * std::tan( m_gameCamera.fov/2 ) * 2;
 }
 
 bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const 
 {
 	return check_out_of_map_bounds((int)pos.x, (int)pos.y);
 }
+
 bool GameCore::check_out_of_map_bounds(int posX, int posY) const
 {
 	return (posX < 0 || posY < 0 || posX >= m_gameMap.x || posY >= m_gameMap.y);
@@ -72,6 +65,7 @@ void GameCore::chech_position_in_map(const math::Vect2& rayPosInMap, EntityType&
 {
 	chech_position_in_map((int)rayPosInMap.x, (int)rayPosInMap.y, hitMarker);
 }
+
 void GameCore::chech_position_in_map(int rayPosInMapX, int rayPosInMapY, EntityType& hitMarker) const
 {
 	if (!check_out_of_map_bounds(rayPosInMapX, rayPosInMapY))
@@ -99,13 +93,22 @@ void GameCore::add_billboard_sprite(int id, const EntityTransform& entityTransfo
 	m_billboards.emplace_back(id, entityTransform);
 }
 
+bool GameCore::generate_map_step() 
+{ 
+	return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map_step()); 
+}
+bool GameCore::generate_map() 
+{ 
+	return ((m_mapGenerator.get() != nullptr) && m_mapGenerator->generate_map()); 
+}
+
 void GameCore::update_entities()
 {
 	//calculate delta time and update internal clock
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	int deltaTime = (currentTime - m_lastTime).count();
 	m_lastTime = currentTime;
-	float correctionFactor = 0.000000001f * deltaTime;
+	float correctionFactor = TIME_CORRECTION * deltaTime;
 
 	//decompose movment in x and y(world) axis and check collions separatly
 
@@ -144,8 +147,8 @@ void GameCore::update_entities()
 
 	//rotate
 	m_playerTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
-	m_cameraDir = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
-	m_cameraPlane = math::Vect2(m_cameraDir.y, -m_cameraDir.x) * std::tan(m_gameCamera.fov / 2) * 2;
+	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
+	m_cameraVecs.plane = math::Vect2(m_cameraVecs.forewardDirection.y, -m_cameraVecs.forewardDirection.x) * std::tan(m_gameCamera.fov / 2) * 2;
 
 	if (m_playerTransform.forewardAngle >= PI)
 		m_playerTransform.forewardAngle -= 2*PI;
@@ -158,15 +161,15 @@ void GameCore::update_entities()
 	m_pInputCache.rotate = 0;
 }
 
-void GameCore::PlayerController::rotate(float angle) const
+void GameCore::GameController::rotate(float angle) const
 {
 	gameCore.m_pInputCache.rotate += angle;
 }
-void GameCore::PlayerController::move_foreward(float amount) const
+void GameCore::GameController::move_foreward(float amount) const
 {
 	gameCore.m_pInputCache.foreward += amount;
 }
-void GameCore::PlayerController::move_strafe(float amount) const
+void GameCore::GameController::move_strafe(float amount) const
 {
 	gameCore.m_pInputCache.lateral += amount;
 }
@@ -186,8 +189,8 @@ void GameCore::view_walls(bool useCameraPlane)
 
 	if (useCameraPlane)
 	{
-		currentRayDir = m_cameraDir - m_cameraPlane / 2;
-		rayRotationIncrement = m_cameraPlane / (m_gameCamera.pixelWidth);
+		currentRayDir = m_cameraVecs.forewardDirection - m_cameraVecs.plane / 2;
+		rayRotationIncrement = m_cameraVecs.plane / (m_gameCamera.pixelWidth);
 	}
 	else
 	{
@@ -342,6 +345,14 @@ void GameCore::view_billboards(bool useCameraPlane)
 			}
 		}
 	}
+}
+
+game::IGameController& GameCore::get_playerController() 
+{
+	if (m_playerController.get() == nullptr)
+		m_playerController = std::make_unique<GameController>(*this);
+
+	return *(m_playerController);
 }
 
 //Simple but inefficient form of ray casting 

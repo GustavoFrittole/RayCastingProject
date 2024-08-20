@@ -1,9 +1,9 @@
 
-#include"dataManager.hpp"
-#include<fstream>
-#include<nlohmann/json.hpp>
-#include<exception>
-#include<iostream>
+#include "dataManager.hpp"
+#include <fstream>
+#include <nlohmann/json.hpp>
+#include <exception>
+#include <iostream>
 
 using json = nlohmann::json;
 
@@ -25,35 +25,36 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->playerTrasform.coords.x = data.at("playerTransform").at("pos").at("x").get<int>();
 		gameData->playerTrasform.coords.y = data.at("playerTransform").at("pos").at("y").get<int>();
 		//wip
-		gameData->gCamera.pixelWidth = screenStats::g_screenWidth;
-		gameData->gCamera.pixelHeight = screenStats::g_screenHeight;
+		gameData->gameCameraVars.pixelWidth = windowVars::g_screenWidth;
+		gameData->gameCameraVars.pixelHeight = windowVars::g_screenHeight;
 
-		gameData->gCamera.fov = math::deg_to_rad( data.at("gameCamera").at("FOV").get<float>() );
-		gameData->gCamera.maxRenderDist = data.at("gameCamera").at("maxRenderDist").get<float>();
-		gameData->gCamera.rayPrecision = data.at("gameCamera").at("rayPrecision").get<float>();
+		gameData->gameCameraVars.fov = math::deg_to_rad( data.at("gameCamera").at("FOV").get<float>() );
+		gameData->gameCameraVars.maxRenderDist = data.at("gameCamera").at("maxRenderDist").get<float>();
+		gameData->gameCameraVars.rayPrecision = data.at("gameCamera").at("rayPrecision").get<float>();
 
-		gameData->gMap.x = data.at("gameMap").at("mapW").get<int>();
-		gameData->gMap.y = data.at("gameMap").at("mapH").get<int>();
-		gameData->gMap.generated = data.at("gameMap").at("generated").get<bool>();
+		gameData->gameMap.x = data.at("gameMap").at("mapW").get<int>();
+		gameData->gameMap.y = data.at("gameMap").at("mapH").get<int>();
+		gameData->gameMap.generated = data.at("gameMap").at("generated").get<bool>();
 
 		gameData->controlsMulti.mouseSens = data.at("controls").at("mouseSens").get<float>();
 		gameData->controlsMulti.movementSpeed = data.at("controls").at("movementSpeed").get<float>();
 
-		gameData->screenStats.minimapScale = data.at("screenStats").at("minimapScale").get<float>();
-		gameData->screenStats.halfWallHeight = data.at("screenStats").at("halfWallHeight").get<float>();
+		gameData->windowVars.minimapScale = data.at("screenStats").at("minimapScale").get<float>();
+		gameData->windowVars.halfWallHeight = data.at("screenStats").at("halfWallHeight").get<float>();
+		gameData->windowVars.maxSightDepth = gameData->gameCameraVars.maxRenderDist;
 
-		gameData->gAssets.wallTexFilePath = data.at("textures").at("wallTexPath").get<std::string>();
-		gameData->gAssets.boundryTexFilePath = data.at("textures").at("boundryTexPath").get<std::string>();
-		gameData->gAssets.floorTexFilePath = data.at("textures").at("floorTexPath").get<std::string>();
-		gameData->gAssets.ceilingTexFilePath = data.at("textures").at("ceilingTexPath").get<std::string>();
-		gameData->gAssets.skyTexFilePath = data.at("textures").at("skyTexPath").get<std::string>();
+		gameData->gameAssets.wallTexFilePath = data.at("textures").at("wallTexPath").get<std::string>();
+		gameData->gameAssets.boundryTexFilePath = data.at("textures").at("boundryTexPath").get<std::string>();
+		gameData->gameAssets.floorTexFilePath = data.at("textures").at("floorTexPath").get<std::string>();
+		gameData->gameAssets.ceilingTexFilePath = data.at("textures").at("ceilingTexPath").get<std::string>();
+		gameData->gameAssets.skyTexFilePath = data.at("textures").at("skyTexPath").get<std::string>();
 
 		int spriteNumber = data.at("sprite number").get<int>();
 		for (int i = 0; i < spriteNumber; ++i)
 		{
 			std::string spriteName("sprite");
 			spriteName.append(std::to_string(i));
-			gameData->gSprites.push_back({ data.at(spriteName).at("texture").get<std::string>(), EntityTransform{ math::Vect2(data.at(spriteName).at("position").at("x").get<float>() ,data.at(spriteName).at("position").at("y").get<float>())} });
+			gameData->gameSprites.push_back({ data.at(spriteName).at("texture").get<std::string>(), EntityTransform{ math::Vect2(data.at(spriteName).at("position").at("x").get<float>() ,data.at(spriteName).at("position").at("y").get<float>())} });
 		}
 
 
@@ -68,7 +69,7 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 	}
 	try
 	{
-		load_map_from_file(gameData->gMap.cells, mapFilePath);
+		load_map_from_file(gameData->gameMap.cells, mapFilePath);
 	}
 	catch (std::exception& e)
 	{
