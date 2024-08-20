@@ -169,7 +169,7 @@ void SpriteRendSectionFactory::set_target(const Billboard& billboard, const Text
     m_sVars.screenVEnd = m_sVars.floorHeight + m_sVars.screenSpriteHeight;
 
     //set number of tasks based on width
-    m_taskNumber = billboard.positionOnScreen + m_sVars.screenSpriteHeight / 2;
+    set_task_number(m_sVars.screenSpriteWidth);
 }
 
 SpriteRendSectionFactory::SpriteRendSection SpriteRendSectionFactory::create_section(int index)
@@ -631,7 +631,7 @@ void GameGraphics::draw_sprite_section(int startU, int endU, GameView& view, con
     float textureU = startU * vars.texUStep;
     if (screenU < 0)
     {
-        textureU = -screenU * vars.texUStep;
+        textureU -= screenU * vars.texUStep;
         screenU = 0;
     }
 

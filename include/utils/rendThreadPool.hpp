@@ -25,6 +25,7 @@ class IRenderingSectionFactory
 {
     public:
 		IRenderingSectionFactory(int taskNumber, int workers);
+		void set_task_number(int taskNumber);
 		int get_size() { return (m_workersNumber); }
     protected:
         int m_taskNumber = 0, m_workersNumber = 0, m_sectionSize = 0, m_remainder = 0;
