@@ -222,11 +222,11 @@ void GameGraphics::load_textures(const GameAssets& gameAssets)
     m_staticTextures.skyTexture.create(gameAssets.skyTexFilePath);
 }
 
-void GameGraphics::draw_view(bool linearPersp, const std::vector<Billboard>& billboards)
+void GameGraphics::draw_view(bool linearPersp, const std::vector<Entity>& entities)
 {
     render_view(linearPersp);
 
-    render_sprites(billboards);
+    render_sprites(entities);
 
     m_mainView.m_texture.update(m_mainView.m_pixels);
     m_window.draw(m_mainView.m_sprite);
@@ -244,9 +244,9 @@ void GameGraphics::calculate_shortest_path(const EntityTransform& startPos)
     m_pathFinder->find_path(startPos.coords.x, startPos.coords.y);
 }
 
-void GameGraphics::load_sprite(const std::string& texturePath)
+void GameGraphics::load_sprite(int id, const std::string& texturePath)
 {
-    m_spriteTexturesDict.emplace_back(std::make_unique<Texture>(texturePath));
+    m_spriteTexturesDict[id] = std::make_unique<Texture>(texturePath);
 }
 
 //----------------utils----------
@@ -568,16 +568,16 @@ struct CompareBillboards
     }
 };
 
-void GameGraphics::render_sprites(const std::vector<Billboard>& billboards)
+void GameGraphics::render_sprites(const std::vector<Entity>& entities)
 {
     std::priority_queue<const Billboard*, std::vector<const Billboard*>, CompareBillboards> billbByDistMaxQ;
 
     //sort by distance (in order to use the painter's algorithm)
-    for (const Billboard& b : billboards)
+    for (const Entity& e : entities)
     {
-        if (b.active && b.visible && b.distance > 0.2f)
+        if (e.active && e.visible && e.m_billboard.distance > 0.2f)
         {
-            billbByDistMaxQ.push(&b);
+            billbByDistMaxQ.push(&(e.m_billboard));
         }
     }
 
@@ -585,14 +585,12 @@ void GameGraphics::render_sprites(const std::vector<Billboard>& billboards)
     {
         const Billboard* billb = billbByDistMaxQ.top();
         const Texture* spriteTex;
-        try
-        {
-            spriteTex = m_spriteTexturesDict.at(billb->id).get();
-        }
-        catch (std::out_of_range& oor)
+
+        spriteTex = m_spriteTexturesDict[billb->id].get();
+        if(spriteTex == nullptr)
         {
             std::string err("Error: a sprite is trying to access a non existing texture of id: ");
-            err.append(std::to_string(billb->id).append("\n").append(oor.what()));
+            err.append(std::to_string(billb->id).append("\n"));
             throw std::runtime_error(err);
         }
         m_spriteSecFactory.set_target(*billb, *spriteTex);

@@ -15,7 +15,7 @@ namespace DataUtils
 		ControlsVars controlsMulti;
 		GraphicsVars windowVars;
 		GameAssets gameAssets;
-		std::vector<Sprite> gameSprites;
+		std::vector<std::pair<int, std::string>> gameSprites;
 	};
 
 	std::unique_ptr<GameData> load_game_data(const std::string&);

@@ -31,9 +31,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 add_executable(main src/main.cpp)
+add_library(gameDataStructures INTERFACE)
 
 add_subdirectory(libs)
-add_subdirectory(include/engine)
+
+#-----------------------INCLUDES---------------------
 
 target_include_directories(
     utils 
@@ -76,14 +78,11 @@ target_include_directories(
 )
 target_include_directories(
     gameHandler 
-    PRIVATE ${CMAKE_SOURCE_DIR}/include
-            ${CMAKE_SOURCE_DIR}/include/engine
+    PUBLIC   ${CMAKE_SOURCE_DIR}/include
+    PRIVATE  ${CMAKE_SOURCE_DIR}/include/engine
 )
-target_include_directories(
-    main 
-    PRIVATE ${CMAKE_SOURCE_DIR}/include
-)
-#---------------------------------------------------
+
+#---------------------LINKS------------------
 
 target_link_libraries(
     gameDataStructures 
@@ -108,6 +107,7 @@ target_link_libraries(
 )
 target_link_libraries(
     gameHandler 
+    PUBLIC  gameDataStructures
     PRIVATE gameGraphics 
             gameCore 
             gameInputs

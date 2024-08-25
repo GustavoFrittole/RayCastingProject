@@ -37,7 +37,7 @@ Pseudo 3d environment generated via ray casting in which the user can explore a 
 Note: distance based shading of horizontal planes (ceiling/floor) and sky are only available in linear perspective mode.
 
 ## Usage
-Various variables are imported from the json file `config.json` that can be found in the asset folder. Amongst other options, the user can choose to load their own map by turning "gameMap" -> "generated" to false and specifying a file path, can modify the map (that must retain rectangular shape and dimensions according to what stated in the config file) and change textures. If the map is generated, there's no need to provide a map file.
+Various variables are imported from the json file `config.json` that can be found in the asset folder, usage explained below. A list of game entities (includes both static sprites and moving characters)can be defines as shown in `main.cpp`.
 The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm, and the process of creation is displayed at game start.
 
 ### `assets/config.json` variables
@@ -46,9 +46,8 @@ The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org
 - gameMap: width, height, option to generate a maze with given dimensions, file form where to load a rectangular map of given (or less) dimensions;
 - screenStats: scale of the minimap (3 means that the center of the m.m. will be at 1/3 of window height, right align), multiplier of the wall height;
 - controls: mouse speed and movement speed;
-- textures: file paths for all textures (alpha );
-- sprite number: number of sprites that follow below;
-- sprite<number>: texture file path, position in map; <number> starts from 0 and grows by one in each following sprite (0, 1 , 2 ...).
+- textures: file paths for all textures (alpha);
+- sprites: a list of pairs of an id (int) and a path(string) from where the sprite will be loaded.
 
 Note: a sprite size multiplier, an option for using flat colors instead of textures and the possibility of using the same texture for multiple sprites are, as of now, missing features. Ray precision has no effect on the DDA algorithm that is currently in use.
 

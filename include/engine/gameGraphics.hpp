@@ -180,7 +180,7 @@ public:
     GameGraphics& operator=(const GameGraphics&) = delete;
 
     void create_assets(const GameAssets&, const GameMap&, const GraphicsVars&, const RayInfoArr&, const GameStateVars&, GameCameraView&);
-    void load_sprite(const std::string&);
+    void load_sprite(int id, const std::string&);
     bool is_running() const { return m_window.isOpen(); }
     //no trasfer
     bool goal_reached(const EntityTransform& pos, const GameMap& map);
@@ -192,7 +192,7 @@ public:
     void draw_map(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
     void draw_end_screen();
     void draw_path_out();
-    void draw_view(bool, const std::vector<Billboard>&);
+    void draw_view(bool, const std::vector<Entity>&);
     void calculate_shortest_path(const EntityTransform&);
 
     void static draw_view_section(int startY, int endY, bool linear, const RayInfoArr&, GameView&, const GraphicsVars&, const StaticTextures&, const EntityTransform&);
@@ -220,7 +220,7 @@ private:
     sf::Font m_endGameFont;
     MapSquareAsset m_mapSquareAsset;
     StaticTextures m_staticTextures;
-    std::vector<std::unique_ptr<Texture>> m_spriteTexturesDict;
+    std::map<int, std::unique_ptr<Texture>> m_spriteTexturesDict;
 
     void draw_camera_view();
 
@@ -243,7 +243,7 @@ private:
     void update_sprite_sections();
 
     void render_view(bool);
-    void render_sprites(const std::vector<Billboard>&);
+    void render_sprites(const std::vector<Entity>&);
     void render_sprite();
 };
 

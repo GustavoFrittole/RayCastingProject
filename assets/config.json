@@ -32,19 +32,8 @@
         "ceilingTexPath" : "assets/ceiling2.png",
         "skyTexPath" : "assets/sky1.png"
     },
-    "sprite number" : 2,
-    "sprite0" : {
-        "texture" : "assets/sprite1.png",
-        "position" : {
-            "x" : 6,
-            "y" : 6
-        }
-    },
-    "sprite1" : {
-        "texture" : "assets/sprite2.png",
-        "position" : {
-            "x" : 5.5,
-            "y" : 6
-        }
-    }
+    "sprites" : [
+        [ 0, "assets/sprite1.png"],
+        [ 1, "assets/sprite2.png"]
+    ]
 }

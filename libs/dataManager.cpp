@@ -49,14 +49,8 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->gameAssets.ceilingTexFilePath = data.at("textures").at("ceilingTexPath").get<std::string>();
 		gameData->gameAssets.skyTexFilePath = data.at("textures").at("skyTexPath").get<std::string>();
 
-		int spriteNumber = data.at("sprite number").get<int>();
-		for (int i = 0; i < spriteNumber; ++i)
-		{
-			std::string spriteName("sprite");
-			spriteName.append(std::to_string(i));
-			gameData->gameSprites.push_back({ data.at(spriteName).at("texture").get<std::string>(), EntityTransform{ math::Vect2(data.at(spriteName).at("position").at("x").get<float>() ,data.at(spriteName).at("position").at("y").get<float>())} });
-		}
-
+		for (auto& sprite : data.at("sprites"))
+			gameData->gameSprites.emplace_back(sprite.at(0).get<int>(), sprite.at(1).get<std::string>());
 
 		mapFilePath = data.at("gameMap").at("mapCellsFile").get<std::string>();
 		std::cout << data.dump(4);

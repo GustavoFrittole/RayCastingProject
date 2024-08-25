@@ -26,10 +26,10 @@ const RayInfo& RayInfoArr::const_at(int index) const
 
 //----------------------GameCore----------------------
 
-GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTransform& entityTransform) : 
+GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTransform& transform) : 
 	m_gameCamera(gameCameraVars),
 	m_gameMap(gameMap),
-	m_playerTransform(entityTransform),
+	m_playerTransform(transform),
 	m_processorCount(get_thread_number()),
 	m_rayInfoArr(gameCameraVars.pixelWidth)
 {
@@ -88,9 +88,14 @@ void GameCore::chech_position_in_map(int rayPosInMapX, int rayPosInMapY, EntityT
 	}
 }
 
-void GameCore::add_billboard_sprite(int id, const EntityTransform& entityTransform)
+void GameCore::add_entity(int id, const EntityTransform& transform)
 {
-	m_billboards.emplace_back(id, entityTransform);
+	m_entities.emplace_back(id, transform);
+}
+
+void GameCore::add_entity(const Entity& entity)
+{
+	m_entities.push_back(entity);
 }
 
 bool GameCore::generate_map_step() 
@@ -306,11 +311,11 @@ void GameCore::view_walls(bool useCameraPlane)
 
 void GameCore::view_billboards(bool useCameraPlane)
 {
-	for (Billboard& b : m_billboards)
+	for (Entity& e : m_entities)
 	{
-		if(b.active)
+		if(e.active)
 		{
-			math::Vect2 rayToCamera = b.entityTransform.coords - m_playerTransform.coords;
+			math::Vect2 rayToCamera = e.transform.coords - m_playerTransform.coords;
 			float euclideanRayLength = rayToCamera.Length();
 
 			//relative to camera foreward view
@@ -322,26 +327,26 @@ void GameCore::view_billboards(bool useCameraPlane)
 
 			if (!useCameraPlane)
 			{
-				b.distance = euclideanRayLength;
+				e.m_billboard.distance = euclideanRayLength;
 
 				//mapping to screen pos
-				b.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
+				e.m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
 
-				b.visible = (b.distance < m_gameCamera.maxRenderDist);
+				e.visible = (e.m_billboard.distance < m_gameCamera.maxRenderDist);
 			}
 			else
 			{
-				b.distance = euclideanRayLength * std::cos(relativeAngle);
+				e.m_billboard.distance = euclideanRayLength * std::cos(relativeAngle);
 
 				//mapping to screen pos
 				float projectionOnPlane = euclideanRayLength * std::sin(relativeAngle);
 				float planeLength = std::tan(m_gameCamera.fov / 2) * 2;
 				//since rays are obrained by adding the plane position to a vertical vector: (planePos, 1) * rayLength
 				//the position on plane can be derived from the vector's x component normalized
-				float positionOnPlane = projectionOnPlane / b.distance;
-				b.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
+				float positionOnPlane = projectionOnPlane / e.m_billboard.distance;
+				e.m_billboard.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
 
-				b.visible = (b.distance < m_gameCamera.maxRenderDist);
+				e.visible = (e.m_billboard.distance < m_gameCamera.maxRenderDist);
 			}
 		}
 	}

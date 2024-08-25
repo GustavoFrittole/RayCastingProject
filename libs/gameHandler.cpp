@@ -5,21 +5,20 @@
 #include "gameInputs.hpp"
 #include <iostream>
 
-constexpr auto WINDOW_NAME = "ray cast maze";
-
+#define WINDOW_NAME "ray cast maze"
 #define GENERATION_TIME_STEP_MS 5
 
 class GameHandler : public rcm::IGameHandler
 {
 public:
 	void load_game_data(const std::string&) override;
-	void create_assets() override;
+	void create_assets(const std::vector<Entity>&) override;
 	void run_game() override;
 private:
 	void start();
 	void performGameCycle();
-	void load_sprites();
-	//inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
+	void load_sprites(const std::vector<Entity>&);
+	inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
 
 	std::unique_ptr<DataUtils::GameData> m_gameData;
 	std::unique_ptr<GameCore> m_gameCore;
@@ -55,25 +54,14 @@ void GameHandler::load_game_data(const std::string& filePath)
 	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, *(m_window), m_gameState, m_gameCore->get_playerController());
 }
 
-void GameHandler::create_assets() 
+void GameHandler::create_assets(const std::vector<Entity>& entities)
 {
 	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap, m_gameData->windowVars, m_gameCore->get_ray_info_arr(), m_gameState, *(m_gameCameraView.get()));
-	load_sprites();
+	load_sprites(entities);
 }
 
 void GameHandler::run_game()
 {
-	try
-	{
-		create_assets();
-	}
-	catch(std::exception& e)
-	{
-		std::string err(e.what());
-		err.append("\nError while creating game assets.\n");
-		throw std::runtime_error(err);
-	}
-
 	start();
 
 	//game timer
@@ -111,13 +99,13 @@ void GameHandler::start()
 	m_gameState.isPaused = true;
 }
 
-//inline bool goal_reached(const EntityTransform& pos, const GameMap& map)
-//{
-//	return (map.cells->at(static_cast<int>(pos.coords.y) * map.x +
-//		static_cast<int>(pos.coords.x))
-//		== 'g'
-//		);
-//}
+bool GameHandler::goal_reached(const EntityTransform& pos, const GameMap& map)
+{
+	return (map.cells->at(static_cast<int>(pos.coords.y) * map.x +
+		static_cast<int>(pos.coords.x))
+		== 'g'
+		);
+}
 
 void GameHandler::performGameCycle()
 {
@@ -135,7 +123,7 @@ void GameHandler::performGameCycle()
 
 	m_gameCore->view_by_ray_casting(m_gameState.isLinearPersp);
 
-	m_gameGraphics->draw_view(m_gameState.isLinearPersp, m_gameCore->get_billboards_info_arr());
+	m_gameGraphics->draw_view(m_gameState.isLinearPersp, m_gameCore->get_entities());
 
 	if (m_gameState.isPaused || m_gameState.isTabbed)
 	{
@@ -147,21 +135,23 @@ void GameHandler::performGameCycle()
 		m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameData->playerTrasform, m_gameData->windowVars);
 		m_gameGraphics->draw_minimap_triangles(m_gameData->gameCameraVars.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->windowVars);
 
-		//if (goal_reached(m_gameData->playerTrasform, m_gameData->gameMap))
-		//{
-		//	m_gameGraphics->draw_end_screen();
-		//}
+		if (goal_reached(m_gameData->playerTrasform, m_gameData->gameMap))
+		{
+			m_gameGraphics->draw_end_screen();
+		}
 	}
 	m_window->display();
 }
 
-void GameHandler::load_sprites()
+void GameHandler::load_sprites(const std::vector<Entity>& entities)
 {
-	int id = 0;
-	for (const Sprite& s : m_gameData->gameSprites)
+	for (const std::pair<int, std::string>& sprite : m_gameData->gameSprites)
 	{
-		m_gameGraphics->load_sprite(s.texturePath);
-		m_gameCore->add_billboard_sprite(id, s.transform);
-		++id;
+		m_gameGraphics->load_sprite(sprite.first, sprite.second);
+	}
+	for (const Entity& e : entities)
+	{
+		m_gameCore->add_entity(e);
+		std::cout << e.active << " " << e.visible << " " << e.m_billboard.id << std::endl;
 	}
 }

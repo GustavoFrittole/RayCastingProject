@@ -100,22 +100,25 @@ private:
 	RayInfo* m_rayArr;
 };
 
-struct Sprite
-{
-	std::string texturePath;
-	EntityTransform transform;
-};
-
 struct Billboard
 {
-	Billboard(int id, const EntityTransform& et) :
-		id(id),
-		entityTransform(et)
+	Billboard(int id) :
+		id(id)
 	{}
 	int id = -1;
-	EntityTransform entityTransform;
-	float distance = 0.f;
 	float positionOnScreen = 0.f;
+	float distance = 0.f;
+};
+
+struct Entity
+{
+	Entity(int id, const EntityTransform& et) :
+		m_billboard(id),
+		transform(et)
+	{}
+
+	Billboard m_billboard;
+	EntityTransform transform;
 	bool active = true;
 	bool visible = false;
 };
