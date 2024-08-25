@@ -10,7 +10,7 @@ struct PlayerInputCache
 {
 	float foreward = 0;
 	float lateral = 0;
-	float rotate = 0;
+	float rotatation = 0;
 };
 
 class GameCore
@@ -70,6 +70,10 @@ private:
 
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
 	bool check_out_of_map_bounds(int, int) const;
+
+	//bool move_entity(EntityTransform&, const math::Vect2&, float);
+	bool move_entity_with_collisions_entity_space(EntityTransform&, float, float, float);
+	//bool move_entity_with_collisions_world_space(EntityTransform&, const math::Vect2&, float);
 };
 
 #endif

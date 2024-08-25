@@ -1,9 +1,8 @@
-
-#include <gameGraphics.hpp>
 #include <math.h>
 #include <stdexcept>
 #include <queue>
 #include <iostream>
+#include "gameGraphics.hpp"
 
 #define DRAW_LINEAR_SKY
 
@@ -772,7 +771,7 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
     //limit minimap to a square with sides length equal to double of the render distance 
     int startX = transform.coords.x - graphVars.maxSightDepth;
 
-    //avoid going out of bounds
+    //avoid drawing out of bounds cells
     if (startX < 0)
         startX = 0;
 
@@ -814,7 +813,7 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
 
 //---------------IG-assets---
 
-void GameGraphics::MapSquareAsset::create(int mapWidth, int mapHeight)
+void MapSquareAsset::create(int mapWidth, int mapHeight)
 {
     int xoverw = g_screenWidth / mapWidth;
     int yoverh = g_screenHeight / mapHeight;

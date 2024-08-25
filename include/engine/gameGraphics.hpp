@@ -62,7 +62,9 @@ struct StaticTextures
     Texture skyTexture;
 };
 
-//------------------THREAD-POOL---
+//-----------------thread-pool-helpers----------------------------
+
+//------structs----
 
 struct BackgroundVars
 {
@@ -140,6 +142,15 @@ protected:
     BackgroundVars m_backgroundVars{};
 };
 
+struct MapSquareAsset
+{
+    void create(int, int);
+    int tileDim = 0;
+    int xoffset = 0;
+    int yoffset = 0;
+    sf::RectangleShape wallRect;
+};
+
 //-----sprites----
 
 class SpriteRendSectionFactory : public IRenderingSectionFactory
@@ -171,6 +182,7 @@ protected:
     SpriteRendVars m_sVars{};
 };
 
+//-----------------------------------------------------------------------
 
 class GameGraphics
 {
@@ -182,8 +194,6 @@ public:
     void create_assets(const GameAssets&, const GameMap&, const GraphicsVars&, const RayInfoArr&, const GameStateVars&, GameCameraView&);
     void load_sprite(int id, const std::string&);
     bool is_running() const { return m_window.isOpen(); }
-    //no trasfer
-    bool goal_reached(const EntityTransform& pos, const GameMap& map);
 
     void draw_map_gen(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
     void draw_minimap_triangles(int winPixWidth, const RayInfoArr& rays, const GraphicsVars& graphVars);
@@ -200,15 +210,6 @@ public:
     void static draw_sprite_section(int startU, int endU, GameView&, const SpriteRendVars&, const Billboard&, const Texture&, const GraphicsVars&, const RayInfoArr&);
 
 private:
-    struct MapSquareAsset
-    {
-        void create(int, int);
-        int tileDim = 0;
-        int xoffset = 0;
-        int yoffset = 0;
-        sf::RectangleShape wallRect;
-    };
-
     sf::RenderWindow& m_window;
 
     std::vector<std::pair<int, int>> m_pathToGoal;

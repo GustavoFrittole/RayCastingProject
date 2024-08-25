@@ -115,60 +115,28 @@ void GameCore::update_entities()
 	m_lastTime = currentTime;
 	float correctionFactor = TIME_CORRECTION * deltaTime;
 
-	//decompose movment in x and y(world) axis and check collions separatly
+	//------player movement-------
+	move_entity_with_collisions_entity_space(m_playerTransform, 
+		m_pInputCache.foreward * correctionFactor, 
+		m_pInputCache.lateral * correctionFactor, 
+		m_pInputCache.rotatation * correctionFactor);
 
-	//check_collision X axis
-	math::Vect2 moveAttempt = m_playerTransform.coords +
-		(math::Vect2(std::cos(m_playerTransform.forewardAngle) * m_pInputCache.foreward 
-					-std::sin(m_playerTransform.forewardAngle) * m_pInputCache.lateral, 0)
-					* (correctionFactor));
-
-	EntityType hitMarker = EntityType::NoHit;
-	chech_position_in_map(moveAttempt, hitMarker);
-
-	//update entities
-	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
-	{
-		m_playerTransform.coords = moveAttempt;
-	}
-
-
-	//check_collision Y axis
-	moveAttempt = m_playerTransform.coords +
-		(math::Vect2(0, std::sin(m_playerTransform.forewardAngle) * m_pInputCache.foreward +
-					std::cos(m_playerTransform.forewardAngle) * m_pInputCache.lateral)
-					* (correctionFactor));
-
-
-
-	hitMarker = EntityType::NoHit;
-	chech_position_in_map(moveAttempt, hitMarker);
-
-	//update entities
-	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
-	{
-		m_playerTransform.coords = moveAttempt;
-	}
-
-	//rotate
-	m_playerTransform.forewardAngle += m_pInputCache.rotate * correctionFactor;
+	//update camera direction
 	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
 	m_cameraVecs.plane = math::Vect2(m_cameraVecs.forewardDirection.y, -m_cameraVecs.forewardDirection.x) * std::tan(m_gameCamera.fov / 2) * 2;
-
-	if (m_playerTransform.forewardAngle >= PI)
-		m_playerTransform.forewardAngle -= 2*PI;
-	else if(m_playerTransform.forewardAngle <= -PI)
-		m_playerTransform.forewardAngle += 2*PI;
 
 	//reset cached values
 	m_pInputCache.foreward = 0;
 	m_pInputCache.lateral = 0;
-	m_pInputCache.rotate = 0;
+	m_pInputCache.rotatation = 0;
+
+	//-----entities movement-------
+	//..........
 }
 
 void GameCore::GameController::rotate(float angle) const
 {
-	gameCore.m_pInputCache.rotate += angle;
+	gameCore.m_pInputCache.rotatation += angle;
 }
 void GameCore::GameController::move_foreward(float amount) const
 {
@@ -358,6 +326,50 @@ game::IGameController& GameCore::get_playerController()
 		m_playerController = std::make_unique<GameController>(*this);
 
 	return *(m_playerController);
+}
+
+bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transform, float front, float latereal, float rotation)
+{
+	//decompose movment in x and y(world) axis and check collions separatly
+
+//check_collision X axis
+	math::Vect2 moveAttempt = transform.coords +
+		(math::Vect2(	std::cos(transform.forewardAngle) * front
+						- std::sin(transform.forewardAngle) * latereal, 0));
+
+	EntityType hitMarker = EntityType::NoHit;
+	chech_position_in_map(moveAttempt, hitMarker);
+
+	//update entities
+	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
+	{
+		transform.coords = moveAttempt;
+	}
+
+
+	//check_collision Y axis
+	moveAttempt = transform.coords +
+		(math::Vect2(	0,	std::sin(transform.forewardAngle) * front +
+							std::cos(transform.forewardAngle) * latereal));
+
+	hitMarker = EntityType::NoHit;
+	chech_position_in_map(moveAttempt, hitMarker);
+
+	//update entities
+	if (hitMarker == EntityType::NoHit) //check for any unblocking tiles 
+	{
+		transform.coords = moveAttempt;
+	}
+
+	//rotate
+	transform.forewardAngle += rotation;
+
+	if (transform.forewardAngle >= PI)
+		transform.forewardAngle -= 2 * PI;
+	else if (transform.forewardAngle <= -PI)
+		transform.forewardAngle += 2 * PI;
+
+	return true;
 }
 
 //Simple but inefficient form of ray casting 

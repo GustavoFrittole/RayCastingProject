@@ -74,9 +74,7 @@ void GameHandler::run_game()
 		//frame counter
 		gt.add_frame();
 		if (gt.get_frame_count() > 20)
-		{
 			std::cout << gt.get_frame_rate() << std::endl;
-		}
 		//
 	}
 }
@@ -152,6 +150,5 @@ void GameHandler::load_sprites(const std::vector<Entity>& entities)
 	for (const Entity& e : entities)
 	{
 		m_gameCore->add_entity(e);
-		std::cout << e.active << " " << e.visible << " " << e.m_billboard.id << std::endl;
 	}
 }

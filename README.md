@@ -49,7 +49,7 @@ The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org
 - textures: file paths for all textures (alpha);
 - sprites: a list of pairs of an id (int) and a path(string) from where the sprite will be loaded.
 
-Note: a sprite size multiplier, an option for using flat colors instead of textures and the possibility of using the same texture for multiple sprites are, as of now, missing features. Ray precision has no effect on the DDA algorithm that is currently in use.
+Note: a sprite size multiplier, an option for using flat colors instead of textures ~~and the possibility of using the same texture for multiple sprites~~ are, as of now, missing features. Ray precision has no effect on the DDA algorithm that is currently in use.
 
 ## Controls
 - WASD to move,
@@ -77,7 +77,7 @@ Billboard sprites
 :-------------------------:
 ![sprites](https://github.com/user-attachments/assets/cf18bbb5-7e49-47b8-9718-380f52d8962a)
 
-## Basic class diagram
+## Basic class diagram (old)
 ![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25)
 *All not specified relations are 1:1*
 

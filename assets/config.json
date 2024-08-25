@@ -33,7 +33,7 @@
         "skyTexPath" : "assets/sky1.png"
     },
     "sprites" : [
-        [ 0, "assets/sprite1.png"],
+        [ 3, "assets/sprite1.png"],
         [ 1, "assets/sprite2.png"]
     ]
 }
