@@ -151,7 +151,7 @@ void SpriteRendSectionFactory::set_target(const Billboard& billboard, const Text
     m_tex = &billTex;
 
     //set sprite dimensions on screen
-    m_sVars.screenSpriteHeight = (g_screenHeight / billboard.distance) * m_graphVars->halfWallHeight;
+    m_sVars.screenSpriteHeight = (g_screenHeight / billboard.distance) * m_graphVars->halfWallHeight * billboard.size;
     m_sVars.screenSpriteWidth = m_sVars.screenSpriteHeight * (billTex.width() / (float)billTex.height());
     m_sVars.floorHeight = (g_screenHeight - m_sVars.screenSpriteHeight) / 2; //distance from vertical limits
 
@@ -371,11 +371,11 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
         sf::Color flatColor(sf::Color::Transparent);
         switch (currRay.entityHit)
         {
-        case EntityType::Wall:
+        case HitType::Wall:
             currentTexture = &tex.wallTexture;
             flatShading = false;
             break;
-        case EntityType::Baudry:
+        case HitType::Baudry:
             currentTexture = &tex.baundryTexture;
             flatShading = false;
             //flat shading example

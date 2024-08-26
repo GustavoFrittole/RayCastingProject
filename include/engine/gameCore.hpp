@@ -26,7 +26,7 @@ public:
 	const GameCameraVecs& get_camera_vecs() const { return m_cameraVecs; }
 	const RayInfoArr& get_ray_info_arr()  const { return m_rayInfoArr; }
 
-	const std::vector<Entity>& get_entities() const { return m_entities; } 
+	std::vector<Entity>& get_entities() { return m_entities; } 
 	void add_entity(int, const EntityTransform&);
 	void add_entity(const Entity&);
 
@@ -65,13 +65,13 @@ private:
 	void view_walls(bool);
 	void view_billboards(bool);
 	
-	void chech_position_in_map(int, int, EntityType&) const;
-	void chech_position_in_map(const math::Vect2&, EntityType&) const;
+	void chech_position_in_map(int, int, HitType&) const;
+	void chech_position_in_map(const math::Vect2&, HitType&) const;
 
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
 	bool check_out_of_map_bounds(int, int) const;
 
-	//bool move_entity(EntityTransform&, const math::Vect2&, float);
+	bool move_entity_entity_space(EntityTransform&, float, float, float);
 	bool move_entity_with_collisions_entity_space(EntityTransform&, float, float, float);
 	//bool move_entity_with_collisions_world_space(EntityTransform&, const math::Vect2&, float);
 };

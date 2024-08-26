@@ -113,6 +113,22 @@ void InputManager::handle_events_main()
             {
                 m_gameState.isTabbed = false;
             }
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+            {
+                if (!m_isTriggerKeptPressed)
+                {
+                    m_isTriggerKeptPressed = true;
+                    m_gameState.isTriggerPressed = true;
+                }
+            }
+            else
+            {
+                m_isTriggerKeptPressed = false;
+            }
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
+            {
+                m_gameState.isTriggerPressed = true;
+            }
         }
         else
         {

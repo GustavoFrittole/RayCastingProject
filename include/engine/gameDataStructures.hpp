@@ -60,7 +60,7 @@ struct GameMap
 	std::unique_ptr<std::string> cells;
 };
 
-enum class EntityType : char
+enum class HitType : char
 {
 	Wall = 'w',
 	Baudry = 'b',
@@ -79,7 +79,7 @@ enum class CellSide
 
 struct RayInfo
 {
-	EntityType entityHit = EntityType::NoHit;
+	HitType entityHit = HitType::NoHit;
 	math::Vect2 hitPos = { 0, 0 };
 	float length = 0;
 	CellSide lastSideChecked = CellSide::Unknown;
@@ -108,17 +108,29 @@ struct Billboard
 	int id = -1;
 	float positionOnScreen = 0.f;
 	float distance = 0.f;
+	float size = 1.f;
+};
+
+enum class EntityType
+{
+	projectile,
+	enemy,
+	prop
 };
 
 struct Entity
 {
 	Entity(int id, const EntityTransform& et) :
 		m_billboard(id),
-		transform(et)
+		m_transform(et)
 	{}
+	void set_size(float size) { m_collisionSize = size; m_billboard.size = size; }
 
 	Billboard m_billboard;
-	EntityTransform transform;
+	EntityTransform m_transform{};
+	float m_collisionSize = 1.f;
+	EntityType type = EntityType::prop;
+	bool vulnerable = false;
 	bool active = true;
 	bool visible = false;
 };
@@ -131,6 +143,7 @@ struct GameStateVars
 	bool isTabbed = false;
 	bool isLinearPersp = true;
 	bool drawSky = false;
+	bool isTriggerPressed = false;
 };
 
 namespace game

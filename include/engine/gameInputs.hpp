@@ -3,6 +3,7 @@
 
 #include "gameDataStructures.hpp"
 #include <SFML/Graphics.hpp>
+#include <thread>
 
 class InputManager
 {
@@ -16,6 +17,8 @@ public:
 
     void handle_events_close();
     void handle_events_main();
+private:
+    bool m_isTriggerKeptPressed = false;
 };
 
 #endif

@@ -1,12 +1,14 @@
+#include <iostream>
 #include "gameHandler.hpp"
 #include "dataManager.hpp"
 #include "gameGraphics.hpp"
 #include "gameCore.hpp"
 #include "gameInputs.hpp"
-#include <iostream>
 
 #define WINDOW_NAME "ray cast maze"
 #define GENERATION_TIME_STEP_MS 5
+#define PROJECTILE_ID 0
+#define FRAME_RATE 60
 
 class GameHandler : public rcm::IGameHandler
 {
@@ -19,6 +21,10 @@ private:
 	void performGameCycle();
 	void load_sprites(const std::vector<Entity>&);
 	inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
+	void handle_entities_actions();
+	void handle_entities_interactions(std::vector<Entity>&);
+
+	void shoot_projectile(const math::Vect2& position, float direction, float speed);
 
 	std::unique_ptr<DataUtils::GameData> m_gameData;
 	std::unique_ptr<GameCore> m_gameCore;
@@ -27,6 +33,16 @@ private:
 	std::unique_ptr<InputManager> m_inputManager;
 	std::unique_ptr<GameCameraView> m_gameCameraView;
 	GameStateVars m_gameState{};
+};
+
+class MyProjectile : public Entity
+{
+public:
+	MyProjectile( const EntityTransform& transform, int id = PROJECTILE_ID) : Entity(id, transform)
+	{
+		type = EntityType::projectile;
+		set_size(0.1f);
+	}
 };
 
 rcm::IGameHandler* rcm::create_gameHandler()
@@ -50,7 +66,7 @@ void GameHandler::load_game_data(const std::string& filePath)
 	m_gameCore = std::make_unique<GameCore>(m_gameData->gameCameraVars, m_gameData->gameMap, m_gameData->playerTrasform);
 	m_gameCameraView = std::make_unique<GameCameraView>( GameCameraView{m_gameData->playerTrasform, m_gameData->gameCameraVars, m_gameCore->get_camera_vecs()} );
 	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowVars::g_screenWidth, windowVars::g_screenHeight), WINDOW_NAME);
-	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->windowVars);
+	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->windowVars, FRAME_RATE);
 	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, *(m_window), m_gameState, m_gameCore->get_playerController());
 }
 
@@ -105,13 +121,51 @@ bool GameHandler::goal_reached(const EntityTransform& pos, const GameMap& map)
 		);
 }
 
+void GameHandler::shoot_projectile(const math::Vect2& position, float direction, float speed)
+{
+	m_gameCore->add_entity(MyProjectile(EntityTransform{ position, direction }));
+	m_gameState.isTriggerPressed = false;
+}
+
+void GameHandler::handle_entities_actions()
+{
+	if (m_gameState.isTriggerPressed)
+		shoot_projectile(m_gameCameraView->transform.coords, m_gameCameraView->transform.forewardAngle, 1);
+}
+
+void GameHandler::handle_entities_interactions(std::vector<Entity>& entities)
+{
+	//destroy active destructible entities hit by projectiles
+	for (Entity& eProjectile : entities)
+	{
+		if(eProjectile.active && eProjectile.type == EntityType::projectile)
+		{
+			for (Entity& eTarget : entities)
+			{
+				if (eTarget.active && eTarget.vulnerable)
+				{
+					float distance = (eProjectile.m_transform.coords - eTarget.m_transform.coords).Length();
+					if (eProjectile.m_collisionSize + eTarget.m_collisionSize >= distance)
+					{
+						eProjectile.active = false;
+						eTarget.active = false;
+					}
+				}
+			}
+		}
+	}
+}
+
 void GameHandler::performGameCycle()
 {
 	m_window->clear(sf::Color::Black);
 
 	m_inputManager->handle_events_main();
-
+	
 	m_gameCore->update_entities();
+
+	handle_entities_interactions(m_gameCore->get_entities());
+	handle_entities_actions();
 
 	if (m_gameState.isFindPathRequested && m_gameData->gameMap.generated)
 	{

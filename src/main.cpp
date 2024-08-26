@@ -15,9 +15,13 @@ int main()
     for (int x = start; x < end; x += 3)
     {
         for (int y = start; y < end; y += 3)
-            entities.emplace_back((x % 2 ? 1 : 3), EntityTransform{ math::Vect2{ x / 10.f, (x+y) / 10.f }, 0.f });
+        {
+            Entity entity((x % 2 ? 1 : 3), EntityTransform{ math::Vect2{ x / 10.f, (x + y) / 10.f }, 0.f });
+            entity.vulnerable = true;
+            entity.m_collisionSize = 0.3f;
+            entities.push_back(entity);
+        }
     }
-
     try
     {
         std::cout << "Reading User defined variables..." << std::endl;
