@@ -8,7 +8,7 @@
 #define WINDOW_NAME "ray cast maze"
 #define GENERATION_TIME_STEP_MS 5
 #define PROJECTILE_ID 0
-#define FRAME_RATE 60
+#define FRAME_RATE 0
 
 class GameHandler : public rcm::IGameHandler
 {
