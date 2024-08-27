@@ -2,14 +2,19 @@
 #include <iostream>
 #include <memory>
 #include <map>
+#include <thread>
+#include <chrono>
 #include "gameHandler.hpp"
 
-struct MyEntity : public IEntity
+struct MyEnemy : public IEntity
 {
-    MyEntity(const EntityTransform& transform, int id = 1) : IEntity(id, transform)
+    MyEnemy(const EntityTransform& transform, int id = 1) : IEntity(id, transform)
     {
-        m_physical.speed.x = 0.5;
-        m_physical.rotationSpeed = 0.4;
+        m_physical.speed.x = 3.f;
+        m_physical.rotationSpeed = 0.8f;
+        m_collisionSize = 0.3;
+        m_type = EntityType::enemy;
+        vulnerable = false;
     }
     void on_update() override
     {
@@ -19,14 +24,30 @@ struct MyEntity : public IEntity
 
 struct MySpawn : public IEntity
 {
-    MySpawn(const EntityTransform& transform, int id = 2) : IEntity(id, transform)
+    MySpawn(const EntityTransform& transform, int id = 3) : IEntity(id, transform)
     {
-        m_physical.speed.x = 0.1;
+        vulnerable = false;
+        matata = std::thread([this] () mutable{
+            while (this->active) 
+            {
+                this->cooldown = false;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            }
+                
+            });
     }
     void on_update() override
     {
-        m_physical.rotationSpeed += 0.1;
+        if(!cooldown)
+        {
+            cooldown = true;
+            rcm::get_gameHandler().add_entity(new MyEnemy(m_transform));
+        }
     }
+    ~MySpawn() { active = false;  matata.join(); }
+private:
+    std::thread matata;
+    bool cooldown = false;
 };
 
 int main()
@@ -44,16 +65,15 @@ int main()
     //{
     //    for (int y = start; y < end; y += 3)
     //    {
-    //        IEntity* entity = new MyEntity((x % 2 ? 1 : 3), EntityTransform{ math::Vect2{ x / 10.f, (x + y) / 10.f }, 0.f });
+    //        IEntity* entity = new MyEnemy((x % 2 ? 1 : 3), EntityTransform{ math::Vect2{ x / 10.f, (x + y) / 10.f }, 0.f });
     //        entity->vulnerable = true;
     //        entity->m_collisionSize = 0.3f;
     //        entities.emplace_back(entity);
     //    }
     //}
-    std::cout << &rcm::get_gameHandler() << std::endl;
 
-    entities.emplace_back(new MyEntity(EntityTransform{ {6,6},6 }));
-
+    entities.emplace_back(new MyEnemy(EntityTransform{ {6,6},6 }));
+    entities.emplace_back(new MySpawn({ {7,10},6 }));
     //---------------- run game ---------------
     try
     {

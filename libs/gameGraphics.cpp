@@ -4,8 +4,6 @@
 #include <iostream>
 #include "gameGraphics.hpp"
 
-#define DRAW_LINEAR_SKY
-
 using namespace windowVars;
 
 //---------------------------GAME-ASSET---

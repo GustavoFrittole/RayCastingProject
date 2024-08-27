@@ -147,7 +147,7 @@ struct IEntity
 	EntityTransform m_transform{};
 	PhysicalVars m_physical{};
 	float m_collisionSize = 1.f;
-	EntityType type = EntityType::prop;
+	EntityType m_type = EntityType::prop;
 	bool vulnerable = false;
 	bool active = true;
 	bool visible = false;

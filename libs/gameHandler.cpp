@@ -14,11 +14,11 @@ public:
 	void load_game_data(const std::string&) override;
 	void create_assets(std::vector<std::unique_ptr<IEntity>>&) override;
 	void add_entity(IEntity* entity) override;
-	void confirm_add_entities();
 	void run_game() override;
 private:
 	void start();
 	void performGameCycle();
+	void confirm_add_entities();
 	void load_sprites(std::vector<std::unique_ptr<IEntity>>&);
 	inline char get_entity_cell(const EntityTransform& pos, const GameMap& map);
 	inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
@@ -44,7 +44,7 @@ class MyProjectile : public IEntity
 public:
 	MyProjectile( const EntityTransform& transform, int id = PROJECTILE_ID) : IEntity(id, transform)
 	{
-		type = EntityType::projectile;
+		m_type = EntityType::projectile;
 		set_size(0.1f);
 		m_physical.speed = { 6.f, 0.f };
 		m_physical.isGhosted = true;
@@ -175,7 +175,7 @@ void GameHandler::handle_entities_interactions(std::vector<std::unique_ptr<IEnti
 {
 	for (std::unique_ptr<IEntity>& eProjectile : entities)
 	{
-		if(eProjectile->active && eProjectile->type == EntityType::projectile)
+		if(eProjectile->active && eProjectile->m_type == EntityType::projectile)
 		{
 			//destroy projectiles if inside walls
 			char cell = get_entity_cell(eProjectile->m_transform, m_gameData->gameMap);
