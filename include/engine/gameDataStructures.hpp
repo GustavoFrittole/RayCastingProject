@@ -132,15 +132,16 @@ struct PhysicalVars
 	math::Vect2 acceleration{};
 	float rotationAcceleraion = 0.f;
 };
- 
-struct Entity
+
+struct IEntity
 {
-	Entity(int id, const EntityTransform& et) :
+	IEntity(int id, const EntityTransform& et) :
 		m_billboard(id),
 		m_transform(et)
 	{}
 	void set_size(float size) { m_collisionSize = size; m_billboard.size = size; }
 	void apply_force(const math::Vect2& force) { m_physical.acceleration = force / m_physical.mass; }
+	virtual void on_update() = 0; 
 
 	Billboard m_billboard;
 	EntityTransform m_transform{};

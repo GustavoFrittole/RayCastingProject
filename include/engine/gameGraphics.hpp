@@ -202,7 +202,7 @@ public:
     void draw_map(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
     void draw_end_screen();
     void draw_path_out();
-    void draw_view(bool, const std::vector<Entity>&);
+    void draw_view(bool, const std::vector<std::unique_ptr<IEntity>>&);
     void calculate_shortest_path(const EntityTransform&);
 
     void static draw_view_section(int startY, int endY, bool linear, const RayInfoArr&, GameView&, const GraphicsVars&, const StaticTextures&, const EntityTransform&);
@@ -244,7 +244,7 @@ private:
     void update_sprite_sections();
 
     void render_view(bool);
-    void render_sprites(const std::vector<Entity>&);
+    void render_sprites(const std::vector<std::unique_ptr<IEntity>>&);
     void render_sprite();
 };
 

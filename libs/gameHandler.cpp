@@ -12,18 +12,21 @@ class GameHandler : public rcm::IGameHandler
 {
 public:
 	void load_game_data(const std::string&) override;
-	void create_assets(const std::vector<Entity>&) override;
-	void add_entity(const Entity& entity) override;
+	void create_assets(std::vector<std::unique_ptr<IEntity>>&) override;
+	void add_entity(IEntity* entity) override;
+	void confirm_add_entities();
 	void run_game() override;
 private:
 	void start();
 	void performGameCycle();
-	void load_sprites(const std::vector<Entity>&);
+	void load_sprites(std::vector<std::unique_ptr<IEntity>>&);
 	inline char get_entity_cell(const EntityTransform& pos, const GameMap& map);
 	inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
-	void handle_entities_actions();
-	void handle_entities_interactions(std::vector<Entity>&);
+	void handle_entities_actions(std::vector<std::unique_ptr<IEntity>>&);
+	void handle_entities_interactions(std::vector<std::unique_ptr<IEntity>>&);
 
+
+	//tochange
 	void shoot_projectile(const math::Vect2& position, float direction, float speed);
 
 	std::unique_ptr<DataUtils::GameData> m_gameData;
@@ -33,12 +36,13 @@ private:
 	std::unique_ptr<InputManager> m_inputManager;
 	std::unique_ptr<GameCameraView> m_gameCameraView;
 	GameStateVars m_gameState{};
+	std::vector<std::unique_ptr<IEntity>> m_entitiesToAdd;
 };
 
-class MyProjectile : public Entity
+class MyProjectile : public IEntity
 {
 public:
-	MyProjectile( const EntityTransform& transform, int id = PROJECTILE_ID) : Entity(id, transform)
+	MyProjectile( const EntityTransform& transform, int id = PROJECTILE_ID) : IEntity(id, transform)
 	{
 		type = EntityType::projectile;
 		set_size(0.1f);
@@ -46,11 +50,12 @@ public:
 		m_physical.isGhosted = true;
 		m_physical.isAirBorne = true;
 	}
+	void on_update() override {};
 };
 
-Entity rcm::create_projectile(const EntityTransform& position)
+IEntity* rcm::create_projectile(const EntityTransform& position)
 {
-	return MyProjectile(position);
+	return new MyProjectile(position);
 }
 
 rcm::IGameHandler& rcm::get_gameHandler()
@@ -80,15 +85,24 @@ void GameHandler::load_game_data(const std::string& filePath)
 	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, *(m_window), m_gameState, m_gameCore->get_playerController());
 }
 
-void GameHandler::create_assets(const std::vector<Entity>& entities)
+void GameHandler::create_assets(std::vector<std::unique_ptr<IEntity>>& entities)
 {
 	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap, m_gameData->graphicsVars, m_gameCore->get_ray_info_arr(), m_gameState, *(m_gameCameraView.get()));
 	load_sprites(entities);
 }
 
-void GameHandler::add_entity(const Entity& entity)
+void GameHandler::add_entity(IEntity* entity)
 {
-	m_gameCore->add_entity(entity);
+	m_entitiesToAdd.emplace_back(entity);
+}
+
+void GameHandler::confirm_add_entities()
+{
+	while(!m_entitiesToAdd.empty())
+	{
+		m_gameCore->add_entity(m_entitiesToAdd.back().release());
+		m_entitiesToAdd.pop_back();
+	}
 }
 
 void GameHandler::run_game()
@@ -143,37 +157,41 @@ bool GameHandler::goal_reached(const EntityTransform& pos, const GameMap& map)
 
 void GameHandler::shoot_projectile(const math::Vect2& position, float direction, float speed)
 {
-	m_gameCore->add_entity(MyProjectile(EntityTransform{ position, direction }));
+	m_gameCore->add_entity(new MyProjectile(EntityTransform{ position, direction }));
 	m_gameState.isTriggerPressed = false;
 }
 
-void GameHandler::handle_entities_actions()
+void GameHandler::handle_entities_actions(std::vector<std::unique_ptr<IEntity>>& entities)
 {
 	if (m_gameState.isTriggerPressed)
 		shoot_projectile(m_gameCameraView->transform.coords, m_gameCameraView->transform.forewardAngle, 1);
+	for (std::unique_ptr<IEntity>& entity : entities)
+	{
+		entity->on_update();
+	}
 }
 
-void GameHandler::handle_entities_interactions(std::vector<Entity>& entities)
+void GameHandler::handle_entities_interactions(std::vector<std::unique_ptr<IEntity>>& entities)
 {
-	for (Entity& eProjectile : entities)
+	for (std::unique_ptr<IEntity>& eProjectile : entities)
 	{
-		if(eProjectile.active && eProjectile.type == EntityType::projectile)
+		if(eProjectile->active && eProjectile->type == EntityType::projectile)
 		{
 			//destroy projectiles if inside walls
-			char cell = get_entity_cell(eProjectile.m_transform, m_gameData->gameMap);
+			char cell = get_entity_cell(eProjectile->m_transform, m_gameData->gameMap);
 			if (!(cell == ' ' || cell == 'g'))
-				eProjectile.active = false;
+				eProjectile->active = false;
 
 			//destroy active destructible entities toghether with the projectile itself on hit
-			for (Entity& eTarget : entities)
+			for (std::unique_ptr<IEntity>& eTarget : entities)
 			{
-				if (eTarget.active && eTarget.vulnerable)
+				if (eTarget->active && eTarget->vulnerable)
 				{
-					float distance = (eProjectile.m_transform.coords - eTarget.m_transform.coords).Length();
-					if (eProjectile.m_collisionSize + eTarget.m_collisionSize >= distance)
+					float distance = (eProjectile->m_transform.coords - eTarget->m_transform.coords).Length();
+					if (eProjectile->m_collisionSize + eTarget->m_collisionSize >= distance)
 					{
-						eProjectile.active = false;
-						eTarget.active = false;
+						eProjectile->active = false;
+						eTarget->active = false;
 					}
 				}
 			}
@@ -190,7 +208,8 @@ void GameHandler::performGameCycle()
 	m_gameCore->update_entities();
 
 	handle_entities_interactions(m_gameCore->get_entities());
-	handle_entities_actions();
+	handle_entities_actions(m_gameCore->get_entities());
+	confirm_add_entities();
 
 	if (m_gameState.isFindPathRequested && m_gameData->gameMap.generated)
 	{
@@ -220,14 +239,14 @@ void GameHandler::performGameCycle()
 	m_window->display();
 }
 
-void GameHandler::load_sprites(const std::vector<Entity>& entities)
+void GameHandler::load_sprites(std::vector<std::unique_ptr<IEntity>>& entities)
 {
 	for (const std::pair<int, std::string>& sprite : m_gameData->gameSprites)
 	{
 		m_gameGraphics->load_sprite(sprite.first, sprite.second);
 	}
-	for (const Entity& e : entities)
+	for (std::unique_ptr<IEntity>& e : entities)
 	{
-		m_gameCore->add_entity(e);
+		m_gameCore->add_entity(e.release());
 	}
 }

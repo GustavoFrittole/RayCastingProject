@@ -221,7 +221,7 @@ void GameGraphics::load_textures(const GameAssets& gameAssets)
     m_staticTextures.skyTexture.create(gameAssets.skyTexFilePath);
 }
 
-void GameGraphics::draw_view(bool linearPersp, const std::vector<Entity>& entities)
+void GameGraphics::draw_view(bool linearPersp, const std::vector<std::unique_ptr<IEntity>>& entities)
 {
     render_view(linearPersp);
 
@@ -567,16 +567,16 @@ struct CompareBillboards
     }
 };
 
-void GameGraphics::render_sprites(const std::vector<Entity>& entities)
+void GameGraphics::render_sprites(const std::vector<std::unique_ptr<IEntity>>& entities)
 {
     std::priority_queue<const Billboard*, std::vector<const Billboard*>, CompareBillboards> billbByDistMaxQ;
 
     //sort by distance (in order to use the painter's algorithm)
-    for (const Entity& e : entities)
+    for (const std::unique_ptr<IEntity>& e : entities)
     {
-        if (e.active && e.visible && e.m_billboard.distance > 0.2f)
+        if (e->active && e->visible && e->m_billboard.distance > 0.2f)
         {
-            billbByDistMaxQ.push(&(e.m_billboard));
+            billbByDistMaxQ.push(&(e->m_billboard));
         }
     }
 

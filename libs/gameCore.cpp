@@ -90,14 +90,9 @@ void GameCore::chech_position_in_map(int rayPosInMapX, int rayPosInMapY, HitType
 	}
 }
 
-void GameCore::add_entity(int id, const EntityTransform& transform)
+void GameCore::add_entity(IEntity* entity)
 {
-	m_entities.emplace_back(id, transform);
-}
-
-void GameCore::add_entity(const Entity& entity)
-{
-	m_entities.push_back(entity);
+	m_entities.emplace_back(entity);
 }
 
 bool GameCore::generate_map_step() 
@@ -140,34 +135,34 @@ void GameCore::update_entities()
 
 	//-----entities movement-------
 	
-	for (Entity& entity : m_entities)
+	for (std::unique_ptr<IEntity>& entity : m_entities)
 	{
-		if (!entity.m_physical.isAirBorne)
+		if (!entity->m_physical.isAirBorne)
 		{
 			//entity.apply_force(FRICTION * timeFactor); 
 		}
 
-		if (!entity.m_physical.isGhosted)
+		if (!entity->m_physical.isGhosted)
 		{
 			//apply acceleration
-			entity.m_physical.speed += entity.m_physical.acceleration * timeFactor;
-			entity.m_physical.rotationSpeed += entity.m_physical.rotationAcceleraion * timeFactor;
+			entity->m_physical.speed += entity->m_physical.acceleration * timeFactor;
+			entity->m_physical.rotationSpeed += entity->m_physical.rotationAcceleraion * timeFactor;
 
 			//apply speed
-			move_entity_with_collisions_entity_space(entity.m_transform,
-				entity.m_physical.speed.x * timeFactor,
-				entity.m_physical.speed.y * timeFactor,
-				entity.m_physical.rotationSpeed * timeFactor);
+			move_entity_with_collisions_entity_space(entity->m_transform,
+				entity->m_physical.speed.x * timeFactor,
+				entity->m_physical.speed.y * timeFactor,
+				entity->m_physical.rotationSpeed * timeFactor);
 		}
 		else
 		{
 			//only apply speed
-			if (!move_entity_space(entity.m_transform,
-				entity.m_physical.speed.x * timeFactor,
-				entity.m_physical.speed.y * timeFactor,
-				entity.m_physical.rotationSpeed * timeFactor))
+			if (!move_entity_space(entity->m_transform,
+				entity->m_physical.speed.x * timeFactor,
+				entity->m_physical.speed.y * timeFactor,
+				entity->m_physical.rotationSpeed * timeFactor))
 			{
-				entity.active = false;
+				entity->active = false;
 			}
 		}
 	}
@@ -317,11 +312,11 @@ void GameCore::view_walls(bool useCameraPlane)
 
 void GameCore::view_billboards(bool useCameraPlane)
 {
-	for (Entity& e : m_entities)
+	for (std::unique_ptr<IEntity>& entity : m_entities)
 	{
-		if(e.active)
+		if(entity->active)
 		{
-			math::Vect2 rayToCamera = e.m_transform.coords - m_playerTransform.coords;
+			math::Vect2 rayToCamera = entity->m_transform.coords - m_playerTransform.coords;
 			float euclideanRayLength = rayToCamera.Length();
 
 			//relative to camera foreward view
@@ -333,16 +328,16 @@ void GameCore::view_billboards(bool useCameraPlane)
 
 			if (!useCameraPlane)
 			{
-				e.m_billboard.distance = euclideanRayLength;
+				entity->m_billboard.distance = euclideanRayLength;
 
 				//mapping to screen pos
-				e.m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
+				entity->m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
 
-				e.visible = (e.m_billboard.distance < m_gameCamera.maxRenderDist);
+				entity->visible = (entity->m_billboard.distance < m_gameCamera.maxRenderDist);
 			}
 			else
 			{
-				e.m_billboard.distance = euclideanRayLength * std::cos(relativeAngle);
+				entity->m_billboard.distance = euclideanRayLength * std::cos(relativeAngle);
 
 				//mapping to screen pos
 				float projectionOnPlane = euclideanRayLength * std::sin(relativeAngle);
@@ -350,10 +345,10 @@ void GameCore::view_billboards(bool useCameraPlane)
 
 				//since rays are obrained by adding the plane position to a vertical vector: (planePos, 1) * rayLength
 				//the position on plane can be derived from the vector's x component normalized
-				float positionOnPlane = projectionOnPlane / e.m_billboard.distance;
-				e.m_billboard.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
+				float positionOnPlane = projectionOnPlane / entity->m_billboard.distance;
+				entity->m_billboard.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
 
-				e.visible = (e.m_billboard.distance < m_gameCamera.maxRenderDist);
+				entity->visible = (entity->m_billboard.distance < m_gameCamera.maxRenderDist);
 			}
 		}
 	}

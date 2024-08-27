@@ -26,9 +26,8 @@ public:
 	const GameCameraVecs& get_camera_vecs() const { return m_cameraVecs; }
 	const RayInfoArr& get_ray_info_arr()  const { return m_rayInfoArr; }
 
-	std::vector<Entity>& get_entities() { return m_entities; } 
-	void add_entity(int, const EntityTransform&);
-	void add_entity(const Entity&);
+	std::vector<std::unique_ptr<IEntity>>& get_entities() { return m_entities; } 
+	void add_entity(IEntity *);
 
 	bool generate_map_step();
 	bool generate_map();
@@ -60,7 +59,7 @@ private:
 
 	RayInfoArr m_rayInfoArr;
 	std::unique_ptr<MapGenerator> m_mapGenerator;
-	std::vector<Entity> m_entities;
+	std::vector<std::unique_ptr<IEntity>> m_entities;
 
 	void view_walls(bool);
 	void view_billboards(bool);
