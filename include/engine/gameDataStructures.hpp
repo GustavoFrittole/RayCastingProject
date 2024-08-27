@@ -8,8 +8,8 @@
 
 namespace windowVars
 {
-	constexpr int g_screenHeight = WINDOW_HEIGHT;
-	constexpr int g_screenWidth = g_screenHeight * 16 / 9;
+	constexpr int g_windowHeight = WINDOW_HEIGHT;
+	constexpr int g_windowWidth = g_windowHeight * 16 / 9;
 }
 
 struct EntityTransform
@@ -48,6 +48,7 @@ struct ControlsVars
 
 struct GraphicsVars
 {
+	int frameRate = 0;
 	int minimapScale = 6;
 	float halfWallHeight = 0.5f;
 	float maxSightDepth = 10.f;
@@ -118,6 +119,19 @@ enum class EntityType
 	prop
 };
 
+struct PhysicalVars
+{
+	//unaffected by external forces and architectural boundaries
+	bool isGhosted = false;
+	//unaffected by friction (speed decay)
+	bool isAirBorne = false;
+	float mass = 0.f;
+	math::Vect2 speed{};
+	float rotationSpeed = 0.f;
+	math::Vect2 acceleration{};
+	float rotationAcceleraion = 0.f;
+};
+
 struct Entity
 {
 	Entity(int id, const EntityTransform& et) :
@@ -125,9 +139,11 @@ struct Entity
 		m_transform(et)
 	{}
 	void set_size(float size) { m_collisionSize = size; m_billboard.size = size; }
+	void apply_force(const math::Vect2& force) { m_physical.acceleration = force / m_physical.mass; }
 
 	Billboard m_billboard;
 	EntityTransform m_transform{};
+	PhysicalVars m_physical{};
 	float m_collisionSize = 1.f;
 	EntityType type = EntityType::prop;
 	bool vulnerable = false;

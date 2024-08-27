@@ -71,7 +71,7 @@ private:
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
 	bool check_out_of_map_bounds(int, int) const;
 
-	bool move_entity_entity_space(EntityTransform&, float, float, float);
+	bool move_entity_space(EntityTransform&, float, float, float);
 	bool move_entity_with_collisions_entity_space(EntityTransform&, float, float, float);
 	//bool move_entity_with_collisions_world_space(EntityTransform&, const math::Vect2&, float);
 };

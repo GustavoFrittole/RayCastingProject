@@ -13,7 +13,7 @@ namespace DataUtils
 		GameCameraVars gameCameraVars;
 		GameMap gameMap;
 		ControlsVars controlsMulti;
-		GraphicsVars windowVars;
+		GraphicsVars graphicsVars;
 		GameAssets gameAssets;
 		std::vector<std::pair<int, std::string>> gameSprites;
 	};

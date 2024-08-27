@@ -7,8 +7,6 @@
 
 #define WINDOW_NAME "ray cast maze"
 #define GENERATION_TIME_STEP_MS 5
-#define PROJECTILE_ID 0
-#define FRAME_RATE 0
 
 class GameHandler : public rcm::IGameHandler
 {
@@ -20,6 +18,7 @@ private:
 	void start();
 	void performGameCycle();
 	void load_sprites(const std::vector<Entity>&);
+	inline char get_entity_cell(const EntityTransform& pos, const GameMap& map);
 	inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
 	void handle_entities_actions();
 	void handle_entities_interactions(std::vector<Entity>&);
@@ -42,8 +41,16 @@ public:
 	{
 		type = EntityType::projectile;
 		set_size(0.1f);
+		m_physical.speed = { 6.f, 0.f };
+		m_physical.isGhosted = true;
+		m_physical.isAirBorne = true;
 	}
 };
+
+Entity rcm::create_projectile(const EntityTransform& position)
+{
+	return MyProjectile(position);
+}
 
 rcm::IGameHandler* rcm::create_gameHandler()
 {
@@ -65,14 +72,14 @@ void GameHandler::load_game_data(const std::string& filePath)
 
 	m_gameCore = std::make_unique<GameCore>(m_gameData->gameCameraVars, m_gameData->gameMap, m_gameData->playerTrasform);
 	m_gameCameraView = std::make_unique<GameCameraView>( GameCameraView{m_gameData->playerTrasform, m_gameData->gameCameraVars, m_gameCore->get_camera_vecs()} );
-	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowVars::g_screenWidth, windowVars::g_screenHeight), WINDOW_NAME);
-	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->windowVars, FRAME_RATE);
+	m_window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowVars::g_windowWidth, windowVars::g_windowHeight), WINDOW_NAME);
+	m_gameGraphics = std::make_unique<GameGraphics>(*(m_window), m_gameData->graphicsVars);
 	m_inputManager = std::make_unique<InputManager>(m_gameData->controlsMulti, *(m_window), m_gameState, m_gameCore->get_playerController());
 }
 
 void GameHandler::create_assets(const std::vector<Entity>& entities)
 {
-	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap, m_gameData->windowVars, m_gameCore->get_ray_info_arr(), m_gameState, *(m_gameCameraView.get()));
+	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap, m_gameData->graphicsVars, m_gameCore->get_ray_info_arr(), m_gameState, *(m_gameCameraView.get()));
 	load_sprites(entities);
 }
 
@@ -82,6 +89,7 @@ void GameHandler::run_game()
 
 	//game timer
 	debug::GameTimer gt;
+	gt.reset_timer();
 
 	while (m_gameGraphics->is_running())
 	{
@@ -89,9 +97,10 @@ void GameHandler::run_game()
 
 		//frame counter
 		gt.add_frame();
-		if (gt.get_frame_count() > 20)
-			std::cout << gt.get_frame_rate() << std::endl;
-		//
+		if (gt.get_frame_rate_noreset() == 8)
+		{
+			std::cout << "fps: " << gt.get_frame_rate()  <<  std::endl;
+		}
 	}
 }
 
@@ -113,12 +122,15 @@ void GameHandler::start()
 	m_gameState.isPaused = true;
 }
 
+char GameHandler::get_entity_cell(const EntityTransform& pos, const GameMap& map)
+{
+	return map.cells->at(	static_cast<int>(pos.coords.y) * map.x +
+							static_cast<int>(pos.coords.x));
+}
+
 bool GameHandler::goal_reached(const EntityTransform& pos, const GameMap& map)
 {
-	return (map.cells->at(static_cast<int>(pos.coords.y) * map.x +
-		static_cast<int>(pos.coords.x))
-		== 'g'
-		);
+	return (get_entity_cell(pos, map)== 'g');
 }
 
 void GameHandler::shoot_projectile(const math::Vect2& position, float direction, float speed)
@@ -135,11 +147,16 @@ void GameHandler::handle_entities_actions()
 
 void GameHandler::handle_entities_interactions(std::vector<Entity>& entities)
 {
-	//destroy active destructible entities hit by projectiles
 	for (Entity& eProjectile : entities)
 	{
 		if(eProjectile.active && eProjectile.type == EntityType::projectile)
 		{
+			//destroy projectiles if inside walls
+			char cell = get_entity_cell(eProjectile.m_transform, m_gameData->gameMap);
+			if (!(cell == ' ' || cell == 'g'))
+				eProjectile.active = false;
+
+			//destroy active destructible entities toghether with the projectile itself on hit
 			for (Entity& eTarget : entities)
 			{
 				if (eTarget.active && eTarget.vulnerable)
@@ -184,8 +201,8 @@ void GameHandler::performGameCycle()
 	}
 	else
 	{
-		m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameData->playerTrasform, m_gameData->windowVars);
-		m_gameGraphics->draw_minimap_triangles(m_gameData->gameCameraVars.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->windowVars);
+		m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameData->playerTrasform, m_gameData->graphicsVars);
+		m_gameGraphics->draw_minimap_triangles(m_gameData->gameCameraVars.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->graphicsVars);
 
 		if (goal_reached(m_gameData->playerTrasform, m_gameData->gameMap))
 		{

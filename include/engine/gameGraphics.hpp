@@ -10,8 +10,8 @@
 struct MinimapInfo
 {
     MinimapInfo(int scaleToScreen, float rayLength) : minimapRelPos(scaleToScreen),
-        minimapCenterX(windowVars::g_screenHeight / minimapRelPos),
-        minimapCenterY(windowVars::g_screenWidth - minimapCenterX),
+        minimapCenterX(windowVars::g_windowHeight / minimapRelPos),
+        minimapCenterY(windowVars::g_windowWidth - minimapCenterX),
         minimapScale(minimapCenterX / rayLength) 
     {}
     int minimapRelPos;
@@ -187,7 +187,7 @@ protected:
 class GameGraphics
 {
 public:
-    GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphicsVars, int frameRate = 0);
+    GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphicsVars);
     GameGraphics() = delete;
     GameGraphics& operator=(const GameGraphics&) = delete;
 

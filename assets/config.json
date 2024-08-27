@@ -17,7 +17,8 @@
         "generated" : false,
         "mapCellsFile": "assets/map.txt"
     },
-    "screenStats" : {
+    "windowStats" : {
+        "frameRate" : 0,
         "minimapScale" : 6,
 	    "halfWallHeight" : 1
     },

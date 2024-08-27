@@ -4,7 +4,9 @@
 #include <stdexcept>
 #include <cmath>
 
-#define TIME_CORRECTION 0.000000001f
+#define TIME_CORRECTION 1e-9f
+#define DYNAMIC_FRICTION 1.f
+#define BULLET_SPEED 5
 
 //----------------------RayInfo----------------------
 
@@ -113,13 +115,13 @@ void GameCore::update_entities()
 	auto currentTime = std::chrono::high_resolution_clock::now();
 	int deltaTime = (currentTime - m_lastTime).count();
 	m_lastTime = currentTime;
-	float correctionFactor = TIME_CORRECTION * deltaTime;
+	float timeFactor = TIME_CORRECTION * deltaTime;
 
 	//------player movement-------
 	move_entity_with_collisions_entity_space(m_playerTransform, 
-		m_pInputCache.foreward * correctionFactor, 
-		m_pInputCache.lateral * correctionFactor, 
-		m_pInputCache.rotatation * correctionFactor);
+		m_pInputCache.foreward * timeFactor, 
+		m_pInputCache.lateral * timeFactor, 
+		m_pInputCache.rotatation * timeFactor);
 
 	//update camera direction
 	m_cameraVecs.forewardDirection = { 
@@ -140,12 +142,30 @@ void GameCore::update_entities()
 	
 	for (Entity& entity : m_entities)
 	{
-		if (entity.type == EntityType::projectile)
+		if (!entity.m_physical.isAirBorne && !entity.m_physical.isGhosted)
 		{
-			if (!move_entity_entity_space(entity.m_transform,
-				10 * correctionFactor,
-				0,
-				0))
+			//entity.apply_force(FRICTION * timeFactor); 
+		}
+
+		if (!entity.m_physical.isGhosted)
+		{
+			//apply acceleration
+			entity.m_physical.speed += entity.m_physical.acceleration * timeFactor;
+			entity.m_physical.rotationSpeed += entity.m_physical.rotationAcceleraion * timeFactor;
+
+			//apply speed
+			move_entity_with_collisions_entity_space(entity.m_transform,
+				entity.m_physical.speed.x * timeFactor,
+				entity.m_physical.speed.y * timeFactor,
+				entity.m_physical.rotationSpeed * timeFactor);
+		}
+		else
+		{
+			//only apply speed
+			if (!move_entity_space(entity.m_transform,
+				entity.m_physical.speed.x * timeFactor,
+				entity.m_physical.speed.y * timeFactor,
+				entity.m_physical.rotationSpeed * timeFactor))
 			{
 				entity.active = false;
 			}
@@ -273,7 +293,6 @@ void GameCore::view_walls(bool useCameraPlane)
 				rayLengthAtIntersectY += lengthIncrementY;
 			}
 			chech_position_in_map(currentPosInMap[0], currentPosInMap[1], hitMarker);
-			
 		}
 
 		//Roll back the increment that reached inside a solid cell.
@@ -328,6 +347,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 				//mapping to screen pos
 				float projectionOnPlane = euclideanRayLength * std::sin(relativeAngle);
 				float planeLength = std::tan(m_gameCamera.fov / 2) * 2;
+
 				//since rays are obrained by adding the plane position to a vertical vector: (planePos, 1) * rayLength
 				//the position on plane can be derived from the vector's x component normalized
 				float positionOnPlane = projectionOnPlane / e.m_billboard.distance;
@@ -349,9 +369,10 @@ game::IGameController& GameCore::get_playerController()
 
 bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transform, float front, float latereal, float rotation)
 {
-	//decompose movment in x and y(world) axis and check collions separatly
+	bool hasMoved = false;
 
-//check_collision X axis
+	//decompose movment in x and y(world) axis and check collions separatly
+	//check_collision X axis
 	math::Vect2 moveAttempt = transform.coords +
 		(math::Vect2(	std::cos(transform.forewardAngle) * front
 						- std::sin(transform.forewardAngle) * latereal, 0));
@@ -362,9 +383,9 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 	//update entities
 	if (hitMarker == HitType::NoHit) //check for any unblocking tiles 
 	{
+		hasMoved = true;
 		transform.coords = moveAttempt;
 	}
-
 
 	//check_collision Y axis
 	moveAttempt = transform.coords +
@@ -377,6 +398,7 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 	//update entities
 	if (hitMarker == HitType::NoHit) //check for any unblocking tiles 
 	{
+		hasMoved = true;
 		transform.coords = moveAttempt;
 	}
 
@@ -388,19 +410,19 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 	else if (transform.forewardAngle <= -PI)
 		transform.forewardAngle += 2 * PI;
 
-	return true;
+	return hasMoved;
 }
 
-bool GameCore::move_entity_entity_space(EntityTransform& transform, float front, float latereal, float rotation)
+bool GameCore::move_entity_space(EntityTransform& transform, float front, float latereal, float rotation)
 {
 	//decompose movment in x and y(world) axis and check collions separatly
 
 //check_collision X axis
 	math::Vect2 moveAttempt = transform.coords +
-		(math::Vect2(std::cos(transform.forewardAngle) * front
-					- std::sin(transform.forewardAngle) * latereal, 
-					std::sin(transform.forewardAngle) * front +
-					std::cos(transform.forewardAngle) * latereal));
+		(math::Vect2(	std::cos(transform.forewardAngle) * front
+						- std::sin(transform.forewardAngle) * latereal, 
+						std::sin(transform.forewardAngle) * front +
+						std::cos(transform.forewardAngle) * latereal));
 
 	if (check_out_of_map_bounds(moveAttempt))
 		return false;

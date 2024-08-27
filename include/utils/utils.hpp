@@ -14,7 +14,7 @@ namespace debug
 		GameTimer(){}
 		void add_frame();
 		int get_frame_rate();
-		int get_frame_count() const { return m_frameCounter; };
+		int get_frame_rate_noreset() const { return m_frameCounter; };
 		int get_time_nano() const;
 		int reset_timer();
 	private:

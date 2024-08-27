@@ -5,6 +5,8 @@
 #include <vector>
 #include "gameDataStructures.hpp"
 
+#define PROJECTILE_ID 0
+
 namespace rcm
 {
 	class IGameHandler
@@ -19,6 +21,10 @@ namespace rcm
 	};
 
 	IGameHandler* create_gameHandler();
+
+	Entity create_projectile(const EntityTransform&);
+	//Entity create_target();
+	//Entity create_spawner();
 }
 
 #endif

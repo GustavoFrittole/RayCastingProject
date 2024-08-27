@@ -109,8 +109,8 @@ void BackgroundRendSectionFactory::set_target(GameView* view, const StaticTextur
     m_graphVars = graphVars;
     m_camera = camera;
     m_backgroundVars.skyPixPerCircle = (m_staticTex->skyTexture.width() / (float)(2 * PI));
-    m_backgroundVars.skyUIncrement = m_backgroundVars.skyPixPerCircle * m_camera->vars.fov / g_screenWidth;
-    m_backgroundVars.skyVIncrement = m_staticTex->skyTexture.height() / ((float)g_screenHeight);
+    m_backgroundVars.skyUIncrement = m_backgroundVars.skyPixPerCircle * m_camera->vars.fov / g_windowWidth;
+    m_backgroundVars.skyVIncrement = m_staticTex->skyTexture.height() / ((float)g_windowHeight);
 }
 
 BackgroundRendSectionFactory::BackgroundRendSection BackgroundRendSectionFactory::create_section(int index)
@@ -151,9 +151,9 @@ void SpriteRendSectionFactory::set_target(const Billboard& billboard, const Text
     m_tex = &billTex;
 
     //set sprite dimensions on screen
-    m_sVars.screenSpriteHeight = (g_screenHeight / billboard.distance) * m_graphVars->halfWallHeight * billboard.size;
+    m_sVars.screenSpriteHeight = (g_windowHeight / billboard.distance) * m_graphVars->halfWallHeight * billboard.size;
     m_sVars.screenSpriteWidth = m_sVars.screenSpriteHeight * (billTex.width() / (float)billTex.height());
-    m_sVars.floorHeight = (g_screenHeight - m_sVars.screenSpriteHeight) / 2; //distance from vertical limits
+    m_sVars.floorHeight = (g_windowHeight - m_sVars.screenSpriteHeight) / 2; //distance from vertical limits
 
     m_sVars.shade = (1 - (billboard.distance / (m_graphVars->maxSightDepth))) * 0xFF;
 
@@ -162,8 +162,8 @@ void SpriteRendSectionFactory::set_target(const Billboard& billboard, const Text
     m_sVars.texUStep = billTex.width() / m_sVars.screenSpriteWidth;
 
     //set texture start and end in V dimension
-    m_sVars.textureVstart = (m_sVars.screenSpriteHeight > g_screenHeight)
-        ? m_sVars.texVStep * ((m_sVars.screenSpriteHeight - g_screenHeight) / 2)
+    m_sVars.textureVstart = (m_sVars.screenSpriteHeight > g_windowHeight)
+        ? m_sVars.texVStep * ((m_sVars.screenSpriteHeight - g_windowHeight) / 2)
         : 0;
     m_sVars.screenVEnd = m_sVars.floorHeight + m_sVars.screenSpriteHeight;
 
@@ -179,24 +179,24 @@ SpriteRendSectionFactory::SpriteRendSection SpriteRendSectionFactory::create_sec
 
 //---------------------------GAME-GRAPHICS---
 
-GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphicsVars, int frameRate) :
+GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphicsVars) :
     m_window(window),
     m_pathToGoal(0),
     m_minimapInfo(graphicsVars.minimapScale, graphicsVars.maxSightDepth),
     m_rendThreadPool(get_thread_number()),
-    m_viewSecFactory(g_screenWidth, m_rendThreadPool.get_size()),
-    m_backgroundSecFactory(g_screenHeight/2, m_rendThreadPool.get_size()),
-    m_spriteSecFactory(g_screenWidth, m_rendThreadPool.get_size())
+    m_viewSecFactory(g_windowWidth, m_rendThreadPool.get_size()),
+    m_backgroundSecFactory(g_windowHeight/2, m_rendThreadPool.get_size()),
+    m_spriteSecFactory(g_windowWidth, m_rendThreadPool.get_size())
 {
     m_window.clear(sf::Color::Black);
-    m_window.setFramerateLimit(frameRate);
+    m_window.setFramerateLimit(graphicsVars.frameRate);
 }
 
 //-----compound-funtions--
 
 void GameGraphics::create_assets(const GameAssets& gameAssets, const GameMap& gameMap, const GraphicsVars& graphicsVars, const RayInfoArr& raysInfoVec, const GameStateVars& gameState, GameCameraView& gameCamera)
 {
-    m_mainView.create(g_screenWidth, g_screenHeight, true);
+    m_mainView.create(g_windowWidth, g_windowHeight, true);
     m_pathFinder = std::make_unique<PathFinder>(gameMap.x, gameMap.y, *(gameMap.cells), m_pathToGoal);
     m_mapSquareAsset.create(gameMap.x, gameMap.y);
 
@@ -269,8 +269,8 @@ void GameGraphics::load_end_screen()
     m_endGameText.setString("GOAL REACHED");
     m_endGameText.setCharacterSize(50);
     m_endGameText.setFillColor(sf::Color::Magenta);
-    m_endGameText.setPosition((g_screenWidth - m_endGameText.getLocalBounds().width)/2,
-                              (g_screenHeight- m_endGameText.getLocalBounds().height)/2);
+    m_endGameText.setPosition((g_windowWidth - m_endGameText.getLocalBounds().width)/2,
+                              (g_windowHeight- m_endGameText.getLocalBounds().height)/2);
     
 }
 void GameGraphics::draw_end_screen()
@@ -355,12 +355,12 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
 
         //--this version maintains correct proportions, but causes texture distortion--
         //float wallAngle = (std::atan(m_gameGraphics.m_halfWallHeight / distance) );
-        //float screenWallHeight = g_screenHeight  * wallAngle / (m_verticalVisibleAngle * m_gameGraphics.m_halfWallHeight);
+        //float screenWallHeight = g_windowHeight  * wallAngle / (m_verticalVisibleAngle * m_gameGraphics.m_halfWallHeight);
 
         //--this version is faster, has easy texture mapping but locks th evertical view angle at 90� (45� up 45� down)--
 
-        float screenWallHeight = (g_screenHeight / distance) * graphVars.halfWallHeight;
-        float floorHeight = (g_screenHeight - screenWallHeight) / 2;
+        float screenWallHeight = (g_windowHeight / distance) * graphVars.halfWallHeight;
+        float floorHeight = (g_windowHeight - screenWallHeight) / 2;
 
         //alpha of walls, bleanding them with the dark backgroud 
         sf::Uint8 boxShade = (1 - (distance / (graphVars.maxSightDepth))) * 0xFF;
@@ -416,24 +416,24 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
                 textureU = currentTexture->width() - textureU - 1;
 
             //if the textured box is bigger then the screen (hight wise), the initial unseen part of pixels must be skipped
-            textureV = (screenWallHeight > g_screenHeight)
-                ? texVStep * ((screenWallHeight - g_screenHeight) / 2)
+            textureV = (screenWallHeight > g_windowHeight)
+                ? texVStep * ((screenWallHeight - g_windowHeight) / 2)
                 : 0;
         }
 
         int x = i * 4;
         //vertical scan line
-        for (int y = 0; y < g_screenHeight * 4; y += 4)
+        for (int y = 0; y < g_windowHeight * 4; y += 4)
         {
             //in the wall range
-            if (y > floorHeight * 4 && y <= (g_screenHeight - floorHeight) * 4)
+            if (y > floorHeight * 4 && y <= (g_windowHeight - floorHeight) * 4)
             {
                 if (flatShading)
                 {
-                    view.m_pixels[y * g_screenWidth + x] = flatColor.r;
-                    view.m_pixels[y * g_screenWidth + x + 1] = flatColor.g;
-                    view.m_pixels[y * g_screenWidth + x + 2] = flatColor.b;
-                    view.m_pixels[y * g_screenWidth + x + 3] = flatColor.a;
+                    view.m_pixels[y * g_windowWidth + x] = flatColor.r;
+                    view.m_pixels[y * g_windowWidth + x + 1] = flatColor.g;
+                    view.m_pixels[y * g_windowWidth + x + 2] = flatColor.b;
+                    view.m_pixels[y * g_windowWidth + x + 3] = flatColor.a;
                 }
                 else
                 {
@@ -441,7 +441,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
                     if (textureV >= currentTexture->height())
                         textureV = 0;
 
-                    int viewPixel = (y * g_screenWidth + x);
+                    int viewPixel = (y * g_windowWidth + x);
                     int texturePixel = (textureU + int(textureV) * currentTexture->width()) * 4;
 
                     copy_pixels(view.m_pixels, currentTexture->m_texturePixels, viewPixel, texturePixel, boxShade);
@@ -452,7 +452,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
             else if (!linear && y <= floorHeight * 4)
             {
 
-                float rayLength = (g_screenHeight * graphVars.halfWallHeight) / (g_screenHeight - (0.5f * y));
+                float rayLength = (g_windowHeight * graphVars.halfWallHeight) / (g_windowHeight - (0.5f * y));
                 math::Vect2 xyPos = camTransform.coords + ((currRay.hitPos) / currRay.length) * rayLength;
                 int uvPos[2]{};
 
@@ -460,7 +460,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
                 uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * tex.ceilingTexture.width()));
                 uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * tex.ceilingTexture.height()));
 
-                int viewPixel = (y * g_screenWidth + x);
+                int viewPixel = (y * g_windowWidth + x);
                 int texturePixel = (uvPos[1] * tex.ceilingTexture.width() + uvPos[0]) * 4;
 
                 copy_pixels(view.m_pixels, tex.ceilingTexture.m_texturePixels, viewPixel, texturePixel, 0xFF);
@@ -469,7 +469,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
                 uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * tex.floorTexture.width()));
                 uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * tex.floorTexture.height()));
 
-                viewPixel = (g_screenHeight * 4 - y - 4) * g_screenWidth + x;
+                viewPixel = (g_windowHeight * 4 - y - 4) * g_windowWidth + x;
                 texturePixel = (uvPos[1] * tex.floorTexture.width() + uvPos[0]) * 4;
 
                 copy_pixels(view.m_pixels, tex.floorTexture.m_texturePixels, viewPixel, texturePixel, 0xFF);
@@ -497,12 +497,12 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
     for (int y = startX; y < endX; ++y)
     {
         //inverse of the formula used in draw_view() to calculate wall height, witch is:
-                    //  float screenWallHeight = (g_screenHeight / distance) * m_gameGraphics.m_halfWallHeight;
-                    //  float floorHeight = (g_screenHeight - screenWallHeight) / 2;
-        float rayLength = (g_screenHeight * windowVars.halfWallHeight) / (g_screenHeight - (2.f * y));
+                    //  float screenWallHeight = (g_windowHeight / distance) * m_gameGraphics.m_halfWallHeight;
+                    //  float floorHeight = (g_windowHeight - screenWallHeight) / 2;
+        float rayLength = (g_windowHeight * windowVars.halfWallHeight) / (g_windowHeight - (2.f * y));
 
         //increment for interpolation
-        math::Vect2 xyIncrement = ((rightmostRayDir - leftmostRayDir) * rayLength) / g_screenWidth;
+        math::Vect2 xyIncrement = ((rightmostRayDir - leftmostRayDir) * rayLength) / g_windowWidth;
 
         //start from the left, interpolete towards the right 
         math::Vect2 worldPosLeft = camera.transform.coords + (leftmostRayDir * rayLength);
@@ -513,7 +513,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
 
         float skyUPos = skyUStart;
 
-        for (int x = 0; x < g_screenWidth; ++x)
+        for (int x = 0; x < g_windowWidth; ++x)
         {
             if (drawSky)
                 //sky
@@ -535,7 +535,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
                 uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * tex.ceilingTexture.width()));
                 uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * tex.ceilingTexture.height()));
 
-                int viewPixel = (y * g_screenWidth + x) * 4;
+                int viewPixel = (y * g_windowWidth + x) * 4;
                 int texturePixel = (uvPos[1] * tex.ceilingTexture.width() + uvPos[0]) * 4;
 
                 copy_pixels(view.m_pixels, tex.ceilingTexture.m_texturePixels, viewPixel, texturePixel, shading);
@@ -545,7 +545,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
             uvPos[0] = std::abs((int)((xyPos.x - int(xyPos.x)) * tex.floorTexture.width()));
             uvPos[1] = std::abs((int)((xyPos.y - int(xyPos.y)) * tex.floorTexture.height()));
 
-            int viewPixel = (g_screenHeight - y - 1) * g_screenWidth * 4 + x * 4;
+            int viewPixel = (g_windowHeight - y - 1) * g_windowWidth * 4 + x * 4;
             int texturePixel = (uvPos[1] * tex.floorTexture.width() + uvPos[0]) * 4;
 
             copy_pixels(view.m_pixels, tex.floorTexture.m_texturePixels, viewPixel, texturePixel, shading);
@@ -634,7 +634,7 @@ void GameGraphics::draw_sprite_section(int startU, int endU, GameView& view, con
 
     int screenUEnd = endU + (billboard.positionOnScreen - vars.screenSpriteWidth / 2);
     
-    for (; screenU < screenUEnd && screenU < g_screenWidth; ++screenU )
+    for (; screenU < screenUEnd && screenU < g_windowWidth; ++screenU )
     {
         if (billboard.distance < rays.const_at( screenU ).length)
         {
@@ -644,7 +644,7 @@ void GameGraphics::draw_sprite_section(int startU, int endU, GameView& view, con
 
             float textureV = vars.textureVstart;
 
-            for (; screenV < vars.screenVEnd && screenV < g_screenHeight; ++screenV)
+            for (; screenV < vars.screenVEnd && screenV < g_windowHeight; ++screenV)
             {
 
                 int uvPos[2]{};
@@ -654,7 +654,7 @@ void GameGraphics::draw_sprite_section(int startU, int endU, GameView& view, con
 
                 if (spriteTex.m_texturePixels[(uvPos[1] * spriteTex.width() + uvPos[0]) * 4 + 3] == 0xFF)
                 {
-                    int viewPixel = (screenV * g_screenWidth + screenU) * 4;
+                    int viewPixel = (screenV * g_windowWidth + screenU) * 4;
                     int texturePixel = (uvPos[1] * spriteTex.width() + uvPos[0]) * 4;
 
                     copy_pixels(view.m_pixels, spriteTex.m_texturePixels, viewPixel, texturePixel, 0xFF);
@@ -815,10 +815,10 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
 
 void MapSquareAsset::create(int mapWidth, int mapHeight)
 {
-    int xoverw = g_screenWidth / mapWidth;
-    int yoverh = g_screenHeight / mapHeight;
+    int xoverw = g_windowWidth / mapWidth;
+    int yoverh = g_windowHeight / mapHeight;
     tileDim = std::min(xoverw, yoverh);
-    xoffset = (g_screenWidth - mapWidth * tileDim) / 2;
-    yoffset = (g_screenHeight - mapHeight * tileDim) / 2;
+    xoffset = (g_windowWidth - mapWidth * tileDim) / 2;
+    yoffset = (g_windowHeight - mapHeight * tileDim) / 2;
     wallRect.setSize({ (float)tileDim, (float)tileDim });
 }

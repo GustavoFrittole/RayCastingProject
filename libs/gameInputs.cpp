@@ -74,12 +74,12 @@ void InputManager::handle_events_main()
                 justUnpaused = false;
                 m_window.setMouseCursorVisible(false);
                 m_window.setMouseCursorGrabbed(true);
-                sf::Mouse::setPosition(sf::Vector2i(g_screenWidth / 2, 0), m_window);
+                sf::Mouse::setPosition(sf::Vector2i(g_windowWidth / 2, 0), m_window);
             }
             else
             {
-                m_playerController.rotate((g_screenWidth / 2 - sf::Mouse::getPosition(m_window).x) * 0.1f);
-                sf::Mouse::setPosition(sf::Vector2i(g_screenWidth / 2, 0), m_window);
+                m_playerController.rotate((g_windowWidth / 2 - sf::Mouse::getPosition(m_window).x) * 0.1f);
+                sf::Mouse::setPosition(sf::Vector2i(g_windowWidth / 2, 0), m_window);
             }
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
             {

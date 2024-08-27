@@ -7,6 +7,9 @@
 int main()
 {
     std::unique_ptr<rcm::IGameHandler> gameHandler(rcm::create_gameHandler());
+
+    //-------------- crete entitys ------------
+
     std::vector<Entity> entities;
 
     int start = 20;
@@ -22,6 +25,10 @@ int main()
             entities.push_back(entity);
         }
     }
+
+    entities.push_back(rcm::create_projectile(EntityTransform{ { 5,5 }, 0 }));
+
+    //---------------- run game ---------------
     try
     {
         std::cout << "Reading User defined variables..." << std::endl;
@@ -29,11 +36,13 @@ int main()
         std::cout << "Creating assets..." << std::endl;
         gameHandler->create_assets(entities);
         std::cout << "Starting..." << std::endl;
-        gameHandler->run_game();
     }
     catch (std::exception& e)
     {
         std::cout << "An error has occured: \n" << e.what() << std::endl;
     }
+
+    gameHandler->run_game();
+
     return 0;
 }
