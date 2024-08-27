@@ -13,6 +13,7 @@ class GameHandler : public rcm::IGameHandler
 public:
 	void load_game_data(const std::string&) override;
 	void create_assets(const std::vector<Entity>&) override;
+	void add_entity(const Entity& entity) override;
 	void run_game() override;
 private:
 	void start();
@@ -52,9 +53,11 @@ Entity rcm::create_projectile(const EntityTransform& position)
 	return MyProjectile(position);
 }
 
-rcm::IGameHandler* rcm::create_gameHandler()
+rcm::IGameHandler& rcm::get_gameHandler()
 {
-	return new GameHandler();
+	if (rcm::g_gameHandler.get() == nullptr)
+		rcm::g_gameHandler.reset(new GameHandler);
+	return *(rcm::g_gameHandler.get());
 }
 
 void GameHandler::load_game_data(const std::string& filePath)
@@ -81,6 +84,11 @@ void GameHandler::create_assets(const std::vector<Entity>& entities)
 {
 	m_gameGraphics->create_assets(m_gameData->gameAssets, m_gameData->gameMap, m_gameData->graphicsVars, m_gameCore->get_ray_info_arr(), m_gameState, *(m_gameCameraView.get()));
 	load_sprites(entities);
+}
+
+void GameHandler::add_entity(const Entity& entity)
+{
+	m_gameCore->add_entity(entity);
 }
 
 void GameHandler::run_game()

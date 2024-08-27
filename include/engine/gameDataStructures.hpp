@@ -123,6 +123,7 @@ struct PhysicalVars
 {
 	//unaffected by external forces and architectural boundaries
 	bool isGhosted = false;
+
 	//unaffected by friction (speed decay)
 	bool isAirBorne = false;
 	float mass = 0.f;
@@ -131,7 +132,7 @@ struct PhysicalVars
 	math::Vect2 acceleration{};
 	float rotationAcceleraion = 0.f;
 };
-
+ 
 struct Entity
 {
 	Entity(int id, const EntityTransform& et) :

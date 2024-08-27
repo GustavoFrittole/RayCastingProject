@@ -142,7 +142,7 @@ void GameCore::update_entities()
 	
 	for (Entity& entity : m_entities)
 	{
-		if (!entity.m_physical.isAirBorne && !entity.m_physical.isGhosted)
+		if (!entity.m_physical.isAirBorne)
 		{
 			//entity.apply_force(FRICTION * timeFactor); 
 		}

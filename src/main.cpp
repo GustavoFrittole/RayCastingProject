@@ -1,12 +1,12 @@
 
 #include <iostream>
 #include <memory>
-#include "gameHandler.hpp"
 #include <map>
+#include "gameHandler.hpp"
 
 int main()
 {
-    std::unique_ptr<rcm::IGameHandler> gameHandler(rcm::create_gameHandler());
+    rcm::IGameHandler& gameHandler = rcm::get_gameHandler();
 
     //-------------- crete entitys ------------
 
@@ -26,15 +26,13 @@ int main()
         }
     }
 
-    entities.push_back(rcm::create_projectile(EntityTransform{ { 5,5 }, 0 }));
-
     //---------------- run game ---------------
     try
     {
         std::cout << "Reading User defined variables..." << std::endl;
-        gameHandler->load_game_data("assets/config.json");
+        gameHandler.load_game_data("assets/config.json");
         std::cout << "Creating assets..." << std::endl;
-        gameHandler->create_assets(entities);
+        gameHandler.create_assets(entities);
         std::cout << "Starting..." << std::endl;
     }
     catch (std::exception& e)
@@ -42,7 +40,7 @@ int main()
         std::cout << "An error has occured: \n" << e.what() << std::endl;
     }
 
-    gameHandler->run_game();
+    gameHandler.run_game();
 
     return 0;
 }
