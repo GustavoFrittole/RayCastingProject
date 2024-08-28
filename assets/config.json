@@ -29,6 +29,7 @@
     "sprites" : [
         [ 3, "assets/sprite1.png"],
         [ 1, "assets/sprite2.png"],
-        [ 0, "assets/projectile.png"]
+        [ 0, "assets/projectile.png"],
+        [ 2, "assets/cage.png"]
     ]
 }
