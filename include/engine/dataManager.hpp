@@ -9,7 +9,6 @@ namespace DataUtils
 {
 	struct GameData
 	{
-		EntityTransform playerTrasform;
 		GameCameraVars gameCameraVars;
 		GameMap gameMap;
 		ControlsVars controlsMulti;

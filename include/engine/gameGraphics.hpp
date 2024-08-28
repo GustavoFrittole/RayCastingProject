@@ -200,7 +200,8 @@ public:
     void draw_minimap_rays(int winPixWidth, const RayInfoArr& rays);
     void draw_minimap_background(const GameMap& gameMap, const EntityTransform& transform, const GraphicsVars& graphVars);
     void draw_map(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
-    void draw_end_screen();
+    void set_text_ui(const std::string&);
+    void draw_text_ui();
     void draw_path_out();
     void draw_view(bool, const std::vector<std::unique_ptr<IEntity>>&);
     void calculate_shortest_path(const EntityTransform&);
@@ -225,7 +226,7 @@ private:
 
     void draw_camera_view();
 
-    inline void load_end_screen();
+    inline void load_text_ui();
     inline void load_textures(const GameAssets&);
 
     RendThreadPool m_rendThreadPool;

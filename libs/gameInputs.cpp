@@ -125,7 +125,7 @@ void InputManager::handle_events_main()
             {
                 m_isTriggerKeptPressed = false;
             }
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Right))
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && m_burstCooldown.is_ready())
             {
                 m_gameState.isTriggerPressed = true;
             }

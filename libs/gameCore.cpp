@@ -32,7 +32,7 @@ GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTrans
 	m_gameCamera(gameCameraVars),
 	m_gameMap(gameMap),
 	m_playerTransform(transform),
-	m_processorCount(get_thread_number()),
+	m_processorCount(utils::get_thread_number()),
 	m_rayInfoArr(gameCameraVars.pixelWidth)
 {
 
@@ -62,6 +62,7 @@ void GameCore::start_internal_time()
 {
 	m_lastTime = std::chrono::high_resolution_clock::now();
 }
+
 
 void GameCore::chech_position_in_map(const math::Vect2& rayPosInMap, HitType& hitMarker) const
 {
@@ -118,35 +119,34 @@ void GameCore::update_entities()
 		m_pInputCache.lateral * timeFactor, 
 		m_pInputCache.rotatation * timeFactor);
 
-	//update camera direction
-	m_cameraVecs.forewardDirection = { 
-		std::cos(m_playerTransform.forewardAngle), 
-		std::sin(m_playerTransform.forewardAngle) 
-	};
-	m_cameraVecs.plane = math::Vect2(
-		m_cameraVecs.forewardDirection.y, 
-		-m_cameraVecs.forewardDirection.x
-		) * std::tan(m_gameCamera.fov / 2) * 2;
-
 	//reset cached values
 	m_pInputCache.foreward = 0;
 	m_pInputCache.lateral = 0;
 	m_pInputCache.rotatation = 0;
 
-	//-----entities movement-------
+	//update camera direction
+	m_cameraVecs.forewardDirection = {
+		std::cos(m_playerTransform.forewardAngle),
+		std::sin(m_playerTransform.forewardAngle)
+	};
+	m_cameraVecs.plane = math::Vect2(
+		m_cameraVecs.forewardDirection.y,
+		-m_cameraVecs.forewardDirection.x
+	) * std::tan(m_gameCamera.fov / 2) * 2;
+
+	//-----entities movement------
 	
 	for (std::unique_ptr<IEntity>& entity : m_entities)
 	{
-		if (!entity->m_physical.isAirBorne)
-		{
-			//entity.apply_force(FRICTION * timeFactor); 
-		}
+		float frictionModule(entity->m_physical.movFrictionCoef * entity->m_physical.mass);
+		//apply friction module in opposite direction of movement (rolling friction)
+		math::Vect2 friction = (entity->m_physical.speed) * (- frictionModule);
 
 		if (!entity->m_physical.isGhosted)
 		{
 			//apply acceleration
-			entity->m_physical.speed += entity->m_physical.acceleration * timeFactor;
-			entity->m_physical.rotationSpeed += entity->m_physical.rotationAcceleraion * timeFactor;
+			entity->m_physical.speed += (friction + entity->m_physical.acceleration * timeFactor);
+			entity->m_physical.rotationSpeed += (entity->m_physical.rotFrictionCoef * (- entity->m_physical.mass) + entity->m_physical.rotationAcceleraion * timeFactor);
 
 			//apply speed
 			move_entity_with_collisions_entity_space(entity->m_transform,
@@ -162,9 +162,20 @@ void GameCore::update_entities()
 				entity->m_physical.speed.y * timeFactor,
 				entity->m_physical.rotationSpeed * timeFactor))
 			{
-				entity->active = false;
+				entity->destroyed = true;
 			}
 		}
+	}
+}
+
+void GameCore::remove_destroyed_entities()
+{
+	for (std::vector<std::unique_ptr<IEntity>>::iterator it = m_entities.begin(); it != m_entities.end();)
+	{
+		if ((*it)->destroyed)
+			it = m_entities.erase(it);
+		else
+			++it;
 	}
 }
 

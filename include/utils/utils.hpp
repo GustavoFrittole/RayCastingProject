@@ -51,8 +51,30 @@ namespace math
 	float rad_to_deg(float rad);
 	float deg_to_rad(float deg);
 	float vec_to_rad(Vect2 v);
+	Vect2 rad_to_vec(float rad);
 }
 
-int get_thread_number();
+namespace utils
+{
+	int get_thread_number();
+
+	class SimpleCooldown 
+	{
+	public:
+		/// @brief starts timer from now
+		/// @param duration : cooldown in milliseconds
+		SimpleCooldown(int duration) : m_cooldown(std::chrono::milliseconds(duration))
+		{}
+		/// @brief resets timer at now
+		void reset();
+		/// @brief resets timer if cooldown time is reached
+		/// @return true if cooldown time is reached
+		bool is_ready();
+	private:
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<int, std::milli> m_cooldown;
+	};
+}
+
 
 #endif

@@ -21,9 +21,6 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 	try
 	{
 		json data = json::parse(configF);
-		gameData->playerTrasform.forewardAngle = data.at("playerTransform").at("forewardAngleDeg").get<float>() * (3.14159265358979323846f / 180);
-		gameData->playerTrasform.coords.x = data.at("playerTransform").at("pos").at("x").get<int>();
-		gameData->playerTrasform.coords.y = data.at("playerTransform").at("pos").at("y").get<int>();
 		//wip
 		gameData->gameCameraVars.pixelWidth = windowVars::g_windowWidth;
 		gameData->gameCameraVars.pixelHeight = windowVars::g_windowHeight;

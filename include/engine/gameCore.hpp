@@ -20,6 +20,7 @@ public:
 	GameCore(GameCameraVars& gc, GameMap&, EntityTransform&);
 
 	void update_entities();
+	void remove_destroyed_entities();
 	void view_by_ray_casting(bool cameraPlane);
 	void start_internal_time();
 
@@ -29,6 +30,17 @@ public:
 	std::vector<std::unique_ptr<IEntity>>& get_entities() { return m_entities; } 
 	void add_entity(IEntity *);
 
+	/// @brief Change the HitType if a physical map structure is hit, otherwise leave it as is
+	/// @param rayPosInMap map position to check
+	/// @param hitMarker marker to change if structure is struck
+	void chech_position_in_map(int, int, HitType&) const;
+
+	/// @brief Change the HitType if a physical map structure is hit, otherwise leave it as is
+	/// @param rayPosInMapX
+	/// @param rayPosInMapY
+	/// @param hitMarker : marker to change if structure is struck
+	void chech_position_in_map(const math::Vect2&, HitType&) const;
+
 	bool generate_map_step();
 	bool generate_map();
 
@@ -36,9 +48,10 @@ public:
 	{
 	public:
 		GameController(GameCore& gc) : gameCore(gc) {};
+
 		void rotate(float) const override;
 		void move_foreward(float) const override;
-		void move_strafe(float) const override;
+		void move_strafe(float) const override;;
 	private:
 		GameCore& gameCore;
 	};
@@ -63,9 +76,6 @@ private:
 
 	void view_walls(bool);
 	void view_billboards(bool);
-	
-	void chech_position_in_map(int, int, HitType&) const;
-	void chech_position_in_map(const math::Vect2&, HitType&) const;
 
 	bool check_out_of_map_bounds(const math::Vect2 &) const;
 	bool check_out_of_map_bounds(int, int) const;

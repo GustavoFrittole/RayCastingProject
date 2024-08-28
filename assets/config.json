@@ -1,11 +1,4 @@
 {
-    "playerTransform": {
-        "forewardAngleDeg": 0,
-        "pos": {
-            "x": 5,
-            "y": 5
-        }
-    },
     "gameCamera": {
         "FOV": 90,
         "maxRenderDist": 20.0,

@@ -13,10 +13,13 @@ namespace rcm
 	{
 	public:
 		IGameHandler() = default;
-		virtual void load_game_data(const std::string&) = 0;
+		virtual void load_game_data(const std::string&,  std::unique_ptr<IEntity>&) = 0;
 		virtual void create_assets(std::vector<std::unique_ptr<IEntity>>&) = 0;
 		virtual void add_entity(IEntity* entity) = 0;
 		virtual void run_game() = 0;
+		virtual void close_game() = 0;
+		virtual void set_text_ui(const std::string&) = 0;
+		virtual bool& show_text_ui() = 0;
 	protected:
 		std::string m_configFilePath;
 	};
@@ -26,8 +29,6 @@ namespace rcm
 	IGameHandler& get_gameHandler();
 
 	IEntity* create_projectile(const EntityTransform&);
-	//IEntity create_target();
-	//IEntity create_spawner();
 }
 
 #endif

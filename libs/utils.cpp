@@ -114,7 +114,26 @@ float math::vec_to_rad(math::Vect2 v)
 	return angle;
 }
 
-int get_thread_number()
+math::Vect2 math::rad_to_vec(float rad)
+{
+	return { std::cos(rad), std::sin(rad) };
+}
+
+void utils::SimpleCooldown::reset()
+{
+	m_lastTime = std::chrono::high_resolution_clock::now();
+}
+bool utils::SimpleCooldown::is_ready()
+{
+	if ((std::chrono::high_resolution_clock::now() - m_lastTime) >= m_cooldown)
+	{
+		m_lastTime = std::chrono::high_resolution_clock::now();
+		return true;
+	}
+	return false;
+}
+
+int utils::get_thread_number()
 {
 	int t = std::thread::hardware_concurrency();
 	return t == 0 ? 1 : t;

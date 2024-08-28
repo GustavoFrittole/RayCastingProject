@@ -181,7 +181,7 @@ GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphic
     m_window(window),
     m_pathToGoal(0),
     m_minimapInfo(graphicsVars.minimapScale, graphicsVars.maxSightDepth),
-    m_rendThreadPool(get_thread_number()),
+    m_rendThreadPool(utils::get_thread_number()),
     m_viewSecFactory(g_windowWidth, m_rendThreadPool.get_size()),
     m_backgroundSecFactory(g_windowHeight/2, m_rendThreadPool.get_size()),
     m_spriteSecFactory(g_windowWidth, m_rendThreadPool.get_size())
@@ -198,7 +198,7 @@ void GameGraphics::create_assets(const GameAssets& gameAssets, const GameMap& ga
     m_pathFinder = std::make_unique<PathFinder>(gameMap.x, gameMap.y, *(gameMap.cells), m_pathToGoal);
     m_mapSquareAsset.create(gameMap.x, gameMap.y);
 
-    load_end_screen();
+    load_text_ui();
     load_textures(gameAssets);
 
     m_viewSecFactory.set_target(&raysInfoVec, &m_mainView, &m_staticTextures, &gameState, &graphicsVars, &gameCamera.transform);
@@ -258,7 +258,7 @@ void copy_pixels(sf::Uint8 * pixelsTo, const sf::Uint8 * pixelsFrom, int indexTo
 
 //----------------end-screen-----
 
-void GameGraphics::load_end_screen()
+void GameGraphics::load_text_ui()
 {
     if (m_endGameFont.loadFromFile("assets\\Roboto-Regular.ttf"))
     {
@@ -271,7 +271,13 @@ void GameGraphics::load_end_screen()
                               (g_windowHeight- m_endGameText.getLocalBounds().height)/2);
     
 }
-void GameGraphics::draw_end_screen()
+
+void GameGraphics::set_text_ui(const std::string& text)
+{
+    m_endGameText.setString(text);
+}
+
+void GameGraphics::draw_text_ui()
 {
     m_window.draw(m_endGameText);
 }
@@ -572,7 +578,7 @@ void GameGraphics::render_sprites(const std::vector<std::unique_ptr<IEntity>>& e
     //sort by distance (in order to use the painter's algorithm)
     for (const std::unique_ptr<IEntity>& e : entities)
     {
-        if (e->active && e->visible && e->m_billboard.distance > 0.2f)
+        if (e->visible && e->m_billboard.id != -1 && e->m_billboard.distance > 0.2f)
         {
             billbByDistMaxQ.push(&(e->m_billboard));
         }

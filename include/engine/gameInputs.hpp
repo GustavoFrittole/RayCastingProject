@@ -19,6 +19,7 @@ public:
     void handle_events_main();
 private:
     bool m_isTriggerKeptPressed = false;
+    utils::SimpleCooldown m_burstCooldown = utils::SimpleCooldown(50);
 };
 
 #endif

@@ -114,9 +114,11 @@ struct Billboard
 
 enum class EntityType
 {
+	player,
 	projectile,
 	enemy,
-	prop
+	prop,
+	wall
 };
 
 struct PhysicalVars
@@ -124,8 +126,8 @@ struct PhysicalVars
 	//unaffected by external forces and architectural boundaries
 	bool isGhosted = false;
 
-	//unaffected by friction (speed decay)
-	bool isAirBorne = false;
+	float movFrictionCoef = 0.f;
+	float rotFrictionCoef = 0.f;
 	float mass = 0.f;
 	math::Vect2 speed{};
 	float rotationSpeed = 0.f;
@@ -140,16 +142,27 @@ struct IEntity
 		m_transform(et)
 	{}
 	void set_size(float size) { m_collisionSize = size; m_billboard.size = size; }
-	void apply_force(const math::Vect2& force) { m_physical.acceleration = force / m_physical.mass; }
-	virtual void on_update() = 0; 
+	void apply_force(const math::Vect2& force) 
+	{ 
+		if(m_physical.mass != 0)
+			m_physical.acceleration += force / m_physical.mass; 
+	}
+	virtual void on_update() = 0;
+	virtual void on_hit(EntityType) = 0;
 
 	Billboard m_billboard;
 	EntityTransform m_transform{};
 	PhysicalVars m_physical{};
 	float m_collisionSize = 1.f;
 	EntityType m_type = EntityType::prop;
-	bool vulnerable = false;
+
+	//flags entities that are to be removed
+	bool destroyed = false;
+	//deactivate distance based interactions (on_hit)
+	bool interactible = false;
+	//deactivete on_update script
 	bool active = true;
+	//automatically changed based on distance form cam
 	bool visible = false;
 };
 
@@ -162,6 +175,7 @@ struct GameStateVars
 	bool isLinearPersp = true;
 	bool drawSky = false;
 	bool isTriggerPressed = false;
+	bool drawTextUi = false;
 };
 
 namespace game
