@@ -71,7 +71,7 @@ private:
 
 struct MySpawn : public IEntity
 {
-    MySpawn(const EntityTransform& transform, int id = 3) : IEntity(id, transform)
+    MySpawn(const EntityTransform& transform, int id = 2) : IEntity(id, transform)
     {
         interactible = false;
     }
