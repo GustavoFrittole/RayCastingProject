@@ -16,7 +16,7 @@ namespace rcm
 {
 	struct EntityTransform
 	{
-		math::Vect2 coords{};
+		math::Vect2 coordinates{};
 		float forewardAngle = 0.f;
 	};
 
@@ -29,7 +29,7 @@ namespace rcm
 		float rayPrecision = 0.1f;
 	};
 
-	struct GameCameraVecs
+	struct GameCameraPlane
 	{
 		math::Vect2 forewardDirection;
 		math::Vect2 plane;
@@ -39,7 +39,7 @@ namespace rcm
 	{
 		const EntityTransform& transform{};
 		const GameCameraVars& vars{};
-		const GameCameraVecs& vecs{};
+		const GameCameraPlane& vecs{};
 	};
 
 	struct ControlsSensitivity
@@ -131,26 +131,43 @@ namespace rcm
 		float movFrictionCoef = 0.f;
 		float rotFrictionCoef = 0.f;
 		float mass = 0.f;
-		math::Vect2 speed{};
+		math::Vect2 movementSpeed{};
 		float rotationSpeed = 0.f;
-		math::Vect2 acceleration{};
+		math::Vect2 movementAcceleration{};
 		float rotationAcceleraion = 0.f;
 	};
 
 	struct IEntity
 	{
+		/// @brief 
+		/// @param id : id of a sprite to be drawn at this entity location. If id=-1 nothing will be drawn.  
+		/// @param et : the starting transform of this entity
 		IEntity(int id, const EntityTransform& et) :
 			m_billboard(id),
 			m_transform(et)
 		{}
-		void set_size(float size) { m_collisionSize = size; m_billboard.size = size; }
+		/// @brief set both sprite and collision sizes
+		/// @param size 
+		void set_size(float size) 
+		{ 
+			m_collisionSize = size; 
+			m_billboard.size = size; 
+		}
+
 		void apply_force(const math::Vect2& force)
 		{
 			if (m_physical.mass != 0)
-				m_physical.acceleration += force / m_physical.mass;
+				m_physical.movementAcceleration += force / m_physical.mass;
 		}
+
+		/// @brief called once at creation, after environment is ready.
 		virtual void on_create() = 0;
+
+		/// @brief called once every game cycle.
 		virtual void on_update() = 0;
+
+		/// @brief called every cycle in which two entities distance is lower then their combined collision size.
+		/// @param  the type of the other entity that took part in the collision
 		virtual void on_hit(EntityType) = 0;
 
 		Billboard m_billboard;

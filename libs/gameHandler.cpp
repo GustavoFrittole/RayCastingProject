@@ -140,7 +140,7 @@ namespace rcm
 
 			m_inputManager->handle_events_close();
 
-			m_gameGraphics->draw_map_gen(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameCameraView->transform.coords.x, m_gameCameraView->transform.coords.y, *(m_gameData->gameMap.cells));
+			m_gameGraphics->draw_map_gen(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
 
 			//wait if the generation time isn't over
 			sleep.join();
@@ -152,8 +152,8 @@ namespace rcm
 
 	char GameHandler::get_entity_cell(const EntityTransform& pos, const GameMap& map)
 	{
-		return map.cells->at(static_cast<int>(pos.coords.y) * map.x +
-			static_cast<int>(pos.coords.x));
+		return map.cells->at(static_cast<int>(pos.coordinates.y) * map.x +
+			static_cast<int>(pos.coordinates.x));
 	}
 
 	bool GameHandler::goal_reached(const EntityTransform& pos, const GameMap& map)
@@ -180,7 +180,7 @@ namespace rcm
 			{
 				//check if inside walls
 				HitType cell = HitType::Nothing;
-				m_gameCore->chech_position_in_map(entities.at(i)->m_transform.coords, cell);
+				m_gameCore->chech_position_in_map(entities.at(i)->m_transform.coordinates, cell);
 
 				if (cell != HitType::Nothing)
 					entities.at(i)->on_hit(EntityType::wall);
@@ -190,7 +190,7 @@ namespace rcm
 				{
 					if (entities.at(c)->interactible)
 					{
-						float distance = (entities.at(i)->m_transform.coords - entities.at(c)->m_transform.coords).Length();
+						float distance = (entities.at(i)->m_transform.coordinates - entities.at(c)->m_transform.coordinates).Length();
 						if (distance < entities.at(i)->m_collisionSize + entities.at(c)->m_collisionSize)
 						{
 							entities.at(i)->on_hit(entities.at(c)->m_type);
@@ -225,7 +225,7 @@ namespace rcm
 
 		if (m_gameState.isPaused || m_gameState.isTabbed)
 		{
-			m_gameGraphics->draw_map(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameCameraView->transform.coords.x, m_gameCameraView->transform.coords.y, *(m_gameData->gameMap.cells));
+			m_gameGraphics->draw_map(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
 			m_gameGraphics->draw_path_out();
 		}
 		else

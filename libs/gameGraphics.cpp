@@ -240,7 +240,7 @@ void GameGraphics::draw_map_gen(int mapWidth, int mapHeight, int posX, int posY,
 
 void GameGraphics::calculate_shortest_path(const EntityTransform& startPos)
 {
-    m_pathFinder->find_path(startPos.coords.x, startPos.coords.y);
+    m_pathFinder->find_path(startPos.coordinates.x, startPos.coordinates.y);
 }
 
 void GameGraphics::load_sprite(int id, const std::string& texturePath)
@@ -407,10 +407,10 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
         if (!flatShading)
         {
             if (currRay.lastSideChecked == CellSide::Hori)
-                posOnWallSide = currRay.hitPos.x + camTransform.coords.x;
+                posOnWallSide = currRay.hitPos.x + camTransform.coordinates.x;
 
             else
-                posOnWallSide = currRay.hitPos.y + camTransform.coords.y;
+                posOnWallSide = currRay.hitPos.y + camTransform.coordinates.y;
 
             posOnWallSide -= std::floor(posOnWallSide);
             texVStep = currentTexture->height() / screenWallHeight;
@@ -459,7 +459,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
             {
 
                 float rayLength = (g_windowHeight * graphVars.halfWallHeight) / (g_windowHeight - (0.5f * y));
-                math::Vect2 xyPos = camTransform.coords + ((currRay.hitPos) / currRay.length) * rayLength;
+                math::Vect2 xyPos = camTransform.coordinates + ((currRay.hitPos) / currRay.length) * rayLength;
                 int uvPos[2]{};
 
                 //ceiling
@@ -511,7 +511,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
         math::Vect2 xyIncrement = ((rightmostRayDir - leftmostRayDir) * rayLength) / g_windowWidth;
 
         //start from the left, interpolete towards the right 
-        math::Vect2 worldPosLeft = camera.transform.coords + (leftmostRayDir * rayLength);
+        math::Vect2 worldPosLeft = camera.transform.coordinates + (leftmostRayDir * rayLength);
         math::Vect2 xyPos = worldPosLeft;
         int uvPos[2]{};
 
@@ -775,21 +775,21 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
     int yoffset = m_minimapInfo.minimapCenterX;
 
     //limit minimap to a square with sides length equal to double of the render distance 
-    int startX = transform.coords.x - graphVars.maxSightDepth;
+    int startX = transform.coordinates.x - graphVars.maxSightDepth;
 
     //avoid drawing out of bounds cells
     if (startX < 0)
         startX = 0;
 
-    int endX = transform.coords.x + graphVars.maxSightDepth;
+    int endX = transform.coordinates.x + graphVars.maxSightDepth;
     if (endX > gameMap.x)
         endX = gameMap.x;
 
-    int startY = transform.coords.y - graphVars.maxSightDepth;
+    int startY = transform.coordinates.y - graphVars.maxSightDepth;
     if (startY < 0)
         startY = 0;
 
-    int endY = transform.coords.y + graphVars.maxSightDepth;
+    int endY = transform.coordinates.y + graphVars.maxSightDepth;
     if (endY > gameMap.y)
         endY = gameMap.y;
 
@@ -809,8 +809,8 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
                 else if (currentCell == 'g')
                     wallRect.setFillColor(sf::Color::Yellow);
 
-                wallRect.setPosition({  tileDim * ((float)x - transform.coords.x) + xoffset,
-                                        tileDim * ((float)y - transform.coords.y) + yoffset });
+                wallRect.setPosition({  tileDim * ((float)x - transform.coordinates.x) + xoffset,
+                                        tileDim * ((float)y - transform.coordinates.y) + yoffset });
                 m_window.draw(wallRect);
             }
         }

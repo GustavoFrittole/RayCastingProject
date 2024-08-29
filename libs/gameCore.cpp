@@ -43,7 +43,7 @@ GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTrans
 		if (m_gameMap.cells.get() == nullptr)
 			m_gameMap.cells = std::make_unique<std::string>();
 
-		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coords.x, (int)m_playerTransform.coords.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
+		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coordinates.x, (int)m_playerTransform.coordinates.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
 	}
 	//camera plane vars
 	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
@@ -121,26 +121,26 @@ void GameCore::update_entities()
 	{
 		float frictionModule(entity->m_physical.movFrictionCoef * entity->m_physical.mass);
 		//apply friction module in opposite direction of movement (rolling friction)
-		math::Vect2 friction = (entity->m_physical.speed) * (- frictionModule);
+		math::Vect2 friction = (entity->m_physical.movementSpeed) * (- frictionModule);
 
 		if (!entity->m_physical.isGhosted)
 		{
 			//apply acceleration
-			entity->m_physical.speed += ((friction + entity->m_physical.acceleration) * timeFactor);
+			entity->m_physical.movementSpeed += ((friction + entity->m_physical.movementAcceleration) * timeFactor);
 			entity->m_physical.rotationSpeed += ((entity->m_physical.rotFrictionCoef * (- entity->m_physical.mass) + entity->m_physical.rotationAcceleraion) * timeFactor);
 
 			//apply speed
 			move_entity_with_collisions_entity_space(entity->m_transform,
-				entity->m_physical.speed.x * timeFactor,
-				entity->m_physical.speed.y * timeFactor,
+				entity->m_physical.movementSpeed.x * timeFactor,
+				entity->m_physical.movementSpeed.y * timeFactor,
 				entity->m_physical.rotationSpeed * timeFactor);
 		}
 		else
 		{
 			//only apply speed
 			if (!move_entity_space(entity->m_transform,
-				entity->m_physical.speed.x * timeFactor,
-				entity->m_physical.speed.y * timeFactor,
+				entity->m_physical.movementSpeed.x * timeFactor,
+				entity->m_physical.movementSpeed.y * timeFactor,
 				entity->m_physical.rotationSpeed * timeFactor))
 			{
 				entity->destroyed = true;
@@ -178,7 +178,7 @@ void GameCore::view_by_ray_casting(bool useCameraPlane)
 
 void GameCore::view_walls(bool useCameraPlane)
 {
-	math::Vect2 startPos = m_playerTransform.coords;
+	math::Vect2 startPos = m_playerTransform.coordinates;
 	math::Vect2 currentRayDir;
 	math::Vect2 rayRotationIncrement;
 	math::Mat2x2 rayRotationIncrementMat;
@@ -200,7 +200,7 @@ void GameCore::view_walls(bool useCameraPlane)
 	{
 		//DDA
 
-		math::Vect2 startingPos = m_playerTransform.coords;
+		math::Vect2 startingPos = m_playerTransform.coordinates;
 		HitType hitMarker = HitType::Nothing;
 
 		float lengthIncrementX;
@@ -305,7 +305,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 	{
 		if(entity->active)
 		{
-			math::Vect2 rayToCamera = entity->m_transform.coords - m_playerTransform.coords;
+			math::Vect2 rayToCamera = entity->m_transform.coordinates - m_playerTransform.coordinates;
 			float euclideanRayLength = rayToCamera.Length();
 
 			//relative to camera foreward view
@@ -349,7 +349,7 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 
 	//decompose movment in x and y(world) axis and check collions separatly
 	//check_collision X axis
-	math::Vect2 moveAttempt = transform.coords +
+	math::Vect2 moveAttempt = transform.coordinates +
 		(math::Vect2(	std::cos(transform.forewardAngle) * front
 						- std::sin(transform.forewardAngle) * latereal, 0));
 
@@ -360,11 +360,11 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 	if (hitMarker == HitType::NoHit) //check for any unblocking tiles 
 	{
 		hasMoved = true;
-		transform.coords = moveAttempt;
+		transform.coordinates = moveAttempt;
 	}
 
 	//check_collision Y axis
-	moveAttempt = transform.coords +
+	moveAttempt = transform.coordinates +
 		(math::Vect2(	0,	std::sin(transform.forewardAngle) * front +
 							std::cos(transform.forewardAngle) * latereal));
 
@@ -375,7 +375,7 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 	if (hitMarker == HitType::NoHit) //check for any unblocking tiles 
 	{
 		hasMoved = true;
-		transform.coords = moveAttempt;
+		transform.coordinates = moveAttempt;
 	}
 
 	//rotate
@@ -394,7 +394,7 @@ bool GameCore::move_entity_space(EntityTransform& transform, float front, float 
 	//decompose movment in x and y(world) axis and check collions separatly
 
 //check_collision X axis
-	math::Vect2 moveAttempt = transform.coords +
+	math::Vect2 moveAttempt = transform.coordinates +
 		(math::Vect2(	std::cos(transform.forewardAngle) * front
 						- std::sin(transform.forewardAngle) * latereal, 
 						std::sin(transform.forewardAngle) * front +
@@ -403,7 +403,7 @@ bool GameCore::move_entity_space(EntityTransform& transform, float front, float 
 	if (check_out_of_map_bounds(moveAttempt))
 		return false;
 
-	transform.coords = moveAttempt;
+	transform.coordinates = moveAttempt;
 
 	//rotate
 	transform.forewardAngle += rotation;
@@ -423,7 +423,7 @@ bool GameCore::move_entity_space(EntityTransform& transform, float front, float 
 //	math::Mat2x2 rotationMat = math::rotation_mat2x2(m_gameCamera.fov/2);
 //	math::Vect2 playerForwDir{ std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
 //	math::Vect2 rayIncrement = (playerForwDir * rotationMat) * m_gameCamera.rayPrecision;
-//	math::Vect2 startPos = m_playerTransform.coords;
+//	math::Vect2 startPos = m_playerTransform.coordinates;
 //
 //	for (int i = 0; i < m_gameCamera.pixelWidth; ++i)
 //	{

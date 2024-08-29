@@ -17,7 +17,7 @@ public:
 	void view_by_ray_casting(bool cameraPlane);
 	void start_internal_time();
 
-	const rcm::GameCameraVecs& get_camera_vecs() const { return m_cameraVecs; }
+	const rcm::GameCameraPlane& get_camera_vecs() const { return m_cameraVecs; }
 	const rcm::RayInfoArr& get_ray_info_arr()  const { return m_rayInfoArr; }
 
 	std::vector<std::unique_ptr<rcm::IEntity>>& get_entities() { return m_entities; }
@@ -41,7 +41,7 @@ private:
 	rcm::GameCameraVars& m_gameCamera;
 	rcm::GameMap& m_gameMap;
 	rcm::EntityTransform& m_playerTransform;
-	rcm::GameCameraVecs m_cameraVecs{ {1,0}, {0,1} };
+	rcm::GameCameraPlane m_cameraVecs{ {1,0}, {0,1} };
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 	int m_processorCount = 1;
