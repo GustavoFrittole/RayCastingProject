@@ -6,7 +6,25 @@
 #include <chrono>
 #include "gameHandler.hpp"
 
+using namespace rcm;
+
 //------------------------- Custom Entities Examples ------------------------
+
+class MyProjectile : public IEntity
+{
+public:
+    MyProjectile(const EntityTransform& transform, int id = PROJECTILE_ID) : IEntity(id, transform)
+    {
+        m_type = EntityType::projectile;
+        set_size(0.1f);
+        m_physical.speed = { 16.f, 0.f };
+        m_physical.isGhosted = true;
+        interactible = true;
+    }
+    void on_create() override {};
+    void on_update() override {};
+    void on_hit(EntityType otherEntity) override { destroyed = true; }
+};
 
 struct MyEnemy : public IEntity
 {
@@ -14,17 +32,22 @@ struct MyEnemy : public IEntity
     {
         m_physical.speed.x = 2.5f;
         m_physical.rotationSpeed = 0.8f;
+        m_physical.movFrictionCoef = .5;
         m_physical.mass = 1.f;
         m_collisionSize = 0.2f;
         m_type = EntityType::enemy;
         interactible = true;
     }
+    void on_create() override 
+    {
+        m_gameHandler = &(rcm::get_gameHandler());
+    };
     void on_update() override
     {
-        if (cooldown.is_ready())
+        if (m_cooldown.is_ready())
         {
             EntityTransform projectileTransform = { m_transform.coords + math::rad_to_vec(m_transform.forewardAngle) * (m_collisionSize + 0.2f), m_transform.forewardAngle };
-            rcm::get_gameHandler().add_entity(rcm::create_projectile(projectileTransform));
+            m_gameHandler->add_entity(new MyProjectile(projectileTransform));
         }
     }
     void on_hit(EntityType otherEntity) override
@@ -35,7 +58,8 @@ struct MyEnemy : public IEntity
         }
     }
 private:
-    utils::SimpleCooldown cooldown = utils::SimpleCooldown(500);
+    utils::SimpleCooldown m_cooldown = utils::SimpleCooldown(500);
+    rcm::IGameHandler* m_gameHandler = nullptr;
 };
 
 struct MyPlayer : public IEntity
@@ -43,15 +67,50 @@ struct MyPlayer : public IEntity
     MyPlayer(const EntityTransform& transform, int id = -1) : IEntity(id, transform)
     {
         m_physical.speed = { 1,0 };
-        m_physical.movFrictionCoef = 0.05;
+        m_physical.movFrictionCoef = 5.;
         m_physical.mass = 1.f;
         m_collisionSize = 0.2f;
         m_type = EntityType::player;
         interactible = true;
     }
+    void on_create() override
+    {
+        m_gameHandler = &(rcm::get_gameHandler());
+    };
     void on_update() override
     {
+        if (m_gameHandler->get_input_cache().foreward != 0 || m_gameHandler->get_input_cache().lateral != 0)
+            m_physical.speed = { m_gameHandler->get_input_cache().foreward , m_gameHandler->get_input_cache().lateral };
 
+        m_physical.rotationSpeed = m_gameHandler->get_input_cache().rotatation;
+
+        if (m_gameHandler->get_input_cache().leftTrigger)
+        {
+            if(!m_isTriggerKeptPressed)
+            {
+                m_isTriggerKeptPressed = true;
+                m_isTriggerPressed = true;
+            }
+        }
+        else
+        {
+            if (m_gameHandler->get_input_cache().rightTrigger && m_burstCooldown.is_ready())
+            {
+                m_isTriggerPressed = true;
+            }
+            else
+            {
+                m_isTriggerPressed = false;
+                m_isTriggerKeptPressed = false;
+            }
+        }
+
+        if (m_isTriggerPressed)
+        {
+        	EntityTransform projectileTransform = { m_transform.coords + math::rad_to_vec(m_transform.forewardAngle) * (0.5f), m_transform.forewardAngle };
+            m_gameHandler->add_entity(new MyProjectile(projectileTransform));
+        	m_isTriggerPressed = false;
+        }
     }
     void on_hit(EntityType otherEntity) override
     {
@@ -59,14 +118,18 @@ struct MyPlayer : public IEntity
         {
             std::string text("Times hit: ");
             text.append(std::to_string(++m_deathCounter)).append("/5");
-            rcm::get_gameHandler().set_text_ui(text);
-            rcm::get_gameHandler().show_text_ui() = true;
+            m_gameHandler->set_text_ui(text);
+            m_gameHandler->show_text_ui() = true;
             if (m_deathCounter == 6)
-                rcm::get_gameHandler().close_game();
+                m_gameHandler->close_game();
         }
     }
 private:
     int m_deathCounter = 0;
+    bool m_isTriggerPressed = false;
+    bool m_isTriggerKeptPressed = false;
+    utils::SimpleCooldown m_burstCooldown = utils::SimpleCooldown(50);
+    rcm::IGameHandler* m_gameHandler = nullptr;
 };
 
 struct MySpawn : public IEntity
@@ -75,16 +138,21 @@ struct MySpawn : public IEntity
     {
         interactible = false;
     }
+    void on_create() override
+    {
+        m_gameHandler = &(rcm::get_gameHandler());
+    };
     void on_update() override
     {
         if(cooldown.is_ready())
         {
-            rcm::get_gameHandler().add_entity(new MyEnemy(m_transform));
+            m_gameHandler->add_entity(new MyEnemy(m_transform));
         }
     }
     void on_hit(EntityType) override {}
 private:
     utils::SimpleCooldown cooldown = utils::SimpleCooldown(1000);
+    rcm::IGameHandler* m_gameHandler = nullptr;
 };
 
 //-------------------------------------------------------------

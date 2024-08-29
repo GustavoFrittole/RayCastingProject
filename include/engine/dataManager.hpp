@@ -9,11 +9,11 @@ namespace DataUtils
 {
 	struct GameData
 	{
-		GameCameraVars gameCameraVars;
-		GameMap gameMap;
-		ControlsVars controlsMulti;
-		GraphicsVars graphicsVars;
-		GameAssets gameAssets;
+		rcm::GameCameraVars gameCameraVars;
+		rcm::GameMap gameMap;
+		rcm::ControlsSensitivity controlsMulti;
+		rcm::GraphicsVars graphicsVars;
+		rcm::GameAssets gameAssets;
 		std::vector<std::pair<int, std::string>> gameSprites;
 	};
 

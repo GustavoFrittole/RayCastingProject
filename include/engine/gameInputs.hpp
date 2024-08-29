@@ -8,18 +8,16 @@
 class InputManager
 {
 public:
-    InputManager(ControlsVars& controlsMulti, sf::RenderWindow& window, GameStateVars& gameState, game::IGameController& playerController);
+    InputManager(rcm::ControlsSensitivity& controlsSens, sf::RenderWindow& window, rcm::GameStateVars& gameState);
 
-    ControlsVars& m_controlsMulti;
-    sf::RenderWindow& m_window;
-    GameStateVars& m_gameState;
-    game::IGameController& m_playerController;
-
+    const rcm::InputCache& get_input_cache() const { return m_inputCache; }
     void handle_events_close();
     void handle_events_main();
 private:
-    bool m_isTriggerKeptPressed = false;
-    utils::SimpleCooldown m_burstCooldown = utils::SimpleCooldown(50);
+    rcm::InputCache m_inputCache;
+    rcm::ControlsSensitivity& m_controlsSens;
+    sf::RenderWindow& m_window;
+    rcm::GameStateVars& m_gameState;
 };
 
 #endif

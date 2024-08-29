@@ -20,6 +20,7 @@ namespace rcm
 		virtual void close_game() = 0;
 		virtual void set_text_ui(const std::string&) = 0;
 		virtual bool& show_text_ui() = 0;
+		virtual const InputCache& get_input_cache() = 0;
 	protected:
 		std::string m_configFilePath;
 	};
@@ -27,8 +28,6 @@ namespace rcm
 	static std::unique_ptr<IGameHandler> g_gameHandler;
 
 	IGameHandler& get_gameHandler();
-
-	IEntity* create_projectile(const EntityTransform&);
 }
 
 #endif

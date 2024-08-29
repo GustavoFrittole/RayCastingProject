@@ -8,6 +8,8 @@
 #define DYNAMIC_FRICTION 1.f
 #define BULLET_SPEED 5
 
+using namespace rcm;
+
 //----------------------RayInfo----------------------
 
 RayInfo& RayInfoArr::at(int index)
@@ -113,27 +115,6 @@ void GameCore::update_entities()
 	m_lastTime = currentTime;
 	float timeFactor = TIME_CORRECTION * deltaTime;
 
-	//------player movement-------
-	move_entity_with_collisions_entity_space(m_playerTransform, 
-		m_pInputCache.foreward * timeFactor, 
-		m_pInputCache.lateral * timeFactor, 
-		m_pInputCache.rotatation * timeFactor);
-
-	//reset cached values
-	m_pInputCache.foreward = 0;
-	m_pInputCache.lateral = 0;
-	m_pInputCache.rotatation = 0;
-
-	//update camera direction
-	m_cameraVecs.forewardDirection = {
-		std::cos(m_playerTransform.forewardAngle),
-		std::sin(m_playerTransform.forewardAngle)
-	};
-	m_cameraVecs.plane = math::Vect2(
-		m_cameraVecs.forewardDirection.y,
-		-m_cameraVecs.forewardDirection.x
-	) * std::tan(m_gameCamera.fov / 2) * 2;
-
 	//-----entities movement------
 	
 	for (std::unique_ptr<IEntity>& entity : m_entities)
@@ -145,8 +126,8 @@ void GameCore::update_entities()
 		if (!entity->m_physical.isGhosted)
 		{
 			//apply acceleration
-			entity->m_physical.speed += (friction + entity->m_physical.acceleration * timeFactor);
-			entity->m_physical.rotationSpeed += (entity->m_physical.rotFrictionCoef * (- entity->m_physical.mass) + entity->m_physical.rotationAcceleraion * timeFactor);
+			entity->m_physical.speed += ((friction + entity->m_physical.acceleration) * timeFactor);
+			entity->m_physical.rotationSpeed += ((entity->m_physical.rotFrictionCoef * (- entity->m_physical.mass) + entity->m_physical.rotationAcceleraion) * timeFactor);
 
 			//apply speed
 			move_entity_with_collisions_entity_space(entity->m_transform,
@@ -166,6 +147,16 @@ void GameCore::update_entities()
 			}
 		}
 	}
+
+	//update camera direction
+	m_cameraVecs.forewardDirection = {
+		std::cos(m_playerTransform.forewardAngle),
+		std::sin(m_playerTransform.forewardAngle)
+	};
+	m_cameraVecs.plane = math::Vect2(
+		m_cameraVecs.forewardDirection.y,
+		-m_cameraVecs.forewardDirection.x
+	) * std::tan(m_gameCamera.fov / 2) * 2;
 }
 
 void GameCore::remove_destroyed_entities()
@@ -177,19 +168,6 @@ void GameCore::remove_destroyed_entities()
 		else
 			++it;
 	}
-}
-
-void GameCore::GameController::rotate(float angle) const
-{
-	gameCore.m_pInputCache.rotatation += angle;
-}
-void GameCore::GameController::move_foreward(float amount) const
-{
-	gameCore.m_pInputCache.foreward += amount;
-}
-void GameCore::GameController::move_strafe(float amount) const
-{
-	gameCore.m_pInputCache.lateral += amount;
 }
 
 void GameCore::view_by_ray_casting(bool useCameraPlane)
@@ -363,14 +341,6 @@ void GameCore::view_billboards(bool useCameraPlane)
 			}
 		}
 	}
-}
-
-game::IGameController& GameCore::get_playerController() 
-{
-	if (m_playerController.get() == nullptr)
-		m_playerController = std::make_unique<GameController>(*this);
-
-	return *(m_playerController);
 }
 
 bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transform, float front, float latereal, float rotation)

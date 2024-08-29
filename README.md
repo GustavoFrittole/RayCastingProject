@@ -16,7 +16,7 @@ cmake -DSFML_BUILD_NETWORK=false -DSFML_BUILD_AUDIO=false -S . -B ./build
 cmake --build ./build
 ```
 ```
-./build/bin/main.exe
+./build/bin/demo.exe
 ```
 ### Linux 
 Same as above, but when building on linux having the SFML dependency installed in advance might be more practical. For Debian is:
@@ -37,7 +37,7 @@ Pseudo 3d environment generated via ray casting in which the user can explore a 
 Note: distance based shading of horizontal planes (ceiling/floor) and sky are only available in linear perspective mode.
 
 ## Usage
-Various variables are imported from the json file `config.json` that can be found in the asset folder, usage explained below. A list of game entities (includes both static sprites and moving characters)can be defines as shown in `main.cpp`.
+Various variables are imported from the json file `config.json` that can be found in the asset folder, usage explained below. A list of game entities (includes both static sprites and moving characters)can be defines as shown in `demo.cpp`.
 The map is generated as a maze using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm, and the process of creation is displayed at game start.
 
 ### `assets/config.json` variables

@@ -30,7 +30,7 @@ FetchContent_Declare(
     URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
-add_executable(main src/main.cpp)
+add_executable(demo src/demo.cpp)
 add_library(gameDataStructures INTERFACE)
 
 add_subdirectory(libs)
@@ -120,8 +120,8 @@ target_link_libraries(
             gameDataStructures
 )
 target_link_libraries(
-    main 
+    demo 
     PRIVATE gameHandler
 )
 
-target_compile_features(main PRIVATE cxx_std_17)
+target_compile_features(demo PRIVATE cxx_std_17)

@@ -1,12 +1,13 @@
 #include "gameInputs.hpp"
 
 using namespace windowVars;
+using namespace rcm;
 
-InputManager::InputManager(ControlsVars& controlsMulti, sf::RenderWindow& window, GameStateVars& gameState, game::IGameController& playerController) :
-    m_controlsMulti(controlsMulti),
+InputManager::InputManager(ControlsSensitivity& controlsSens, sf::RenderWindow& window, GameStateVars& gameState) :
+    m_controlsSens(controlsSens),
     m_window(window),
-    m_gameState(gameState),
-    m_playerController(playerController) {}
+    m_gameState(gameState)
+{}
 
 void InputManager::handle_events_close()
 {
@@ -21,6 +22,7 @@ void InputManager::handle_events_close()
 void InputManager::handle_events_main()
 {
     bool justUnpaused = false;
+    bool justPaused = false;
     sf::Event event;
     while (m_window.pollEvent(event))
     {
@@ -38,7 +40,11 @@ void InputManager::handle_events_main()
                     justUnpaused = true;
                 }
                 else
+                {
                     m_gameState.isPaused = true;
+                    justPaused = true;
+                }
+                    
             }
             if (event.key.scancode == sf::Keyboard::Scan::Space)
             {
@@ -68,6 +74,63 @@ void InputManager::handle_events_main()
     {
         if (!m_gameState.isPaused)
         {
+            //----player input----
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+            {
+                m_inputCache.foreward = + m_controlsSens.movementSpeed;
+            }
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+            {
+                m_inputCache.foreward = - m_controlsSens.movementSpeed;
+            }
+            else
+            {
+                m_inputCache.foreward = 0;
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+            {
+                m_inputCache.lateral = + m_controlsSens.movementSpeed;
+            }
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            {
+                m_inputCache.lateral = - m_controlsSens.movementSpeed;
+            }
+            else
+            {
+                m_inputCache.lateral = 0;
+            }
+
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+            {
+                m_inputCache.rotatation = +m_controlsSens.mouseSens;
+            }
+            else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+            {
+                m_inputCache.rotatation = -m_controlsSens.mouseSens;
+            }
+            else
+            {
+                m_inputCache.rotatation = 0;
+            }
+
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Left) || sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+            {
+                m_inputCache.leftTrigger = true;
+            }
+            else
+            {
+                m_inputCache.leftTrigger = false;
+            }
+            if ((sf::Mouse::isButtonPressed(sf::Mouse::Right) || sf::Keyboard::isKeyPressed(sf::Keyboard::E)))
+            {
+                m_inputCache.rightTrigger = true;
+            }
+            else
+            {
+                m_inputCache.rightTrigger = false;
+            }
+
             if (!m_gameState.hadFocus || justUnpaused)
             {
                 m_gameState.hadFocus = true;
@@ -78,33 +141,13 @@ void InputManager::handle_events_main()
             }
             else
             {
-                m_playerController.rotate((g_windowWidth / 2 - sf::Mouse::getPosition(m_window).x) * 0.1f);
+                float rotation = (g_windowWidth / 2 - sf::Mouse::getPosition(m_window).x) * 0.1f;
+                if (rotation != 0)
+                    m_inputCache.rotatation = rotation;
                 sf::Mouse::setPosition(sf::Vector2i(g_windowWidth / 2, 0), m_window);
             }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-            {
-                m_playerController.move_foreward(+m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-            {
-                m_playerController.move_strafe(-m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-            {
-                m_playerController.move_strafe(+m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-            {
-                m_playerController.move_foreward(-m_controlsMulti.movementSpeed);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            {
-                m_playerController.rotate(+m_controlsMulti.mouseSens);
-            }
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            {
-                m_playerController.rotate(-m_controlsMulti.mouseSens);
-            }
+
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Tab))
             {
                 m_gameState.isTabbed = true;
@@ -113,27 +156,19 @@ void InputManager::handle_events_main()
             {
                 m_gameState.isTabbed = false;
             }
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-            {
-                if (!m_isTriggerKeptPressed)
-                {
-                    m_isTriggerKeptPressed = true;
-                    m_gameState.isTriggerPressed = true;
-                }
-            }
-            else
-            {
-                m_isTriggerKeptPressed = false;
-            }
-            if (sf::Mouse::isButtonPressed(sf::Mouse::Right) && m_burstCooldown.is_ready())
-            {
-                m_gameState.isTriggerPressed = true;
-            }
         }
         else
         {
-            m_window.setMouseCursorVisible(true);
-            m_window.setMouseCursorGrabbed(false);
+            if(justPaused)
+            {
+                m_inputCache.foreward = 0.f;
+                m_inputCache.lateral = 0.f;
+                m_inputCache.rotatation = 0.f;
+                m_inputCache.leftTrigger = false;
+                m_inputCache.rightTrigger = false;
+                m_window.setMouseCursorVisible(true);
+                m_window.setMouseCursorGrabbed(false);
+            }
         }
     }
     else

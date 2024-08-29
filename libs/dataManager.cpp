@@ -40,6 +40,7 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->graphicsVars.minimapScale = data.at("windowStats").at("minimapScale").get<float>();
 		gameData->graphicsVars.halfWallHeight = data.at("windowStats").at("halfWallHeight").get<float>();
 		gameData->graphicsVars.maxSightDepth = gameData->gameCameraVars.maxRenderDist;
+		gameData->graphicsVars.frameRate = data.at("windowStats").at("frameRate").get<int>();
 
 		gameData->gameAssets.wallTexFilePath = data.at("textures").at("wallTexPath").get<std::string>();
 		gameData->gameAssets.boundryTexFilePath = data.at("textures").at("boundryTexPath").get<std::string>();

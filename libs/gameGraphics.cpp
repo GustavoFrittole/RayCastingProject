@@ -5,6 +5,7 @@
 #include "gameGraphics.hpp"
 
 using namespace windowVars;
+using namespace rcm;
 
 //---------------------------GAME-ASSET---
 
@@ -187,6 +188,7 @@ GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphic
     m_spriteSecFactory(g_windowWidth, m_rendThreadPool.get_size())
 {
     m_window.clear(sf::Color::Black);
+    std::cout << graphicsVars.frameRate << std::endl;
     m_window.setFramerateLimit(graphicsVars.frameRate);
 }
 
