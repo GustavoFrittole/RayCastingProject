@@ -84,7 +84,8 @@ Billboard sprites
 ## Basic class diagram
 old | post refactor
 :-------------------------:|:-------------------------:
-![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25) | to add
+![Caster drawio](https://github.com/user-attachments/assets/6165682c-98fd-404e-9333-6a98c0315d25) | ![Caster2 drawio](https://github.com/user-attachments/assets/cab82be5-5c44-496c-a819-f2d19aa0d3c8)
+
 *All not specified relations are 1:1*
 
 ## Known issues
