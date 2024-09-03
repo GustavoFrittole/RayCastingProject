@@ -128,7 +128,7 @@ MyPlayer::MyPlayer(const EntityTransform& transform, int id) : IEntity(id, trans
 {
     m_physical.movFrictionCoef = 5.;
     m_physical.mass = 1.f;
-    m_collisionSize = .6f;
+    m_collisionSize = .2f;
     m_type = EntityType::player;
     interactible = true;
 }
