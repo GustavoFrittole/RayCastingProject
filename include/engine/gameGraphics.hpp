@@ -200,7 +200,7 @@ public:
     void draw_minimap_rays(int winPixWidth, const rcm::RayInfoArr& rays);
     void draw_minimap_background(const rcm::GameMap& gameMap, const rcm::EntityTransform& transform, const rcm::GraphicsVars& graphVars);
     void draw_map(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
-    void set_text_ui(const std::string&);
+    void set_text_ui(const std::string&, const rcm::TextVerticalAlignment, const rcm::TextHorizontalAlignment, const int, const int, const int);
     void draw_text_ui();
     void draw_path_out();
     void draw_view(bool, const std::vector<std::unique_ptr<rcm::IEntity>>&);
@@ -218,15 +218,15 @@ private:
     const MinimapInfo m_minimapInfo;
 
     GameView m_mainView;
-    sf::Text m_endGameText;
-    sf::Font m_endGameFont;
+    sf::Text m_gameText;
+    sf::Font m_gameFont;
     MapSquareAsset m_mapSquareAsset;
     StaticTextures m_staticTextures;
     std::map<int, std::unique_ptr<Texture>> m_spriteTexturesDict;
 
     void draw_camera_view();
 
-    inline void load_text_ui();
+    inline void load_text_ui(const std::string&);
     inline void load_textures(const rcm::GameAssets&);
 
     RendThreadPool m_rendThreadPool;

@@ -30,7 +30,14 @@ FetchContent_Declare(
     URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
+#-------demo----------
 add_executable(demo src/demo.cpp)
+target_link_libraries(
+    demo 
+    PRIVATE gameHandler
+)
+#----------------------
+
 add_library(gameDataStructures INTERFACE)
 
 add_subdirectory(libs)
@@ -118,10 +125,6 @@ target_link_libraries(
     gameInputs 
     PUBLIC  sfml-graphics
             gameDataStructures
-)
-target_link_libraries(
-    demo 
-    PRIVATE gameHandler
 )
 
 target_compile_features(demo PRIVATE cxx_std_17)

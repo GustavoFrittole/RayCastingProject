@@ -58,7 +58,7 @@ namespace rcm
 
 	struct GameMap
 	{
-		int x = 0, y = 0;
+		int width = 0, height = 0;
 		bool generated = false;
 		std::unique_ptr<std::string> cells;
 	};
@@ -67,7 +67,7 @@ namespace rcm
 	{
 		Wall = 'w',
 		Baudry = 'b',
-		Nothing = 'n',
+		Nothing = ' ',
 		Goal = 'g',
 		Oob = 'o',
 		NoHit = '\0'
@@ -103,15 +103,49 @@ namespace rcm
 		RayInfo* m_rayArr;
 	};
 
+	enum class SpriteAlignment
+	{
+		TopWindow,
+		Ceiling,
+		Center,
+		Floor,
+		BottomWindow
+	};
+
+	enum class TextVerticalAlignment
+	{
+		TopWindow,
+		Center,
+		BottomWindow
+	};
+
+	enum class TextHorizontalAlignment
+	{
+		Left,
+		Center,
+		Right,
+	};
+
 	struct Billboard
 	{
 		Billboard(int id) :
 			id(id)
 		{}
+
+		//associated texture id
 		int id = -1;
+
+		//position is screen space, modified by core
 		float positionOnScreen = 0.f;
+
+		//distance from camera, modified by core
 		float distance = 0.f;
+
+		//relative size, 1 equals to cell size (based on distance)
 		float size = 1.f;
+
+		//where the spriteis drawn verically
+		SpriteAlignment alignment = SpriteAlignment::Center;
 	};
 
 	enum class EntityType
@@ -166,6 +200,9 @@ namespace rcm
 		/// @brief called once every game cycle.
 		virtual void on_update() = 0;
 
+		/// @brief called once every game cycle, after all on_update() calls.
+		virtual void on_late_update() = 0;
+
 		/// @brief called every cycle in which two entities distance is lower then their combined collision size.
 		/// @param  the type of the other entity that took part in the collision
 		virtual void on_hit(EntityType) = 0;
@@ -208,6 +245,7 @@ namespace rcm
 
 	struct GameAssets
 	{
+		std::string fontFilePath;
 		std::string wallTexFilePath;
 		std::string boundryTexFilePath;
 		std::string floorTexFilePath;

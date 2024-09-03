@@ -16,10 +16,20 @@ int main()
     //-------------- crete entities ------------
 
     std::vector<std::unique_ptr<IEntity>> entities;
-    std::unique_ptr<IEntity> player(new MyPlayer({ {5,5}, 0 }));
 
-    entities.emplace_back(new MyEnemy(EntityTransform{ {6,6},6 }));
-    entities.emplace_back(new MySpawn({ {7,10},6 }));
+    MyGameHandler* handlerP = new MyGameHandler();
+
+    MyPlayer* playerP = new MyPlayer({ {5,5}, 0 });
+    handlerP->set_player(playerP);
+    std::unique_ptr<IEntity> player(playerP);
+
+    const unsigned char ids[] = { 3, 4, 5, 6 };
+    IEntity* spawnerP = new MySpawner(EntityTransform{ {7,10}, 6 }, sizeof(ids) / sizeof(ids[0]), ids);
+    spawnerP->m_billboard.size = 0.5f;
+    spawnerP->m_billboard.alignment = SpriteAlignment::Floor;
+
+    entities.emplace_back(spawnerP);
+    entities.emplace_back(handlerP);
 
     //---------------- run game ---------------
     try

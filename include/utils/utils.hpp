@@ -70,9 +70,11 @@ namespace utils
 		/// @brief resets timer if cooldown time is reached
 		/// @return true if cooldown time is reached
 		bool is_ready();
+
+		long long get_time() { return (m_cooldown - (std::chrono::high_resolution_clock::now() - m_lastTime)).count(); }
 	private:
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<int, std::milli> m_cooldown;
+		std::chrono::duration<long int, std::milli> m_cooldown;
 	};
 }
 

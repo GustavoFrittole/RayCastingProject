@@ -29,8 +29,8 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->gameCameraVars.maxRenderDist = data.at("gameCamera").at("maxRenderDist").get<float>();
 		gameData->gameCameraVars.rayPrecision = data.at("gameCamera").at("rayPrecision").get<float>();
 
-		gameData->gameMap.x = data.at("gameMap").at("mapW").get<int>();
-		gameData->gameMap.y = data.at("gameMap").at("mapH").get<int>();
+		gameData->gameMap.width = data.at("gameMap").at("mapW").get<int>();
+		gameData->gameMap.height = data.at("gameMap").at("mapH").get<int>();
 		gameData->gameMap.generated = data.at("gameMap").at("generated").get<bool>();
 
 		gameData->controlsMulti.mouseSens = data.at("controls").at("mouseSens").get<float>();
@@ -42,11 +42,12 @@ std::unique_ptr<DataUtils::GameData> DataUtils::load_game_data(const std::string
 		gameData->graphicsVars.maxSightDepth = gameData->gameCameraVars.maxRenderDist;
 		gameData->graphicsVars.frameRate = data.at("windowStats").at("frameRate").get<int>();
 
-		gameData->gameAssets.wallTexFilePath = data.at("textures").at("wallTexPath").get<std::string>();
-		gameData->gameAssets.boundryTexFilePath = data.at("textures").at("boundryTexPath").get<std::string>();
-		gameData->gameAssets.floorTexFilePath = data.at("textures").at("floorTexPath").get<std::string>();
-		gameData->gameAssets.ceilingTexFilePath = data.at("textures").at("ceilingTexPath").get<std::string>();
-		gameData->gameAssets.skyTexFilePath = data.at("textures").at("skyTexPath").get<std::string>();
+		gameData->gameAssets.fontFilePath = data.at("assets").at("font").get<std::string>();
+		gameData->gameAssets.wallTexFilePath = data.at("assets").at("textures").at("wallTexPath").get<std::string>();
+		gameData->gameAssets.boundryTexFilePath = data.at("assets").at("textures").at("boundryTexPath").get<std::string>();
+		gameData->gameAssets.floorTexFilePath = data.at("assets").at("textures").at("floorTexPath").get<std::string>();
+		gameData->gameAssets.ceilingTexFilePath = data.at("assets").at("textures").at("ceilingTexPath").get<std::string>();
+		gameData->gameAssets.skyTexFilePath = data.at("assets").at("textures").at("skyTexPath").get<std::string>();
 
 		for (auto& sprite : data.at("sprites"))
 			gameData->gameSprites.emplace_back(sprite.at(0).get<int>(), sprite.at(1).get<std::string>());

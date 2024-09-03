@@ -43,7 +43,7 @@ GameCore::GameCore(GameCameraVars& gameCameraVars, GameMap& gameMap, EntityTrans
 		if (m_gameMap.cells.get() == nullptr)
 			m_gameMap.cells = std::make_unique<std::string>();
 
-		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coordinates.x, (int)m_playerTransform.coordinates.y, m_gameMap.x, m_gameMap.y, *(m_gameMap.cells));
+		m_mapGenerator = std::make_unique<MapGenerator>((int)m_playerTransform.coordinates.x, (int)m_playerTransform.coordinates.y, m_gameMap.width, m_gameMap.height, *(m_gameMap.cells));
 	}
 	//camera plane vars
 	m_cameraVecs.forewardDirection = { std::cos(m_playerTransform.forewardAngle), std::sin(m_playerTransform.forewardAngle) };
@@ -57,7 +57,7 @@ bool GameCore::check_out_of_map_bounds(const math::Vect2& pos) const
 
 bool GameCore::check_out_of_map_bounds(int posX, int posY) const
 {
-	return (posX < 0 || posY < 0 || posX >= m_gameMap.x || posY >= m_gameMap.y);
+	return (posX < 0 || posY < 0 || posX >= m_gameMap.width || posY >= m_gameMap.height);
 }
 
 void GameCore::start_internal_time()
@@ -75,7 +75,7 @@ void GameCore::chech_position_in_map(int rayPosInMapX, int rayPosInMapY, HitType
 {
 	if (!check_out_of_map_bounds(rayPosInMapX, rayPosInMapY))
 	{
-		switch (m_gameMap.cells->at(rayPosInMapX + rayPosInMapY * m_gameMap.x))
+		switch (m_gameMap.cells->at(rayPosInMapX + rayPosInMapY * m_gameMap.width))
 		{
 		case 'w':
 			hitMarker = HitType::Wall;

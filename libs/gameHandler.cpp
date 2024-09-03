@@ -19,18 +19,20 @@ namespace rcm
 		void run_game() override;
 		void close_game() override;
 		bool& show_text_ui() override { return m_gameState.drawTextUi; }
-		void set_text_ui(const std::string&) override;
+		void set_text_ui(const std::string&, const TextVerticalAlignment, const TextHorizontalAlignment, const int, const int, const int) override;
 		const InputCache& get_input_cache() override { return m_inputManager->get_input_cache(); }
+		inline char get_entity_cell(const EntityTransform& pos, const GameMap& map) override;
+		inline char get_entity_cell(const int cellX, const int cellY, const GameMap& map) override;
+		inline const GameMap& get_active_map() override { return m_gameData->gameMap; }
 	private:
 		void start();
 		void performGameCycle();
 		void add_cached_entities();
 		void load_sprites(std::vector<std::unique_ptr<IEntity>>&);
-		inline char get_entity_cell(const EntityTransform& pos, const GameMap& map);
-		inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
 		void handle_entities_actions(std::vector<std::unique_ptr<IEntity>>&);
 		void handle_entities_interactions(std::vector<std::unique_ptr<IEntity>>&);
 		void draw_text_ui();
+		inline bool goal_reached(const EntityTransform& pos, const GameMap& map);
 
 		std::unique_ptr<DataUtils::GameData> m_gameData;
 		std::unique_ptr<GameCore> m_gameCore;
@@ -54,9 +56,9 @@ namespace rcm
 		m_window->close();
 	}
 
-	void GameHandler::set_text_ui(const std::string& text)
+	void GameHandler::set_text_ui(const std::string& text, const TextVerticalAlignment vertAlign, const TextHorizontalAlignment horiAlign, const int size, const int offsetX, const int offsetY)
 	{
-		m_gameGraphics->set_text_ui(text);
+		m_gameGraphics->set_text_ui(text, vertAlign, horiAlign, size, offsetX, offsetY);
 	}
 
 	void GameHandler::draw_text_ui()
@@ -75,8 +77,8 @@ namespace rcm
 		}
 		catch (std::exception& e)
 		{
-			std::string err(e.what());
-			err.append("\nError while loading game assets.\n");
+			std::string err("Error while loading game assets:\n");
+			err.append(e.what());
 			throw std::runtime_error(err);
 		}
 
@@ -140,7 +142,7 @@ namespace rcm
 
 			m_inputManager->handle_events_close();
 
-			m_gameGraphics->draw_map_gen(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
+			m_gameGraphics->draw_map_gen(m_gameData->gameMap.width, m_gameData->gameMap.height, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
 
 			//wait if the generation time isn't over
 			sleep.join();
@@ -152,8 +154,13 @@ namespace rcm
 
 	char GameHandler::get_entity_cell(const EntityTransform& pos, const GameMap& map)
 	{
-		return map.cells->at(static_cast<int>(pos.coordinates.y) * map.x +
+		return map.cells->at(static_cast<int>(pos.coordinates.y) * map.width +
 			static_cast<int>(pos.coordinates.x));
+	}
+
+	char GameHandler::get_entity_cell(const int cellX, const int cellY, const GameMap& map)
+	{
+		return map.cells->at(cellX * map.width + cellY);
 	}
 
 	bool GameHandler::goal_reached(const EntityTransform& pos, const GameMap& map)
@@ -163,11 +170,15 @@ namespace rcm
 
 	void GameHandler::handle_entities_actions(std::vector<std::unique_ptr<IEntity>>& entities)
 	{
-
 		for (std::unique_ptr<IEntity>& entity : entities)
 		{
 			if (entity->active)
 				entity->on_update();
+		}
+		for (std::unique_ptr<IEntity>& entity : entities)
+		{
+			if (entity->active)
+				entity->on_late_update();
 		}
 	}
 
@@ -225,19 +236,13 @@ namespace rcm
 
 		if (m_gameState.isPaused || m_gameState.isTabbed)
 		{
-			m_gameGraphics->draw_map(m_gameData->gameMap.x, m_gameData->gameMap.y, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
+			m_gameGraphics->draw_map(m_gameData->gameMap.width, m_gameData->gameMap.height, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
 			m_gameGraphics->draw_path_out();
 		}
 		else
 		{
 			m_gameGraphics->draw_minimap_background(m_gameData->gameMap, m_gameCameraView->transform, m_gameData->graphicsVars);
 			m_gameGraphics->draw_minimap_triangles(m_gameData->gameCameraVars.pixelWidth, m_gameCore->get_ray_info_arr(), m_gameData->graphicsVars);
-
-			if (goal_reached(m_gameCameraView->transform, m_gameData->gameMap) && !m_gameState.drawTextUi)
-			{
-				set_text_ui("Goal Reached");
-				show_text_ui() = true;
-			}
 
 			draw_text_ui();
 		}

@@ -1,7 +1,6 @@
 #include <math.h>
 #include <stdexcept>
 #include <queue>
-#include <iostream>
 #include "gameGraphics.hpp"
 
 using namespace windowVars;
@@ -150,9 +149,31 @@ void SpriteRendSectionFactory::set_target(const Billboard& billboard, const Text
     m_tex = &billTex;
 
     //set sprite dimensions on screen
-    m_sVars.screenSpriteHeight = (g_windowHeight / billboard.distance) * m_graphVars->halfWallHeight * billboard.size;
+    float wallHeight = (g_windowHeight / billboard.distance) * m_graphVars->halfWallHeight;
+    m_sVars.screenSpriteHeight = wallHeight * billboard.size;
     m_sVars.screenSpriteWidth = m_sVars.screenSpriteHeight * (billTex.width() / (float)billTex.height());
-    m_sVars.floorHeight = (g_windowHeight - m_sVars.screenSpriteHeight) / 2; //distance from vertical limits
+
+    //from where to start drawing the sprite (sprites are drawn top to bottom)
+    switch (billboard.alignment)
+    {
+    case SpriteAlignment::TopWindow : 
+        m_sVars.floorHeight = 0;
+        break;
+    case SpriteAlignment::Ceiling :
+        m_sVars.floorHeight = (g_windowHeight - wallHeight) / 2;
+        break;
+    case SpriteAlignment::Center:
+        m_sVars.floorHeight = (g_windowHeight - m_sVars.screenSpriteHeight) / 2;
+            break;
+    case SpriteAlignment::Floor:
+        m_sVars.floorHeight =
+            m_sVars.floorHeight = (g_windowHeight + wallHeight) / 2 - m_sVars.screenSpriteHeight;
+            break;
+    case SpriteAlignment::BottomWindow:
+        m_sVars.floorHeight = g_windowHeight - m_sVars.screenSpriteHeight;
+            break;
+    }
+    
 
     m_sVars.shade = (1 - (billboard.distance / (m_graphVars->maxSightDepth))) * 0xFF;
 
@@ -161,8 +182,8 @@ void SpriteRendSectionFactory::set_target(const Billboard& billboard, const Text
     m_sVars.texUStep = billTex.width() / m_sVars.screenSpriteWidth;
 
     //set texture start and end in V dimension
-    m_sVars.textureVstart = (m_sVars.screenSpriteHeight > g_windowHeight)
-        ? m_sVars.texVStep * ((m_sVars.screenSpriteHeight - g_windowHeight) / 2)
+    m_sVars.textureVstart = (m_sVars.floorHeight < 0)
+        ? m_sVars.texVStep * (-m_sVars.floorHeight)
         : 0;
     m_sVars.screenVEnd = m_sVars.floorHeight + m_sVars.screenSpriteHeight;
 
@@ -188,7 +209,6 @@ GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphic
     m_spriteSecFactory(g_windowWidth, m_rendThreadPool.get_size())
 {
     m_window.clear(sf::Color::Black);
-    std::cout << graphicsVars.frameRate << std::endl;
     m_window.setFramerateLimit(graphicsVars.frameRate);
 }
 
@@ -197,10 +217,10 @@ GameGraphics::GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphic
 void GameGraphics::create_assets(const GameAssets& gameAssets, const GameMap& gameMap, const GraphicsVars& graphicsVars, const RayInfoArr& raysInfoVec, const GameStateVars& gameState, GameCameraView& gameCamera)
 {
     m_mainView.create(g_windowWidth, g_windowHeight, true);
-    m_pathFinder = std::make_unique<PathFinder>(gameMap.x, gameMap.y, *(gameMap.cells), m_pathToGoal);
-    m_mapSquareAsset.create(gameMap.x, gameMap.y);
+    m_pathFinder = std::make_unique<PathFinder>(gameMap.width, gameMap.height, *(gameMap.cells), m_pathToGoal);
+    m_mapSquareAsset.create(gameMap.width, gameMap.height);
 
-    load_text_ui();
+    load_text_ui(gameAssets.fontFilePath);
     load_textures(gameAssets);
 
     m_viewSecFactory.set_target(&raysInfoVec, &m_mainView, &m_staticTextures, &gameState, &graphicsVars, &gameCamera.transform);
@@ -260,28 +280,59 @@ void copy_pixels(sf::Uint8 * pixelsTo, const sf::Uint8 * pixelsFrom, int indexTo
 
 //----------------end-screen-----
 
-void GameGraphics::load_text_ui()
+void GameGraphics::load_text_ui(const std::string& path)
 {
-    if (m_endGameFont.loadFromFile("assets\\Roboto-Regular.ttf"))
+    if (m_gameFont.loadFromFile(path))
     {
-        m_endGameText.setFont(m_endGameFont);
+        m_gameText.setFont(m_gameFont);
     }
-    m_endGameText.setString("GOAL REACHED");
-    m_endGameText.setCharacterSize(50);
-    m_endGameText.setFillColor(sf::Color::Magenta);
-    m_endGameText.setPosition((g_windowWidth - m_endGameText.getLocalBounds().width)/2,
-                              (g_windowHeight- m_endGameText.getLocalBounds().height)/2);
-    
+    m_gameText.setString("GOAL REACHED");
+    m_gameText.setCharacterSize(50);
+    m_gameText.setFillColor(sf::Color::Red);
 }
 
-void GameGraphics::set_text_ui(const std::string& text)
+void GameGraphics::set_text_ui(const std::string& text, const TextVerticalAlignment vertAlign, const TextHorizontalAlignment horiAlign, const int size, const int offsetX, const int offsetY)
 {
-    m_endGameText.setString(text);
+    if (size > 0)
+        m_gameText.setCharacterSize(size);
+        //m_gameText.setScale(size/10.f,size/10.f);
+
+    m_gameText.setString(text);
+    math::Vect2 textPos{};
+    switch (vertAlign)
+    {
+    case TextVerticalAlignment::BottomWindow:
+        textPos.y = g_windowHeight - m_gameText.getLocalBounds().height*2 + offsetY;
+        break;
+    case TextVerticalAlignment::Center:
+        textPos.y = (g_windowHeight - m_gameText.getLocalBounds().height) / 2 + offsetY;
+        break;
+    case TextVerticalAlignment::TopWindow:
+        textPos.y = 0 + offsetY;
+        break;
+    default:
+        break;
+    }
+    switch (horiAlign)
+    {
+    case TextHorizontalAlignment::Left:
+        textPos.x = 0 + offsetX;
+        break;
+    case TextHorizontalAlignment::Center:
+        textPos.x = (g_windowWidth - m_gameText.getLocalBounds().width) / 2 + offsetX;;
+        break;
+    case TextHorizontalAlignment::Right:
+        textPos.x = g_windowWidth - m_gameText.getLocalBounds().width + offsetX;;
+        break;
+    default:
+        break;
+    }
+    m_gameText.setPosition( textPos.x, textPos.y );
 }
 
 void GameGraphics::draw_text_ui()
 {
-    m_window.draw(m_endGameText);
+    m_window.draw(m_gameText);
 }
 
 void GameGraphics::create_view_sections()
@@ -782,16 +833,16 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
         startX = 0;
 
     int endX = transform.coordinates.x + graphVars.maxSightDepth;
-    if (endX > gameMap.x)
-        endX = gameMap.x;
+    if (endX > gameMap.width)
+        endX = gameMap.width;
 
     int startY = transform.coordinates.y - graphVars.maxSightDepth;
     if (startY < 0)
         startY = 0;
 
     int endY = transform.coordinates.y + graphVars.maxSightDepth;
-    if (endY > gameMap.y)
-        endY = gameMap.y;
+    if (endY > gameMap.height)
+        endY = gameMap.height;
 
     sf::RectangleShape wallRect({ (float)tileDim, (float)tileDim });
 
@@ -799,7 +850,7 @@ void GameGraphics::draw_minimap_background(const GameMap& gameMap, const EntityT
     {
         for (int x = startX; x < endX; ++x)
         {
-            char currentCell = gameMap.cells->at(y * gameMap.x + x);
+            char currentCell = gameMap.cells->at(y * gameMap.width + x);
 
             if (currentCell != ' ')
             {

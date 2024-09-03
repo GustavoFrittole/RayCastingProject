@@ -17,19 +17,26 @@
     },
     "controls" : {
         "mouseSens" : 1,
-	    "movementSpeed" : 1
+	    "movementSpeed" : 2
     },
-    "textures" : {
-        "wallTexPath" : "assets/wall2.png",
-        "boundryTexPath" : "assets/boundry2.png",
-        "floorTexPath" : "assets/floor2.png",
-        "ceilingTexPath" : "assets/ceiling2.png",
-        "skyTexPath" : "assets/sky1.png"
+    "assets" :
+    {
+        "font" : "assets/IndieFlower-Regular/IndieFlower-Regular.ttf",
+        "textures" : {
+            "wallTexPath" : "assets/wall2.png",
+            "boundryTexPath" : "assets/boundry2.png",
+            "floorTexPath" : "assets/floor2.png",
+            "ceilingTexPath" : "assets/ceiling2.png",
+            "skyTexPath" : "assets/sky1.png"
+        }
     },
     "sprites" : [
-        [ 3, "assets/sprite1.png"],
-        [ 1, "assets/sprite2.png"],
-        [ 0, "assets/projectile.png"],
-        [ 2, "assets/cage.png"]
+        [ 2, "assets/fallen.png"],
+        [ 1, "assets/lover.png"],
+        [ 0, "assets/smallheart.png"],
+        [ 3, "assets/climb0.png"],
+        [ 4, "assets/climb1.png"],
+        [ 5, "assets/climb2.png"],
+        [ 6, "assets/climb3.png"]
     ]
 }
