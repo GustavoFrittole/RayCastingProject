@@ -358,6 +358,11 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 
 	if(front != 0.f || latereal != 0.f)
 	{
+		if (front != 0.f && latereal != 0.f)
+		{
+			front = front / SQRT2;
+			latereal = latereal / SQRT2;
+		}
 
 		//decompose movment in x and y (world) axis and check collions separatly
 		//--------- check_collision X axis ------------
@@ -395,7 +400,6 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 			else
 			{
 				moveAttempt.x = 0.f;
-				extension.x = 0.f;
 			}
 		}
 
@@ -413,33 +417,15 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 					extension.y = collisionSize;
 			}
 
-			if (hasMoved)
+			if (check_if_empty_space(transform.coordinates + (moveAttempt + extension)) &&
+				check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(-collisionSize, extension.y))) &&
+				check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(collisionSize, extension.y))))
 			{
-				math::Vect2 diagonalMoveAttempt = moveAttempt / SQRT2;
-
-				if (check_if_empty_space(transform.coordinates + (diagonalMoveAttempt + extension) ) &&
-					check_if_empty_space(transform.coordinates + (diagonalMoveAttempt + math::Vect2(extension.x, 0))) &&
-					check_if_empty_space(transform.coordinates + (diagonalMoveAttempt + math::Vect2(0, extension.y))))
-				{
-					moveAttempt = diagonalMoveAttempt;
-				}
-				else
-				{
-					moveAttempt.y = 0.f;
-				}
+				hasMoved = true;
 			}
 			else
 			{
-				if (check_if_empty_space(transform.coordinates + (moveAttempt + extension)) &&
-					check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(-collisionSize, extension.y))) &&
-					check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(collisionSize, extension.y))))
-				{
-					hasMoved = true;
-				}
-				else
-				{
-					moveAttempt.y = 0.f;
-				}
+				moveAttempt.y = 0.f;
 			}
 		}	
 		transform.coordinates += moveAttempt;
