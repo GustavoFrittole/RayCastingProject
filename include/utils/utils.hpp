@@ -5,6 +5,7 @@
 #include <chrono>
 
 #define PI 3.14159265359f
+#define SQRT2 1.41421356237f
 //DEBUG
 namespace debug
 {

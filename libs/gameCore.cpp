@@ -133,7 +133,8 @@ void GameCore::update_entities()
 			move_entity_with_collisions_entity_space(entity->m_transform,
 				entity->m_physical.movementSpeed.x * timeFactor,
 				entity->m_physical.movementSpeed.y * timeFactor,
-				entity->m_physical.rotationSpeed * timeFactor);
+				entity->m_physical.rotationSpeed * timeFactor,
+				entity->m_collisionSize);
 		}
 		else
 		{
@@ -343,40 +344,9 @@ void GameCore::view_billboards(bool useCameraPlane)
 	}
 }
 
-bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transform, float front, float latereal, float rotation)
+bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transform, float front, float latereal, float rotation, float collisionSize)
 {
 	bool hasMoved = false;
-
-	//decompose movment in x and y(world) axis and check collions separatly
-	//check_collision X axis
-	math::Vect2 moveAttempt = transform.coordinates +
-		(math::Vect2(	std::cos(transform.forewardAngle) * front
-						- std::sin(transform.forewardAngle) * latereal, 0));
-
-	HitType hitMarker = HitType::NoHit;
-	chech_position_in_map(moveAttempt, hitMarker);
-
-	//update entities
-	if (hitMarker == HitType::NoHit) //check for any unblocking tiles 
-	{
-		hasMoved = true;
-		transform.coordinates = moveAttempt;
-	}
-
-	//check_collision Y axis
-	moveAttempt = transform.coordinates +
-		(math::Vect2(	0,	std::sin(transform.forewardAngle) * front +
-							std::cos(transform.forewardAngle) * latereal));
-
-	hitMarker = HitType::NoHit;
-	chech_position_in_map(moveAttempt, hitMarker);
-
-	//update entities
-	if (hitMarker == HitType::NoHit) //check for any unblocking tiles 
-	{
-		hasMoved = true;
-		transform.coordinates = moveAttempt;
-	}
 
 	//rotate
 	transform.forewardAngle += rotation;
@@ -385,6 +355,95 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 		transform.forewardAngle -= 2 * PI;
 	else if (transform.forewardAngle <= -PI)
 		transform.forewardAngle += 2 * PI;
+
+	if(front != 0.f || latereal != 0.f)
+	{
+
+		//decompose movment in x and y (world) axis and check collions separatly
+		//--------- check_collision X axis ------------
+		math::Vect2 moveAttempt = (math::Vect2(std::cos(transform.forewardAngle) * front
+			- std::sin(transform.forewardAngle) * latereal, 0));
+
+		math::Vect2 extension{};
+
+		auto check_if_empty_space = [this](const math::Vect2& pos) mutable ->bool
+			{
+				HitType hitMarker = HitType::NoHit;
+
+				chech_position_in_map(pos, hitMarker);
+
+				return hitMarker == HitType::NoHit;
+			};
+
+		if (moveAttempt.x != 0.f)
+		{
+			//make sure collision size is smaller than wall size
+			if (collisionSize < 1.f)
+			{
+				if (moveAttempt.x < 0)
+					extension.x = -collisionSize;
+				else
+					extension.x = collisionSize;
+			}
+
+			if (check_if_empty_space(transform.coordinates + (moveAttempt + extension)) &&
+				check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(extension.x, collisionSize))) &&
+				check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(extension.x, -collisionSize))))
+			{
+				hasMoved = true;
+			}
+			else
+			{
+				moveAttempt.x = 0.f;
+				extension.x = 0.f;
+			}
+		}
+
+		//--------- check_collision Y axis ------------
+		moveAttempt += (math::Vect2(0, std::sin(transform.forewardAngle) * front +
+			std::cos(transform.forewardAngle) * latereal));
+
+		if(moveAttempt.y != 0.f)
+		{
+			if (collisionSize < 1.f)
+			{
+				if (moveAttempt.y < 0)
+					extension.y = -collisionSize;
+				else
+					extension.y = collisionSize;
+			}
+
+			if (hasMoved)
+			{
+				math::Vect2 diagonalMoveAttempt = moveAttempt / SQRT2;
+
+				if (check_if_empty_space(transform.coordinates + (diagonalMoveAttempt + extension) ) &&
+					check_if_empty_space(transform.coordinates + (diagonalMoveAttempt + math::Vect2(extension.x, 0))) &&
+					check_if_empty_space(transform.coordinates + (diagonalMoveAttempt + math::Vect2(0, extension.y))))
+				{
+					moveAttempt = diagonalMoveAttempt;
+				}
+				else
+				{
+					moveAttempt.y = 0.f;
+				}
+			}
+			else
+			{
+				if (check_if_empty_space(transform.coordinates + (moveAttempt + extension)) &&
+					check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(-collisionSize, extension.y))) &&
+					check_if_empty_space(transform.coordinates + (moveAttempt + math::Vect2(collisionSize, extension.y))))
+				{
+					hasMoved = true;
+				}
+				else
+				{
+					moveAttempt.y = 0.f;
+				}
+			}
+		}	
+		transform.coordinates += moveAttempt;
+	}
 
 	return hasMoved;
 }
