@@ -6,7 +6,7 @@ b             w     b
 b      www    w     b
 b            w      b
 b                   b
-b                   b
+b       ggggggg     b
 b                   b
 b                   b
 b      w            b
@@ -19,7 +19,7 @@ b     w         w   b
 b        w          b
 b                   b
 b                   b
-b                   b
+b       gggggg      b
 b                   b
 b    www            b
 b                   b

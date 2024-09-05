@@ -17,6 +17,9 @@ find_package(SFML 2.6 COMPONENTS system window graphics QUIET)
 
 # fetch if not found
 if (NOT SFML_FOUND)
+    set(SFML_BUILD_NETWORK OFF CACHE BOOL "Dont build SFML Network module")
+    set(SFML_BUILD_AUDIO OFF CACHE BOOL "Dont build SFML Audio module")
+
     FetchContent_Declare(
         SFML
         GIT_REPOSITORY https://github.com/SFML/SFML.git
@@ -30,10 +33,19 @@ FetchContent_Declare(
     URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
-add_executable(main src/main.cpp)
+#-------demo----------
+add_executable(demo src/demo.cpp)
+target_link_libraries(
+    demo 
+    PRIVATE gameHandler
+)
+#----------------------
+
+add_library(gameDataStructures INTERFACE)
 
 add_subdirectory(libs)
-add_subdirectory(include/engine)
+
+#-----------------------INCLUDES---------------------
 
 target_include_directories(
     utils 
@@ -76,14 +88,11 @@ target_include_directories(
 )
 target_include_directories(
     gameHandler 
-    PRIVATE ${CMAKE_SOURCE_DIR}/include
-            ${CMAKE_SOURCE_DIR}/include/engine
+    PUBLIC   ${CMAKE_SOURCE_DIR}/include
+    PRIVATE  ${CMAKE_SOURCE_DIR}/include/engine
 )
-target_include_directories(
-    main 
-    PRIVATE ${CMAKE_SOURCE_DIR}/include
-)
-#---------------------------------------------------
+
+#---------------------LINKS------------------
 
 target_link_libraries(
     gameDataStructures 
@@ -108,6 +117,7 @@ target_link_libraries(
 )
 target_link_libraries(
     gameHandler 
+    PUBLIC  gameDataStructures
     PRIVATE gameGraphics 
             gameCore 
             gameInputs
@@ -119,9 +129,5 @@ target_link_libraries(
     PUBLIC  sfml-graphics
             gameDataStructures
 )
-target_link_libraries(
-    main 
-    PRIVATE gameHandler
-)
 
-target_compile_features(main PRIVATE cxx_std_17)
+target_compile_features(demo PRIVATE cxx_std_17)

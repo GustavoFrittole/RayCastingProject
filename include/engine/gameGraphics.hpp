@@ -10,8 +10,8 @@
 struct MinimapInfo
 {
     MinimapInfo(int scaleToScreen, float rayLength) : minimapRelPos(scaleToScreen),
-        minimapCenterX(windowVars::g_screenHeight / minimapRelPos),
-        minimapCenterY(windowVars::g_screenWidth - minimapCenterX),
+        minimapCenterX(windowVars::g_windowHeight / minimapRelPos),
+        minimapCenterY(windowVars::g_windowWidth - minimapCenterX),
         minimapScale(minimapCenterX / rayLength) 
     {}
     int minimapRelPos;
@@ -62,7 +62,9 @@ struct StaticTextures
     Texture skyTexture;
 };
 
-//------------------THREAD-POOL---
+//-----------------thread-pool-helpers----------------------------
+
+//------structs----
 
 struct BackgroundVars
 {
@@ -100,15 +102,15 @@ public:
         IRenderingSectionFactory(taskNumber, workers) {}
 
     ViewRendSection create_section(int index);
-    void set_target(const RayInfoArr* rays, GameView* view, const StaticTextures* tex, const GameStateVars* state, const GraphicsVars* graphVars, const EntityTransform* camTransform);
+    void set_target(const rcm::RayInfoArr* rays, GameView* view, const StaticTextures* tex, const rcm::GameStateVars* state, const rcm::GraphicsVars* graphVars, const rcm::EntityTransform* camTransform);
 
 protected:
-    const RayInfoArr* m_rays = nullptr;
+    const rcm::RayInfoArr* m_rays = nullptr;
     GameView* m_view = nullptr;
     const StaticTextures* m_staticTex = nullptr;
-    const GameStateVars* m_state = nullptr;
-    const GraphicsVars* m_graphVars = nullptr;
-    const EntityTransform* m_camTransform = nullptr;
+    const rcm::GameStateVars* m_state = nullptr;
+    const rcm::GraphicsVars* m_graphVars = nullptr;
+    const rcm::EntityTransform* m_camTransform = nullptr;
 };
 
 //----background----
@@ -129,15 +131,24 @@ public:
         IRenderingSectionFactory(taskNumber, workers) {}
 
     BackgroundRendSection create_section(int index);
-    void set_target(GameView*, const StaticTextures*, const GameStateVars*, const GraphicsVars*, GameCameraView*);
+    void set_target(GameView*, const StaticTextures*, const rcm::GameStateVars*, const rcm::GraphicsVars*, rcm::GameCameraView*);
     
 protected:
     GameView* m_view = nullptr;
     const StaticTextures* m_staticTex = nullptr;
-    GameCameraView* m_camera = nullptr;
-    const GameStateVars* m_state = nullptr;
-    const GraphicsVars* m_graphVars = nullptr;
+    rcm::GameCameraView* m_camera = nullptr;
+    const rcm::GameStateVars* m_state = nullptr;
+    const rcm::GraphicsVars* m_graphVars = nullptr;
     BackgroundVars m_backgroundVars{};
+};
+
+struct MapSquareAsset
+{
+    void create(int, int);
+    int tileDim = 0;
+    int xoffset = 0;
+    int yoffset = 0;
+    sf::RectangleShape wallRect;
 };
 
 //-----sprites----
@@ -159,56 +170,47 @@ public:
         IRenderingSectionFactory(taskNumber, workers) {}
 
     SpriteRendSection create_section(int index);
-    void set_environment(GameView*, const GraphicsVars*, const RayInfoArr*);
-    void set_target(const Billboard&, const Texture&);
+    void set_environment(GameView*, const rcm::GraphicsVars*, const rcm::RayInfoArr*);
+    void set_target(const rcm::Billboard&, const Texture&);
 
 protected:
-    const Billboard* m_billboard = nullptr;
+    const rcm::Billboard* m_billboard = nullptr;
     GameView* m_view = nullptr;
-    const GraphicsVars* m_graphVars = nullptr;
-    const RayInfoArr* m_rays = nullptr;
+    const rcm::GraphicsVars* m_graphVars = nullptr;
+    const rcm::RayInfoArr* m_rays = nullptr;
     const Texture* m_tex = nullptr;
     SpriteRendVars m_sVars{};
 };
 
+//-----------------------------------------------------------------------
 
 class GameGraphics
 {
 public:
-    GameGraphics(sf::RenderWindow& window, const GraphicsVars& graphicsVars, int frameRate = 0);
+    GameGraphics(sf::RenderWindow& window, const rcm::GraphicsVars& graphicsVars);
     GameGraphics() = delete;
     GameGraphics& operator=(const GameGraphics&) = delete;
 
-    void create_assets(const GameAssets&, const GameMap&, const GraphicsVars&, const RayInfoArr&, const GameStateVars&, GameCameraView&);
-    void load_sprite(const std::string&);
+    void create_assets(const rcm::GameAssets&, const rcm::GameMap&, const rcm::GraphicsVars&, const rcm::RayInfoArr&, const rcm::GameStateVars&, rcm::GameCameraView&);
+    void load_sprite(int id, const std::string&);
     bool is_running() const { return m_window.isOpen(); }
-    //no trasfer
-    bool goal_reached(const EntityTransform& pos, const GameMap& map);
 
     void draw_map_gen(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
-    void draw_minimap_triangles(int winPixWidth, const RayInfoArr& rays, const GraphicsVars& graphVars);
-    void draw_minimap_rays(int winPixWidth, const RayInfoArr& rays);
-    void draw_minimap_background(const GameMap& gameMap, const EntityTransform& transform, const GraphicsVars& graphVars);
+    void draw_minimap_triangles(int winPixWidth, const rcm::RayInfoArr& rays, const rcm::GraphicsVars& graphVars);
+    void draw_minimap_rays(int winPixWidth, const rcm::RayInfoArr& rays);
+    void draw_minimap_background(const rcm::GameMap& gameMap, const rcm::EntityTransform& transform, const rcm::GraphicsVars& graphVars);
     void draw_map(int mapWidth, int mapHeight, int posX, int posY, const std::string& cells);
-    void draw_end_screen();
+    void set_text_ui(const std::string&, const rcm::TextVerticalAlignment, const rcm::TextHorizontalAlignment, const int, const int, const int);
+    void draw_text_ui();
     void draw_path_out();
-    void draw_view(bool, const std::vector<Billboard>&);
-    void calculate_shortest_path(const EntityTransform&);
+    void draw_view(bool, const std::vector<std::unique_ptr<rcm::IEntity>>&);
+    void calculate_shortest_path(const rcm::EntityTransform&);
 
-    void static draw_view_section(int startY, int endY, bool linear, const RayInfoArr&, GameView&, const GraphicsVars&, const StaticTextures&, const EntityTransform&);
-    void static draw_background_section(int startX, int endX, bool drawSky, GameView&, const BackgroundVars&, const GraphicsVars&, GameCameraView&, const StaticTextures&);
-    void static draw_sprite_section(int startU, int endU, GameView&, const SpriteRendVars&, const Billboard&, const Texture&, const GraphicsVars&, const RayInfoArr&);
+    void static draw_view_section(int startY, int endY, bool linear, const rcm::RayInfoArr&, GameView&, const rcm::GraphicsVars&, const StaticTextures&, const rcm::EntityTransform&);
+    void static draw_background_section(int startX, int endX, bool drawSky, GameView&, const BackgroundVars&, const rcm::GraphicsVars&, rcm::GameCameraView&, const StaticTextures&);
+    void static draw_sprite_section(int startU, int endU, GameView&, const SpriteRendVars&, const rcm::Billboard&, const Texture&, const rcm::GraphicsVars&, const rcm::RayInfoArr&);
 
 private:
-    struct MapSquareAsset
-    {
-        void create(int, int);
-        int tileDim = 0;
-        int xoffset = 0;
-        int yoffset = 0;
-        sf::RectangleShape wallRect;
-    };
-
     sf::RenderWindow& m_window;
 
     std::vector<std::pair<int, int>> m_pathToGoal;
@@ -216,16 +218,16 @@ private:
     const MinimapInfo m_minimapInfo;
 
     GameView m_mainView;
-    sf::Text m_endGameText;
-    sf::Font m_endGameFont;
+    sf::Text m_gameText;
+    sf::Font m_gameFont;
     MapSquareAsset m_mapSquareAsset;
     StaticTextures m_staticTextures;
-    std::vector<std::unique_ptr<Texture>> m_spriteTexturesDict;
+    std::map<int, std::unique_ptr<Texture>> m_spriteTexturesDict;
 
     void draw_camera_view();
 
-    inline void load_end_screen();
-    inline void load_textures(const GameAssets&);
+    inline void load_text_ui(const std::string&);
+    inline void load_textures(const rcm::GameAssets&);
 
     RendThreadPool m_rendThreadPool;
 
@@ -243,7 +245,7 @@ private:
     void update_sprite_sections();
 
     void render_view(bool);
-    void render_sprites(const std::vector<Billboard>&);
+    void render_sprites(const std::vector<std::unique_ptr<rcm::IEntity>>&);
     void render_sprite();
 };
 

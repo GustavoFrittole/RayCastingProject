@@ -1,11 +1,4 @@
 {
-    "playerTransform": {
-        "forewardAngleDeg": 0,
-        "pos": {
-            "x": 5,
-            "y": 5
-        }
-    },
     "gameCamera": {
         "FOV": 90,
         "maxRenderDist": 20.0,
@@ -17,34 +10,33 @@
         "generated" : false,
         "mapCellsFile": "assets/map.txt"
     },
-    "screenStats" : {
+    "windowStats" : {
+        "frameRate" : 0,
         "minimapScale" : 6,
 	    "halfWallHeight" : 1
     },
     "controls" : {
         "mouseSens" : 1,
-	    "movementSpeed" : 1
+	    "movementSpeed" : 2
     },
-    "textures" : {
-        "wallTexPath" : "assets/wall2.png",
-        "boundryTexPath" : "assets/boundry2.png",
-        "floorTexPath" : "assets/floor2.png",
-        "ceilingTexPath" : "assets/ceiling2.png",
-        "skyTexPath" : "assets/sky1.png"
-    },
-    "sprite number" : 2,
-    "sprite0" : {
-        "texture" : "assets/sprite1.png",
-        "position" : {
-            "x" : 6,
-            "y" : 6
+    "assets" :
+    {
+        "font" : "assets/IndieFlower-Regular/IndieFlower-Regular.ttf",
+        "textures" : {
+            "wallTexPath" : "assets/wall2.png",
+            "boundryTexPath" : "assets/boundry2.png",
+            "floorTexPath" : "assets/floor2.png",
+            "ceilingTexPath" : "assets/ceiling2.png",
+            "skyTexPath" : "assets/sky.png"
         }
     },
-    "sprite1" : {
-        "texture" : "assets/sprite2.png",
-        "position" : {
-            "x" : 5.5,
-            "y" : 6
-        }
-    }
+    "sprites" : [
+        [ 2, "assets/fallen.png"],
+        [ 1, "assets/lover0.png"],
+        [ 0, "assets/smallheart.png"],
+        [ 3, "assets/climb0.png"],
+        [ 4, "assets/climb1.png"],
+        [ 5, "assets/climb2.png"],
+        [ 6, "assets/climb3.png"]
+    ]
 }
