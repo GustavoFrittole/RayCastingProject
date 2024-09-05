@@ -90,7 +90,7 @@ old | post refactor (0.2.0)
 
 ## Resources
  - Textures:
-    - skybox: edited Adobe Stock Standard License photo thumbnail;
-    - other textures: edited DALL·E 3 generated images;
+    - textures: edited DALL·E 3 and FLUX.1 schnell generated images;
+    - sprite textures: original
  - Linear perspective:
     - [Lodev article](https://lodev.org/cgtutor/raycasting.html).

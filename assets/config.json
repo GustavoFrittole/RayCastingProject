@@ -27,12 +27,12 @@
             "boundryTexPath" : "assets/boundry2.png",
             "floorTexPath" : "assets/floor2.png",
             "ceilingTexPath" : "assets/ceiling2.png",
-            "skyTexPath" : "assets/sky1.png"
+            "skyTexPath" : "assets/sky.png"
         }
     },
     "sprites" : [
         [ 2, "assets/fallen.png"],
-        [ 1, "assets/lover.png"],
+        [ 1, "assets/lover0.png"],
         [ 0, "assets/smallheart.png"],
         [ 3, "assets/climb0.png"],
         [ 4, "assets/climb1.png"],

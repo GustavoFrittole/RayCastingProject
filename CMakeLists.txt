@@ -17,6 +17,9 @@ find_package(SFML 2.6 COMPONENTS system window graphics QUIET)
 
 # fetch if not found
 if (NOT SFML_FOUND)
+    set(SFML_BUILD_NETWORK OFF CACHE BOOL "Dont build SFML Network module")
+    set(SFML_BUILD_AUDIO OFF CACHE BOOL "Dont build SFML Audio module")
+
     FetchContent_Declare(
         SFML
         GIT_REPOSITORY https://github.com/SFML/SFML.git

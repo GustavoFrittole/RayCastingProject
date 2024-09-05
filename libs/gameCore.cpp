@@ -3,6 +3,7 @@
 #include <thread>
 #include <stdexcept>
 #include <cmath>
+#include <cassert>
 
 #define TIME_CORRECTION 1e-9f
 #define DYNAMIC_FRICTION 1.f
@@ -360,6 +361,8 @@ bool GameCore::move_entity_with_collisions_entity_space(EntityTransform& transfo
 	{
 		if (front != 0.f && latereal != 0.f)
 		{
+			//movement values are assumed to have equal absulute value when active
+			assert(std::abs(front) == std::abs(latereal));
 			front = front / SQRT2;
 			latereal = latereal / SQRT2;
 		}

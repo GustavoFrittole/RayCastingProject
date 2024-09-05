@@ -108,7 +108,7 @@ void BackgroundRendSectionFactory::set_target(GameView* view, const StaticTextur
     m_camera = camera;
     m_backgroundVars.skyPixPerCircle = (m_staticTex->skyTexture.width() / (float)(2 * PI));
     m_backgroundVars.skyUIncrement = m_backgroundVars.skyPixPerCircle * m_camera->vars.fov / g_windowWidth;
-    m_backgroundVars.skyVIncrement = m_staticTex->skyTexture.height() / ((float)g_windowHeight);
+    m_backgroundVars.skyVIncrement = m_staticTex->skyTexture.height() / ((float)g_windowHeight / 2);
 }
 
 BackgroundRendSectionFactory::BackgroundRendSection BackgroundRendSectionFactory::create_section(int index)
