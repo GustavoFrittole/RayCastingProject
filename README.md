@@ -80,7 +80,8 @@ ___
 ## Basic class diagram
 old | post refactor (0.2.0)
 :-------------------------:|:-------------------------:
-![Caster drawio](https://github.com/user-attachments/assets/9e436ad2-37ac-475a-bd19-af297e51c40f) | ![Caster2 drawio](https://github.com/user-attachments/assets/50f05b47-dee1-427c-b483-0eef94de09f7)
+![Caster drawio](https://github.com/user-attachments/assets/9e436ad2-37ac-475a-bd19-af297e51c40f) | ![Caster2 drawio](https://github.com/user-attachments/assets/6cc88bfc-6c43-4cdf-b52e-64a4bc934561)
+
 
 *All not specified relations are 1:1*
 
