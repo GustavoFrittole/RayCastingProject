@@ -145,7 +145,7 @@ void GameCore::update_entities()
 				entity->m_physical.movementSpeed.y * timeFactor,
 				entity->m_physical.rotationSpeed * timeFactor))
 			{
-				entity->destroyed = true;
+				entity->set_destroyed(true);
 			}
 		}
 	}
@@ -165,7 +165,7 @@ void GameCore::remove_destroyed_entities()
 {
 	for (std::vector<std::unique_ptr<IEntity>>::iterator it = m_entities.begin(); it != m_entities.end();)
 	{
-		if ((*it)->destroyed)
+		if ((*it)->get_destroyed())
 			it = m_entities.erase(it);
 		else
 			++it;
@@ -305,7 +305,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 {
 	for (std::unique_ptr<IEntity>& entity : m_entities)
 	{
-		if(entity->active)
+		if(entity->get_active())
 		{
 			math::Vect2 rayToCamera = entity->m_transform.coordinates - m_playerTransform.coordinates;
 			float euclideanRayLength = rayToCamera.Length();
@@ -324,7 +324,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 				//mapping to screen pos
 				entity->m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
 
-				entity->visible = (entity->m_billboard.distance < m_gameCamera.maxRenderDist);
+				entity->set_visible(entity->m_billboard.distance < m_gameCamera.maxRenderDist);
 			}
 			else
 			{
@@ -339,7 +339,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 				float positionOnPlane = projectionOnPlane / entity->m_billboard.distance;
 				entity->m_billboard.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
 
-				entity->visible = (entity->m_billboard.distance < m_gameCamera.maxRenderDist);
+				entity->set_visible(entity->m_billboard.distance < m_gameCamera.maxRenderDist);
 			}
 		}
 	}

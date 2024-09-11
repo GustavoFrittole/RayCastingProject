@@ -172,12 +172,12 @@ namespace rcm
 	{
 		for (std::unique_ptr<IEntity>& entity : entities)
 		{
-			if (entity->active)
+			if (entity->get_active())
 				entity->on_update();
 		}
 		for (std::unique_ptr<IEntity>& entity : entities)
 		{
-			if (entity->active)
+			if (entity->get_active())
 				entity->on_late_update();
 		}
 	}
@@ -187,7 +187,7 @@ namespace rcm
 
 		for (int i = 0; i < entities.size() - 1; ++i)
 		{
-			if (entities.at(i)->interactible)
+			if (entities.at(i)->get_interactible())
 			{
 				//check if inside walls
 				HitType cell = HitType::Nothing;
@@ -199,7 +199,7 @@ namespace rcm
 				//entity - entity interaction
 				for (int c = i + 1; c < entities.size(); ++c)
 				{
-					if (entities.at(c)->interactible)
+					if (entities.at(c)->get_interactible())
 					{
 						float distance = (entities.at(i)->m_transform.coordinates - entities.at(c)->m_transform.coordinates).Length();
 						if (distance < entities.at(i)->m_collisionSize + entities.at(c)->m_collisionSize)

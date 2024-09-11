@@ -207,20 +207,33 @@ namespace rcm
 		/// @param  the type of the other entity that took part in the collision
 		virtual void on_hit(EntityType) = 0;
 
+		void set_destroyed(bool destroyed) { m_destroyed = destroyed; }
+		bool get_destroyed() { return m_destroyed; }
+
+		void set_interactible(bool interactible) { m_interactible = interactible; }
+		bool get_interactible() { return m_interactible; }
+
+		void set_active(bool active) { m_active = active; }
+		bool get_active() { return m_active; }
+
+		void set_visible(bool visible) { m_visible = visible; }
+		bool get_visible() { return m_visible; }
+
 		Billboard m_billboard;
 		EntityTransform m_transform{};
 		PhysicalVars m_physical{};
 		float m_collisionSize = 1.f;
 		EntityType m_type = EntityType::prop;
 
+	protected:
 		//flags entities that are to be removed
-		bool destroyed = false;
+		bool m_destroyed = false;
 		//deactivate distance based interactions (on_hit)
-		bool interactible = false;
+		bool m_interactible = false;
 		//deactivete on_update script
-		bool active = true;
+		bool m_active = true;
 		//automatically changed based on distance from cam
-		bool visible = false;
+		bool m_visible = false;
 	};
 
 	struct GameStateVars

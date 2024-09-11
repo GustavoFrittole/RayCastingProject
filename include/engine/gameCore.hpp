@@ -23,15 +23,16 @@ public:
 	std::vector<std::unique_ptr<rcm::IEntity>>& get_entities() { return m_entities; }
 	void add_entity(rcm::IEntity *);
 
-	/// @brief Change the HitType if a physical map structure is hit, otherwise leave it as is
-	/// @param rayPosInMap map position to check
-	/// @param hitMarker marker to change if structure is struck
-	void chech_position_in_map(int, int, rcm::HitType&) const;
 
 	/// @brief Change the HitType if a physical map structure is hit, otherwise leave it as is
 	/// @param rayPosInMapX
 	/// @param rayPosInMapY
 	/// @param hitMarker : marker to change if structure is struck
+	void chech_position_in_map(int, int, rcm::HitType&) const;
+
+	/// @brief Change the HitType if a physical map structure is hit, otherwise leave it as is
+	/// @param rayPosInMap map position to check
+	/// @param hitMarker marker to change if structure is struck
 	void chech_position_in_map(const math::Vect2&, rcm::HitType&) const;
 
 	bool generate_map_step();

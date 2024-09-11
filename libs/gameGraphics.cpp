@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdexcept>
 #include <queue>
+#include <cassert>
 #include "gameGraphics.hpp"
 
 using namespace windowVars;
@@ -126,8 +127,8 @@ SpriteRendSectionFactory::SpriteRendSection::SpriteRendSection(int start, int en
 
 void SpriteRendSectionFactory::SpriteRendSection::operator()() const
 {
-    if (m_source == nullptr)
-        throw std::runtime_error("Render section called while no target was set.");
+    //Render section functor must be used after a target is set.
+    assert(m_source != nullptr);
 
     //if the section is empty do nothing
     if (m_start == m_end)
@@ -631,7 +632,7 @@ void GameGraphics::render_sprites(const std::vector<std::unique_ptr<IEntity>>& e
     //sort by distance (in order to use the painter's algorithm)
     for (const std::unique_ptr<IEntity>& e : entities)
     {
-        if (e->visible && e->m_billboard.id != -1 && e->m_billboard.distance > 0.2f)
+        if (e->get_visible() && e->m_billboard.id != -1 && e->m_billboard.distance > 0.2f)
         {
             billbByDistMaxQ.push(&(e->m_billboard));
         }
