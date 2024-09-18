@@ -1,14 +1,15 @@
 #include <random>
-
-//----------------------------- Utils --------------------------------
+#include <cassert>
 
 using namespace rcm;
+
+//----------------------------- Utils --------------------------------
 
 math::Vect2 find_free_cell();
 
 //-------------------- Custom Entities Examples ----------------------
 
-//------------------------- MyGameLogicsHandler ------------------------
+//---------------------- MyGameLogicsHandler -------------------------
 
 class MyGameLogicsHandler : public IEntity
 {
@@ -20,7 +21,7 @@ public:
     void on_late_update() override;
     void on_hit(EntityType otherEntity) override {}
 
-    //------------------------- MyProjectile -----------------------------
+    //----------------------- MyProjectile ------------------------------
 
     class MyProjectile : public IEntity
     {
@@ -37,6 +38,8 @@ public:
     struct MyPlayer : public IEntity
     {
         MyPlayer(const EntityTransform& transform, int id = -1);
+
+        //in most cases it's preferable to delay interactions with gameHandler until the environment is fully loaded (not required)
         void on_create() override { m_gameHandler = &(rcm::get_gameHandler()); }
         void on_update() override;
         void on_late_update() override {}
@@ -45,10 +48,10 @@ public:
         int get_playerHearts() { return m_playerHearts; }
         void set_playerHearths(int hearts) { m_playerHearts = hearts; }
     private:
+        rcm::IGameHandler* m_gameHandler = nullptr;
         bool m_isTriggerPressed = false;
         bool m_isTriggerKeptPressed = false;
         utils::SimpleCooldown m_burstCooldown = utils::SimpleCooldown(50);
-        rcm::IGameHandler* m_gameHandler = nullptr;
         int m_playerHearts = 0;
     };
 
@@ -76,9 +79,9 @@ public:
         void on_update() override;
         void on_hit(EntityType otherEntity) override;
     private:
+        rcm::IGameHandler* m_gameHandler = nullptr;
         utils::SimpleCooldown m_heartCooldown = utils::SimpleCooldown(300);
         utils::SimpleCooldown m_turningCooldown = utils::SimpleCooldown(2000);
-        rcm::IGameHandler* m_gameHandler = nullptr;
         std::mt19937 m_generator;
         std::uniform_real_distribution<float> m_distribution;
     };
@@ -93,18 +96,19 @@ public:
         void on_late_update() override {}
         void on_hit(EntityType) override {}
     private:
+        rcm::IGameHandler* m_gameHandler = nullptr;
         const unsigned char* m_ids = nullptr;
         int m_countdown = 0;
         const int m_frameNumber = 0;
         utils::SimpleCooldown cooldown = utils::SimpleCooldown(500);
-        rcm::IGameHandler* m_gameHandler = nullptr;
     };
 
-    void set_player(MyPlayer* player) { m_player = player; }
 private:
     utils::SimpleCooldown m_deathTimer = utils::SimpleCooldown(3000);
     IGameHandler* m_gameHandler = nullptr;
-    MyPlayer* m_player = nullptr;
+
+    //an entity can store pointers to other entities
+    inline static MyPlayer* m_player = nullptr;
     inline static int m_enemyInstances = 0;
     int m_heartsCap = 10;
     bool m_isDying = false;
@@ -119,20 +123,24 @@ MyGameLogicsHandler::MyProjectile::MyProjectile(const EntityTransform& transform
     m_type = EntityType::projectile;
     set_size(0.2f);
     m_physical.movementSpeed = { 16.f, 0.f };
-    m_physical.movFrictionCoef = .2;
+    m_physical.movementFrictionCoef = .2;
     m_physical.isGhosted = true;
     m_interactible = true;
 }
 
-//------------------------- MyPlayer ------------------------
+//--------------------------- MyPlayer ------------------------
 
 MyGameLogicsHandler::MyPlayer::MyPlayer(const EntityTransform& transform, int id) : IEntity(id, transform)
 {
-    m_physical.movFrictionCoef = 5.;
+    m_physical.movementFrictionCoef = 5.;
     m_physical.mass = 1.f;
     m_collisionSize = .2f;
     m_type = EntityType::player;
     m_interactible = true;
+
+    //there is no point in creating multiple players ( currently there's no way of switching player )
+    assert(m_player == nullptr);
+    MyGameLogicsHandler::m_player = this;
 }
 
 void MyGameLogicsHandler::MyPlayer::on_update()
@@ -204,7 +212,7 @@ MyGameLogicsHandler::MyEnemy::MyEnemy(const EntityTransform& transform, int id) 
 {
     m_physical.movementSpeed.x = 2.5f;
     m_physical.rotationSpeed = 0.8f;
-    m_physical.rotFrictionCoef = .3;
+    m_physical.rotationFrictionCoef = .3;
     m_physical.mass = 1.f;
     m_collisionSize = 0.2f;
     m_type = EntityType::enemy;
@@ -249,6 +257,8 @@ MyGameLogicsHandler::MySpawner::MySpawner(const EntityTransform& transform, int 
 { 
     m_interactible = false; 
     m_physical.rotationSpeed = 2.f;
+    m_billboard.size = 0.5f;
+    m_billboard.alignment = SpriteAlignment::Floor;
 }
 
 void MyGameLogicsHandler::MySpawner::on_update()

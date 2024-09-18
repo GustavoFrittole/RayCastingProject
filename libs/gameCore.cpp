@@ -120,7 +120,7 @@ void GameCore::update_entities()
 	
 	for (std::unique_ptr<IEntity>& entity : m_entities)
 	{
-		float frictionModule(entity->m_physical.movFrictionCoef * entity->m_physical.mass);
+		float frictionModule(entity->m_physical.movementFrictionCoef * entity->m_physical.mass);
 		//apply friction module in opposite direction of movement (rolling friction)
 		math::Vect2 friction = (entity->m_physical.movementSpeed) * (- frictionModule);
 
@@ -128,7 +128,7 @@ void GameCore::update_entities()
 		{
 			//apply acceleration
 			entity->m_physical.movementSpeed += ((friction + entity->m_physical.movementAcceleration) * timeFactor);
-			entity->m_physical.rotationSpeed += ((entity->m_physical.rotFrictionCoef * (- entity->m_physical.mass) + entity->m_physical.rotationAcceleraion) * timeFactor);
+			entity->m_physical.rotationSpeed += ((entity->m_physical.rotationFrictionCoef * (- entity->m_physical.mass) + entity->m_physical.rotationAcceleraion) * timeFactor);
 
 			//apply speed
 			move_entity_with_collisions_entity_space(entity->m_transform,
@@ -324,7 +324,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 				//mapping to screen pos
 				entity->m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
 
-				entity->set_visible(entity->m_billboard.distance < m_gameCamera.maxRenderDist);
+				entity->m_visible = entity->m_billboard.distance < m_gameCamera.maxRenderDist;
 			}
 			else
 			{
@@ -339,7 +339,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 				float positionOnPlane = projectionOnPlane / entity->m_billboard.distance;
 				entity->m_billboard.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;
 
-				entity->set_visible(entity->m_billboard.distance < m_gameCamera.maxRenderDist);
+				entity->m_visible = entity->m_billboard.distance < m_gameCamera.maxRenderDist;
 			}
 		}
 	}

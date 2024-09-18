@@ -3,7 +3,7 @@
 # Ray casting based maze explorer
 Personal project exploring the concept of ray casting.
 ## Build instructions
-The project relies on SFML (for user input and window handling). If it can't be found locally by cmake, it will be downloaded from github and compiled.
+The project relies on the SFML library (for user input and window handling). If it can't be found locally, cmake will automatically download it from github and it will be compiled with the rest of the project.
 ### Windows
 ```
 git clone https://github.com/GustavoFrittole/RayCastingProject.git
@@ -29,7 +29,7 @@ Regarding SFML dependencies, this project's workflow file [build-ubuntu](https:/
 
 
 ## Features
-Pseudo 3d environment generated via ray casting that allows to explore a maze (generation displayed at launch) or a custom map. 
+Pseudo 3d environment generated via ray casting that allows to explore a maze (generation displayed at launch) or a custom map. More features in order of implementation:
 - in-game map and mini map;
 - calculation and display of shortest path to goal in generated mazes;
 - switch between euclidean distance (curvilinear perspective) and projection to camera plain (linear perspective);
@@ -40,16 +40,28 @@ Pseudo 3d environment generated via ray casting that allows to explore a maze (g
 Note: distance based shading of horizontal planes (ceiling/floor) and sky are only available in linear perspective mode.
 
 ## Usage
-Various variables are imported from the json file `config.json` that can be found in the asset folder, usage explained in the next section. Scriptable entities (includes player, static sprites and active entities) can be created and added as shown in `demo.cpp` and `demoEntities.hpp`.
-The maze is generated using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm, and the process of creation is displayed at game start.
+Various variables are imported from the json file `assets/config.json`, usage explained in the next section. The project is roughly configured as a entity–component–system, so game logic \ game play related code is implemented throgh scriptable entities. Entities can interact with the game handler api and between each other. Entities and be easily defined as shown and described in `demo.cpp` and `demoEntities.hpp`.
+The map (at the moment there is only one map and only one "scene") can be custom made and loaded from a file, or the user can choose to generate a maze (through the config file). The maze is generated using a [randomized DFS](https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_depth-first_search) algorithm, and the process of creation is displayed at game start.
 
-### `assets/config.json` variables
-- gameCamera: field of view in degrees, rays max length, ray precision;
-- gameMap: width, height, option to generate a maze with given dimensions, file form where to load a rectangular map of given (or less) dimensions;
-- screenStats: scale factor for the minimap (3 means that the center of the minimap will be at 1/3 of window height, right alignment) and scale factor for the wall height (basically the vertical fov);
-- controls: mouse speed and movement speed;
-- font: font used for the simple text ui;
-- textures: file paths for all textures;
+### `assets/config.json` variables, each section contains:
+- gameCamera: 
+   - field of view in degrees, 
+   - rays max length, 
+   - rays precision;
+- gameMap: 
+   - map width, 
+   - map height, 
+   - option to generate a maze with given dimensions, 
+   - file form where to load a rectangular map of given (or less) dimensions;
+- screenStats: 
+   - scale factor for the minimap (3 means that the center of the minimap will be at 1/3 of window height, right alignment),
+   - scale factor for the wall height (basically the vertical fov);
+- controls: 
+   - mouse speed,
+   - movement speed;
+- assets:
+   - font used for the simple text ui;
+   - textures: file paths for all textures;
 - sprites: a list of pairs of an id (int) and a path(string) from where the sprite will be loaded.
 
 Note: ~~a sprite size multiplier,~~ an option for using flat colors instead of textures ~~and the possibility of using the same texture for multiple sprites~~ are, as of now, missing features. Ray precision has no effect on the DDA algorithm that is currently in use.

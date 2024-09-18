@@ -14,6 +14,27 @@ namespace windowVars
 
 namespace rcm
 {
+	struct GameAssets
+	{
+		std::string fontFilePath;
+		std::string wallTexFilePath;
+		std::string boundryTexFilePath;
+		std::string floorTexFilePath;
+		std::string ceilingTexFilePath;
+		std::string skyTexFilePath;
+	};
+
+	struct GameStateVars
+	{
+		bool hadFocus = false;
+		bool isPaused = false;
+		bool isFindPathRequested = false;
+		bool isTabbed = false;
+		bool isLinearPersp = true;
+		bool drawSky = false;
+		bool drawTextUi = false;
+	};
+
 	struct EntityTransform
 	{
 		math::Vect2 coordinates{};
@@ -148,6 +169,21 @@ namespace rcm
 		SpriteAlignment alignment = SpriteAlignment::Center;
 	};
 
+	struct PhysicalVars
+	{
+		//if true unaffected by external forces (like friction) and architectural boundaries
+		bool isGhosted = false;
+
+		float movementFrictionCoef = 0.f;
+		float rotationFrictionCoef = 0.f;
+		float mass = 0.f;
+		math::Vect2 movementSpeed{};
+		float rotationSpeed = 0.f;
+		math::Vect2 movementAcceleration{};
+		float rotationAcceleraion = 0.f;
+	};
+
+	///@brief only used in the on_hit(EntityType) function. Elements can be added / removed freely
 	enum class EntityType
 	{
 		player,
@@ -157,23 +193,9 @@ namespace rcm
 		wall
 	};
 
-	struct PhysicalVars
-	{
-		//unaffected by external forces and architectural boundaries
-		bool isGhosted = false;
-
-		float movFrictionCoef = 0.f;
-		float rotFrictionCoef = 0.f;
-		float mass = 0.f;
-		math::Vect2 movementSpeed{};
-		float rotationSpeed = 0.f;
-		math::Vect2 movementAcceleration{};
-		float rotationAcceleraion = 0.f;
-	};
-
 	struct IEntity
 	{
-		/// @brief 
+		/// @brief An Entity contains both the state and the logics of a game object
 		/// @param id : id of a sprite to be drawn at this entity location. If id=-1 nothing will be drawn.  
 		/// @param et : the starting transform of this entity
 		IEntity(int id, const EntityTransform& et) :
@@ -194,7 +216,9 @@ namespace rcm
 				m_physical.movementAcceleration += force / m_physical.mass;
 		}
 
-		/// @brief called once at creation, after environment is ready.
+		/// @brief called once at creation. Takes place either right before the first game cycle for entities passed in create_assets()
+		/// or, for entities created afterwards by scripts, during the same game cycle, after all actions and interactions, 
+		/// before everything else (as display and movement).
 		virtual void on_create() = 0;
 
 		/// @brief called once every game cycle.
@@ -203,8 +227,8 @@ namespace rcm
 		/// @brief called once every game cycle, after all on_update() calls.
 		virtual void on_late_update() = 0;
 
-		/// @brief called every cycle in which two entities distance is lower then their combined collision size.
-		/// @param  the type of the other entity that took part in the collision
+		/// @brief every cycle this function is called once per entity of each pair whose distance is less then thier summed collisionSizes.
+		/// @param : the type of the other entity that took part in the collision
 		virtual void on_hit(EntityType) = 0;
 
 		void set_destroyed(bool destroyed) { m_destroyed = destroyed; }
@@ -216,54 +240,39 @@ namespace rcm
 		void set_active(bool active) { m_active = active; }
 		bool get_active() { return m_active; }
 
-		void set_visible(bool visible) { m_visible = visible; }
-		bool get_visible() { return m_visible; }
-
 		Billboard m_billboard;
 		EntityTransform m_transform{};
 		PhysicalVars m_physical{};
 		float m_collisionSize = 1.f;
 		EntityType m_type = EntityType::prop;
 
+		//automatically changed based on distance from camera (consider as read only)
+		bool m_visible = false;
+
 	protected:
 		//flags entities that are to be removed
 		bool m_destroyed = false;
-		//deactivate distance based interactions (on_hit)
+		//deactivate distance based interactions (on_hit()) (for both counterparts)
 		bool m_interactible = false;
 		//deactivete on_update script
 		bool m_active = true;
-		//automatically changed based on distance from cam
-		bool m_visible = false;
-	};
-
-	struct GameStateVars
-	{
-		bool hadFocus = false;
-		bool isPaused = false;
-		bool isFindPathRequested = false;
-		bool isTabbed = false;
-		bool isLinearPersp = true;
-		bool drawSky = false;
-		bool drawTextUi = false;
 	};
 
 	struct InputCache
 	{
+		//-- value is zero or "movementSpeed" from config file --
+		// 'W' pressed -> positive, 'S' pressed -> negative
 		float foreward = 0;
+		// 'A' pressed -> positive, 'D' pressed -> negative
 		float lateral = 0;
+		//-- value is zero or "mouseSens" from config file or is based on mouse movement --
+		// '<' pressed -> positive, '>' pressed -> negative
 		float rotatation = 0;
-		bool leftTrigger = false;
-		bool rightTrigger = false;
-	};
 
-	struct GameAssets
-	{
-		std::string fontFilePath;
-		std::string wallTexFilePath;
-		std::string boundryTexFilePath;
-		std::string floorTexFilePath;
-		std::string ceilingTexFilePath;
-		std::string skyTexFilePath;
+		// true if left mouse click and/or 'Q' are pressed
+		bool leftTrigger = false;
+		// true if right mouse click and/or 'E' are pressed
+		bool rightTrigger = false;
 	};
 }
 

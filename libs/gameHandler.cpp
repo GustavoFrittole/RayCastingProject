@@ -133,25 +133,6 @@ namespace rcm
 		}
 	}
 
-	void GameHandler::start()
-	{
-		//step by step map generation (if generation is requested)
-		while (m_gameCore->generate_map_step())
-		{
-			std::thread sleep([] { std::this_thread::sleep_for(std::chrono::milliseconds(GENERATION_TIME_STEP_MS)); });
-
-			m_inputManager->handle_events_close();
-
-			m_gameGraphics->draw_map_gen(m_gameData->gameMap.width, m_gameData->gameMap.height, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
-
-			//wait if the generation time isn't over
-			sleep.join();
-		}
-		m_gameCore->start_internal_time();
-		m_gameState.isPaused = true;
-		add_cached_entities();
-	}
-
 	char GameHandler::get_entity_cell(const EntityTransform& pos, const GameMap& map)
 	{
 		return map.cells->at(static_cast<int>(pos.coordinates.y) * map.width +
@@ -213,6 +194,28 @@ namespace rcm
 		}
 	}
 
+	/// @brief first game cycle
+	void GameHandler::start()
+	{
+		//step by step map generation (if generation is requested)
+		while (m_gameCore->generate_map_step())
+		{
+			//stert step generaton time delay
+			std::thread sleep([] { std::this_thread::sleep_for(std::chrono::milliseconds(GENERATION_TIME_STEP_MS)); });
+
+			m_inputManager->handle_events_close();
+
+			m_gameGraphics->draw_map_gen(m_gameData->gameMap.width, m_gameData->gameMap.height, m_gameCameraView->transform.coordinates.x, m_gameCameraView->transform.coordinates.y, *(m_gameData->gameMap.cells));
+
+			//wait if the generation time isn't over
+			sleep.join();
+		}
+		m_gameCore->start_internal_time();
+		m_gameState.isPaused = true;
+		add_cached_entities();
+	}
+
+	/// @brief main game cycle
 	void GameHandler::performGameCycle()
 	{
 		m_window->clear(sf::Color::Black);

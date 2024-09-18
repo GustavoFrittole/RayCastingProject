@@ -411,12 +411,11 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
         const RayInfo& currRay = rays.const_at(i);
         float distance = currRay.length;
 
-        //--this version maintains correct proportions, but causes texture distortion--
+        //--this code version maintains correct proportions, but causes texture distortion (not compatible with other parts of the code, which use the inverse function)--
         //float wallAngle = (std::atan(m_gameGraphics.m_halfWallHeight / distance) );
         //float screenWallHeight = g_windowHeight  * wallAngle / (m_verticalVisibleAngle * m_gameGraphics.m_halfWallHeight);
 
-        //--this version is faster, has easy texture mapping but locks th evertical view angle at 90� (45� up 45� down)--
-
+        //--this version is faster, has easy texture mapping but locks the vertical view angle at 90 deg (45 deg up 45 deg down)--
         float screenWallHeight = (g_windowHeight / distance) * graphVars.halfWallHeight;
         float floorHeight = (g_windowHeight - screenWallHeight) / 2;
 
@@ -436,7 +435,7 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
         case HitType::Baudry:
             currentTexture = &tex.baundryTexture;
             flatShading = false;
-            //flat shading example
+            //-------flat shading example-------
             //flatShading = true;
             //flatColor = { 0xff, (currRay.lastSideChecked == CellSide::Hori) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , boxShade };
             break;
@@ -632,7 +631,7 @@ void GameGraphics::render_sprites(const std::vector<std::unique_ptr<IEntity>>& e
     //sort by distance (in order to use the painter's algorithm)
     for (const std::unique_ptr<IEntity>& e : entities)
     {
-        if (e->get_visible() && e->m_billboard.id != -1 && e->m_billboard.distance > 0.2f)
+        if (e->m_visible && e->m_billboard.id != -1 && e->m_billboard.distance > 0.2f)
         {
             billbByDistMaxQ.push(&(e->m_billboard));
         }
