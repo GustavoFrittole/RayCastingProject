@@ -1,8 +1,6 @@
 #include <random>
 #include <cassert>
 
-using namespace rcm;
-
 //----------------------------- Utils --------------------------------
 
 math::Vect2 find_free_cell();
@@ -220,6 +218,13 @@ MyGameLogicsHandler::MyEnemy::MyEnemy(const EntityTransform& transform, int id) 
     m_billboard.size = 0.8f;
     m_interactible = true;
 
+    m_billboard.hasTurnAroundSprites = true;
+    m_billboard.turnAroundTexIds.ne = 7;
+    m_billboard.turnAroundTexIds.se = 8;
+    m_billboard.turnAroundTexIds.s = 9;
+    m_billboard.turnAroundTexIds.sw = 10;
+    m_billboard.turnAroundTexIds.nw = 11;
+
     std::random_device seed;
     m_generator = std::mt19937(seed());
     m_distribution = (std::uniform_real_distribution<float>(-2.5f, 2.5f) );
@@ -256,7 +261,7 @@ MyGameLogicsHandler::MySpawner::MySpawner(const EntityTransform& transform, int 
     m_ids(ids)
 { 
     m_interactible = false; 
-    m_physical.rotationSpeed = 2.f;
+    //m_physical.rotationSpeed = 2.f;
     m_billboard.size = 0.5f;
     m_billboard.alignment = SpriteAlignment::Floor;
 }

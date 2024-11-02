@@ -14,6 +14,8 @@ namespace windowVars
 
 namespace rcm
 {
+	//--------------- engine ralated structures -----------------
+
 	struct GameAssets
 	{
 		std::string fontFilePath;
@@ -124,6 +126,9 @@ namespace rcm
 		RayInfo* m_rayArr;
 	};
 
+	//--------------------- entity related structures --------------------------
+	//All entity components values can be freely modified, unless otherwise explicitly stated.
+
 	enum class SpriteAlignment
 	{
 		TopWindow,
@@ -147,26 +152,40 @@ namespace rcm
 		Right,
 	};
 
+	struct TurnAroundTexIds
+	{
+		//nord-east, south-west, ... where south corresponds to the back side
+		int s = -1, sw = -1, se = -1, nw = -1, ne = -1;
+	};
+
 	struct Billboard
 	{
 		Billboard(int id) :
 			id(id)
-		{}
+		{  }
 
-		//associated texture id
+		//the associated texture id that will be displayed for the entity that holds this component. -1 means no texture
 		int id = -1;
 
-		//position is screen space, modified by core
-		float positionOnScreen = 0.f;
-
-		//distance from camera, modified by core
-		float distance = 0.f;
-
-		//relative size, 1 equals to cell size (based on distance)
+		//relative size, = 1 means it will be equal in height to the walls (based on distance)
 		float size = 1.f;
 
 		//where the spriteis drawn verically
 		SpriteAlignment alignment = SpriteAlignment::Center;
+
+		//if true turnaround frames will be read
+		bool hasTurnAroundSprites = false;
+
+		TurnAroundTexIds turnAroundTexIds{};
+
+		//position in screen space, modified by core (read only)
+		float positionOnScreen = 0.f;
+
+		//distance from camera, modified by core (read only)
+		float distance = 0.f;
+
+		//rotation needed to look straight at the camera, from entity's foreward direction (read only)
+		float cameraAngle = 0.f;
 	};
 
 	struct PhysicalVars

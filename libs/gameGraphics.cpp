@@ -439,8 +439,15 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
             //flatShading = true;
             //flatColor = { 0xff, (currRay.lastSideChecked == CellSide::Hori) ? (sf::Uint8)0xff : (sf::Uint8)0x0, 0xff , boxShade };
             break;
+        case HitType::Nothing:
+            //this occurs when sight is clear up to a distance equivalent to graphVars.maxSightDepth
+            //viable options might be to draw nothing or to draw a black wall 
+            //here nothing is drawn (works better with linear persp)
+            screenWallHeight = 0;
+            floorHeight = g_windowHeight / 2;
+            break;
         default:
-            //dontDraw = true;
+
             break;
         }
 
@@ -501,7 +508,8 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
                     int viewPixel = (y * g_windowWidth + x);
                     int texturePixel = (textureU + int(textureV) * currentTexture->width()) * 4;
 
-                    copy_pixels(view.m_pixels, currentTexture->m_texturePixels, viewPixel, texturePixel, boxShade);
+                    if(!linear || !(currentTexture->m_texturePixels[texturePixel + 3] == 0))
+                        copy_pixels(view.m_pixels, currentTexture->m_texturePixels, viewPixel, texturePixel, boxShade);
 
                     textureV += texVStep;
                 }
@@ -566,7 +574,10 @@ void GameGraphics::draw_view_section(int startY, int endY, bool linear, const Ra
         math::Vect2 xyPos = worldPosLeft;
         int uvPos[2]{};
 
-        sf::Uint8 shading = 0xFF * (1 - (rayLength / windowVars.maxSightDepth));
+        sf::Uint8 shading = 0x0;
+
+        if (rayLength <= windowVars.maxSightDepth)
+            shading = 0xFF * (1 - (rayLength / windowVars.maxSightDepth));
 
         float skyUPos = skyUStart;
 
@@ -629,29 +640,66 @@ void GameGraphics::render_sprites(const std::vector<std::unique_ptr<IEntity>>& e
     std::priority_queue<const Billboard*, std::vector<const Billboard*>, CompareBillboards> billbByDistMaxQ;
 
     //sort by distance (in order to use the painter's algorithm)
-    for (const std::unique_ptr<IEntity>& e : entities)
+    for (const std::unique_ptr<IEntity>& entity : entities)
     {
-        if (e->m_visible && e->m_billboard.id != -1 && e->m_billboard.distance > 0.2f)
+        if (entity->m_visible && entity->m_billboard.distance > 0.2f)
         {
-            billbByDistMaxQ.push(&(e->m_billboard));
+            billbByDistMaxQ.push(&(entity->m_billboard));
         }
     }
 
     while(!billbByDistMaxQ.empty())
     {
         const Billboard* billb = billbByDistMaxQ.top();
-        const Texture* spriteTex;
+        const Texture* spriteTex = nullptr;
 
-        spriteTex = m_spriteTexturesDict[billb->id].get();
-        if(spriteTex == nullptr)
+        int currentId = -1;
+
+        if (billb->hasTurnAroundSprites)
         {
-            std::string err("Error: a sprite is trying to access a non existing texture of id: ");
-            err.append(std::to_string(billb->id).append("\n"));
-            throw std::runtime_error(err);
+
+            if (billb->cameraAngle <= -(PI * 5 / 6))
+                currentId = billb->id;
+
+            else if (billb->cameraAngle <= -(PI / 2))
+                currentId = billb->turnAroundTexIds.ne;
+
+            else if (billb->cameraAngle <= -(PI / 6))
+                currentId = billb->turnAroundTexIds.se;
+
+            else if (billb->cameraAngle <= PI / 6)
+                 currentId = billb->turnAroundTexIds.s;
+
+            else if (billb->cameraAngle <= PI / 2)
+                currentId = billb->turnAroundTexIds.sw;
+
+            else if (billb->cameraAngle <= PI * 5 / 6)
+                currentId = billb->turnAroundTexIds.nw;
+
+            else
+                currentId = billb->id;
         }
-        m_spriteSecFactory.set_target(*billb, *spriteTex);
-        update_sprite_sections();
-        render_sprite();
+        else
+        {
+            currentId = billb->id;
+        }
+
+        if (currentId != -1)
+        {
+            spriteTex = m_spriteTexturesDict[currentId].get();
+
+            if (spriteTex == nullptr)
+            {
+                std::string err("Error: a sprite is trying to access a non existing texture of id: ");
+                err.append(std::to_string(currentId).append("\n"));
+                throw std::runtime_error(err);
+            }
+
+            m_spriteSecFactory.set_target(*billb, *spriteTex);
+            update_sprite_sections();
+            render_sprite();
+        }
+
         billbByDistMaxQ.pop();
     }
 

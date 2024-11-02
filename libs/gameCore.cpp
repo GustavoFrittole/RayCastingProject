@@ -145,6 +145,7 @@ void GameCore::update_entities()
 				entity->m_physical.movementSpeed.y * timeFactor,
 				entity->m_physical.rotationSpeed * timeFactor))
 			{
+				//entities oob or inside walls get destroyed
 				entity->set_destroyed(true);
 			}
 		}
@@ -311,30 +312,36 @@ void GameCore::view_billboards(bool useCameraPlane)
 			float euclideanRayLength = rayToCamera.Length();
 
 			//relative to camera foreward view
-			float relativeAngle = m_playerTransform.forewardAngle - math::vec_to_rad(rayToCamera);
-			if (relativeAngle >= PI)
-				relativeAngle -= 2 * PI;
-			else if (relativeAngle <= -PI)
-				relativeAngle += 2 * PI;
+			float entityRelativeAngle = m_playerTransform.forewardAngle - math::vec_to_rad(rayToCamera);
+			if (entityRelativeAngle >= PI)
+				entityRelativeAngle -= 2 * PI;
+			else if (entityRelativeAngle <= -PI)
+				entityRelativeAngle += 2 * PI;
+
+			entity->m_billboard.cameraAngle = entity->m_transform.forewardAngle + math::vec_to_rad(rayToCamera);
+			if (entity->m_billboard.cameraAngle >= PI)
+				entity->m_billboard.cameraAngle -= 2 * PI;
+			else if (entity->m_billboard.cameraAngle <= -PI)
+				entity->m_billboard.cameraAngle += 2 * PI;
 
 			if (!useCameraPlane)
 			{
 				entity->m_billboard.distance = euclideanRayLength;
 
 				//mapping to screen pos
-				entity->m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (relativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
+				entity->m_billboard.positionOnScreen = (m_gameCamera.fov / 2 + (entityRelativeAngle)) / (m_gameCamera.fov) * m_gameCamera.pixelWidth;
 
 				entity->m_visible = entity->m_billboard.distance < m_gameCamera.maxRenderDist;
 			}
 			else
 			{
-				entity->m_billboard.distance = euclideanRayLength * std::cos(relativeAngle);
+				entity->m_billboard.distance = euclideanRayLength * std::cos(entityRelativeAngle);
 
 				//mapping to screen pos
-				float projectionOnPlane = euclideanRayLength * std::sin(relativeAngle);
+				float projectionOnPlane = euclideanRayLength * std::sin(entityRelativeAngle);
 				float planeLength = std::tan(m_gameCamera.fov / 2) * 2;
 
-				//since rays are obrained by adding the plane position to a vertical vector: (planePos, 1) * rayLength
+				//since rays are obtained by adding the plane position to a vertical vector: (planePos, 1) * rayLength
 				//the position on plane can be derived from the vector's x component normalized
 				float positionOnPlane = projectionOnPlane / entity->m_billboard.distance;
 				entity->m_billboard.positionOnScreen = (positionOnPlane / planeLength + 0.5f) * m_gameCamera.pixelWidth;

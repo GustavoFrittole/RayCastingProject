@@ -4,9 +4,12 @@
 #include <thread>
 #include <chrono>
 #include "gameHandler.hpp"
-#include "../demo/demoEntities.hpp"
 
-// for more informations and comments on IEntity see gameDataStructures.hpp : rcm::IEntity
+using namespace rcm;
+
+#include "../demo/demoEntities.hpp" //<---
+
+// for more informations and comments on IEntity see rcm::IEntity and the "entity related structires" section in gameDataStructures.hpp 
 // the implementation examples of all entities used in this file can be found in "demo/demoEntities.hpp"
 
 int main()
@@ -14,8 +17,8 @@ int main()
     rcm::IGameHandler& gameHandler = rcm::get_gameHandler();
 
     //Implementation note: entities are heap allocated and each entity is free to hold pointers 
-    //to other entities. Notice that entities destruction is handled by game handler, so if an entity
-    //is destroied by other means, the behavior will be undefined. Also note that all unique_ptrs fed
+    //to other entities as members. Notice that entities destruction is handled by the game handler, so if an entity
+    //is destroyed by other means, the behavior will be undefined. Also note that all unique_ptrs fed
     //to gameHandler are returned empty, as it takes ownership of them.
 
     //-------------- crete entities ------------
@@ -33,7 +36,6 @@ int main()
 
     entities.emplace_back(new MyGameLogicsHandler::MySpawner(EntityTransform{ {7,10}, 6 }, sizeof(ids) / sizeof(ids[0]), ids));
 
-
     //---------------- run game ---------------
     try
     {
@@ -49,6 +51,9 @@ int main()
         std::cout << "An error has occured: \n" << e.what() << std::endl;
     }
 
-    //implementaion note, error handling:
+    //implementation note, error handling: errors may occur if the config file or the assets
+    //aren't correctly specified. Exception are thrown with additional information about where
+    //the error has occurred, in order to simplify debugging
+    std::cin.get();
     return 0;
 }

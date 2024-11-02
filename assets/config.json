@@ -31,12 +31,17 @@
         }
     },
     "sprites" : [
-        [ 2, "assets/fallen.png"],
-        [ 1, "assets/lover0.png"],
         [ 0, "assets/smallheart.png"],
+        [ 1, "assets/lover0.png"],
+        [ 2, "assets/fallen.png"],
         [ 3, "assets/climb0.png"],
         [ 4, "assets/climb1.png"],
         [ 5, "assets/climb2.png"],
-        [ 6, "assets/climb3.png"]
+        [ 6, "assets/climb3.png"],
+        [ 7, "assets/lover1.png"],
+        [ 8, "assets/lover2.png"],
+        [ 9, "assets/lover3.png"],
+        [ 10, "assets/lover4.png"],
+        [ 11, "assets/lover5.png"]
     ]
 }
