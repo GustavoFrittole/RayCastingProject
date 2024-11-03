@@ -85,9 +85,10 @@ ___
 ![path](https://github.com/user-attachments/assets/f1382797-0022-4488-bfb5-c3c704b4340b)
 :-------------------------:
 
-0.1.1 | 0.2.0 (preview)
+0.1.1 | 0.2.0
 :-------------------------:|:-------------------------:
-![switch](https://github.com/user-attachments/assets/159c4ac2-e2bf-49a2-89ed-49960b84b41b) | ![scriptable](https://github.com/user-attachments/assets/1e74a11c-d919-4587-b194-eebb06e8c960)
+![switch](https://github.com/user-attachments/assets/159c4ac2-e2bf-49a2-89ed-49960b84b41b) |![scriptable](https://github.com/user-attachments/assets/a88f578f-9904-4b51-ae12-82920c35d53d)
+
 
 ## Basic class diagram
 old | post refactor (0.2.0)
@@ -98,7 +99,7 @@ old | post refactor (0.2.0)
 *All not specified relations are 1:1*
 
 ## Known issues
-- mouse speed lowers as the frame rate increases (whilst arrows rotation behaves correctly);
+- mouse speed lowers as the frame rate increases (whilst arrows rotation is not effected);
 - ~~drawing sprites has a big impact on frame rate (multi threading not yet implemented in sprite drawing);~~
 
 ## Resources
@@ -106,4 +107,4 @@ old | post refactor (0.2.0)
     - textures: edited DALL·E 3 and FLUX.1 schnell generated images;
     - sprite textures: original
  - Linear perspective:
-    - [Lodev article](https://lodev.org/cgtutor/raycasting.html).
+    - [Lodev article](https://lodev.org/cgtutor/raycasting.html)
