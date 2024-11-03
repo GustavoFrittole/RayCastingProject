@@ -34,7 +34,9 @@ int main()
     //sequence of sprites that "MySpawner" will play in sequence
     const unsigned char ids[] = { 3, 4, 5, 6 };
 
-    entities.emplace_back(new MyGameLogicsHandler::MySpawner(EntityTransform{ {7,10}, 6 }, sizeof(ids) / sizeof(ids[0]), ids));
+    entities.emplace_back(new MyGameLogicsHandler::MySpawner(EntityTransform{ {7,10}, 0 }, sizeof(ids) / sizeof(ids[0]), ids));
+    entities.emplace_back(new MyProp(EntityTransform{ {8,10}, 0 }));
+    entities.emplace_back(new MyProp(EntityTransform{ {6,10}, 0 }));
 
     //---------------- run game ---------------
     try
@@ -54,6 +56,9 @@ int main()
     //implementation note, error handling: errors may occur if the config file or the assets
     //aren't correctly specified. Exception are thrown with additional information about where
     //the error has occurred, in order to simplify debugging
+
+    std::cout << "Press Enter to exit" << std::endl;
     std::cin.get();
+
     return 0;
 }

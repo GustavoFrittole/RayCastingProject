@@ -24,7 +24,7 @@ public:
     class MyProjectile : public IEntity
     {
     public:
-        MyProjectile(const EntityTransform& transform, int id = PROJECTILE_ID);
+        MyProjectile(const EntityTransform& transform, int id = 0);
         void on_create() override {}
         void on_update() override {}
         void on_late_update() override {}
@@ -88,7 +88,7 @@ public:
 
     struct MySpawner : public IEntity
     {
-        MySpawner(const EntityTransform& transform, int frame_number, const unsigned char* ids);
+        MySpawner(const EntityTransform& transform, int frame_number, const unsigned char* ids, int spawn_step_ms_cd = 500);
         void on_create() override;
         void on_update() override;
         void on_late_update() override {}
@@ -96,9 +96,9 @@ public:
     private:
         rcm::IGameHandler* m_gameHandler = nullptr;
         const unsigned char* m_ids = nullptr;
-        int m_countdown = 0;
+        int m_countdown_counter = 0;
         const int m_frameNumber = 0;
-        utils::SimpleCooldown cooldown = utils::SimpleCooldown(500);
+        utils::SimpleCooldown m_cooldown;
     };
 
 private:
@@ -208,16 +208,22 @@ void MyGameLogicsHandler::MyFallenEnemy::on_update()
 
 MyGameLogicsHandler::MyEnemy::MyEnemy(const EntityTransform& transform, int id) : IEntity(id, transform)
 {
+    //-- entity's physical properies --
     m_physical.movementSpeed.x = 2.5f;
     m_physical.rotationSpeed = 0.8f;
     m_physical.rotationFrictionCoef = .3;
     m_physical.mass = 1.f;
     m_collisionSize = 0.2f;
-    m_type = EntityType::enemy;
-    m_billboard.alignment = SpriteAlignment::Floor;
-    m_billboard.size = 0.8f;
     m_interactible = true;
 
+    m_type = EntityType::enemy;
+
+    //-- sprite options ( get applied to any sprite that is assigned to this entity ) --
+    m_billboard.alignment = SpriteAlignment::Floor;
+    m_billboard.size = 0.8f;
+ 
+
+    //-- turnaround sprites --
     m_billboard.hasTurnAroundSprites = true;
     m_billboard.turnAroundTexIds.ne = 7;
     m_billboard.turnAroundTexIds.se = 8;
@@ -225,6 +231,8 @@ MyGameLogicsHandler::MyEnemy::MyEnemy(const EntityTransform& transform, int id) 
     m_billboard.turnAroundTexIds.sw = 10;
     m_billboard.turnAroundTexIds.nw = 11;
 
+
+    //-- random number generator for changing rotarion speed --
     std::random_device seed;
     m_generator = std::mt19937(seed());
     m_distribution = (std::uniform_real_distribution<float>(-2.5f, 2.5f) );
@@ -256,27 +264,29 @@ void MyGameLogicsHandler::MyEnemy::on_hit(EntityType otherEntity)
 
 //------------------------- MySpawner ------------------------
 
-MyGameLogicsHandler::MySpawner::MySpawner(const EntityTransform& transform, int frame_number, const unsigned char* ids) : IEntity(ids[0], transform),
+MyGameLogicsHandler::MySpawner::MySpawner(const EntityTransform& transform, int frame_number, const unsigned char* ids, int spawn_step_ms_cd)
+    : IEntity(ids[0], transform),
     m_frameNumber(frame_number),
-    m_ids(ids)
+    m_ids(ids),
+    m_cooldown(spawn_step_ms_cd)
 { 
     m_interactible = false; 
-    //m_physical.rotationSpeed = 2.f;
+    m_physical.rotationSpeed = 8.f;
     m_billboard.size = 0.5f;
     m_billboard.alignment = SpriteAlignment::Floor;
 }
 
 void MyGameLogicsHandler::MySpawner::on_update()
 {
-    if (cooldown.is_ready())
+    if (m_cooldown.is_ready())
     {
-        if (m_countdown >= m_frameNumber)
+        if (m_countdown_counter >= m_frameNumber)
         {
             m_gameHandler->add_entity(new MyEnemy(m_transform));
-            m_countdown = 0;
+            m_countdown_counter = 0;
         }
-        m_billboard.id = m_ids[m_countdown];
-        ++m_countdown;
+        m_billboard.id = m_ids[m_countdown_counter];
+        ++m_countdown_counter;
     }
 }
 
@@ -341,3 +351,24 @@ void MyGameLogicsHandler::on_late_update()
         }
     }
 }
+
+//-----prop----
+class MyProp : public IEntity
+{
+public:
+    MyProp(const EntityTransform& transform, int id = 1) : IEntity(id, transform)
+    {
+        m_physical.rotationSpeed = 6.f;
+
+        m_billboard.hasTurnAroundSprites = true;
+        m_billboard.turnAroundTexIds.ne = 7;
+        m_billboard.turnAroundTexIds.se = 8;
+        m_billboard.turnAroundTexIds.s = 9;
+        m_billboard.turnAroundTexIds.sw = 10;
+        m_billboard.turnAroundTexIds.nw = 11;
+    }
+    void on_create() override {}
+    void on_update() override {}
+    void on_late_update() override {}
+    void on_hit(EntityType otherEntity) override {}
+};

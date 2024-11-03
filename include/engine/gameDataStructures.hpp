@@ -202,7 +202,7 @@ namespace rcm
 		float rotationAcceleraion = 0.f;
 	};
 
-	///@brief only used in the on_hit(EntityType) function. Elements can be added / removed freely
+	///@brief the only purpose of this tag is in scripting, to comunicate between entities scripts the type of the objects involved in a collision ( on_hit(EntityType) calls ). Elements can be added / removed freely
 	enum class EntityType
 	{
 		player,

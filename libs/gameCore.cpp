@@ -318,7 +318,7 @@ void GameCore::view_billboards(bool useCameraPlane)
 			else if (entityRelativeAngle <= -PI)
 				entityRelativeAngle += 2 * PI;
 
-			entity->m_billboard.cameraAngle = entity->m_transform.forewardAngle + math::vec_to_rad(rayToCamera);
+			entity->m_billboard.cameraAngle = entity->m_transform.forewardAngle - math::vec_to_rad(rayToCamera);
 			if (entity->m_billboard.cameraAngle >= PI)
 				entity->m_billboard.cameraAngle -= 2 * PI;
 			else if (entity->m_billboard.cameraAngle <= -PI)

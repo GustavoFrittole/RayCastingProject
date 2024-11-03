@@ -657,24 +657,26 @@ void GameGraphics::render_sprites(const std::vector<std::unique_ptr<IEntity>>& e
 
         if (billb->hasTurnAroundSprites)
         {
-
+            std::cout << billb->cameraAngle / PI << std::endl;
             if (billb->cameraAngle <= -(PI * 5 / 6))
                 currentId = billb->id;
 
             else if (billb->cameraAngle <= -(PI / 2))
-                currentId = billb->turnAroundTexIds.ne;
+                currentId = billb->turnAroundTexIds.nw;
 
             else if (billb->cameraAngle <= -(PI / 6))
-                currentId = billb->turnAroundTexIds.se;
+                currentId = billb->turnAroundTexIds.sw;
 
             else if (billb->cameraAngle <= PI / 6)
                  currentId = billb->turnAroundTexIds.s;
 
             else if (billb->cameraAngle <= PI / 2)
-                currentId = billb->turnAroundTexIds.sw;
+                currentId = billb->turnAroundTexIds.se;
+                
 
             else if (billb->cameraAngle <= PI * 5 / 6)
-                currentId = billb->turnAroundTexIds.nw;
+                currentId = billb->turnAroundTexIds.ne;
+                
 
             else
                 currentId = billb->id;

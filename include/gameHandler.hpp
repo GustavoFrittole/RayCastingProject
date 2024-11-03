@@ -5,8 +5,6 @@
 #include <vector>
 #include "gameDataStructures.hpp"
 
-#define PROJECTILE_ID 0
-
 namespace rcm
 {
 	class IGameHandler
