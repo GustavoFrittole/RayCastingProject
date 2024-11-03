@@ -6,8 +6,6 @@
 #include <cassert>
 
 #define TIME_CORRECTION 1e-9f
-#define DYNAMIC_FRICTION 1.f
-#define BULLET_SPEED 5
 
 using namespace rcm;
 
