@@ -17,6 +17,7 @@ cmake -S . -B ./build
 ```
 cmake --build ./build
 ```
+Run the demo. Path might be change based on the chosen generator. 
 ```
 ./build/bin/demo.exe
 ```
